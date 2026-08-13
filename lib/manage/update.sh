@@ -894,6 +894,7 @@ ${GREEN}|  \/  | ___ | | ___ ${NC}
 ${GREEN}| |\/| |/ _ \| |/ _ \\${NC}
 ${GREEN}| |  | | (_) | |  __/${NC}  ${BLUE}https://mole.fit${NC}
 ${GREEN}|_|  |_|\___/|_|\___|${NC}  ${GREEN}${MOLE_TAGLINE}${NC}
+${GRAY}由 HaoUp 完成全量简体中文翻译 · ${BLUE}https://github.com/XiaoWoUi/Mole-CN${NC}
 
 EOF
 }
