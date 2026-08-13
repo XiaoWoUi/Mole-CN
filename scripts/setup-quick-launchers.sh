@@ -15,11 +15,11 @@ ICON_WARN="!"
 ICON_ERR="✗"
 
 LAUNCHER_COMMAND_SPECS=(
-    "clean|Mole Clean|Deep system cleanup with Mole|Run Mole clean"
-    "uninstall|Mole Uninstall|Uninstall applications with Mole|Uninstall apps via Mole"
-    "optimize|Mole Optimize|System health checks and optimization|System health and optimization"
-    "analyze|Mole Analyze|Disk space analysis with Mole|Disk space analysis"
-    "status|Mole Status|Live system status dashboard|Live system dashboard"
+    "clean|Mole 清理|使用 Mole 深度系统清理|运行 Mole 清理"
+    "uninstall|Mole 卸载|使用 Mole 卸载应用|通过 Mole 卸载应用"
+    "optimize|Mole 优化|系统健康检查与优化|系统健康与优化"
+    "analyze|Mole 分析|使用 Mole 进行磁盘空间分析|磁盘空间分析"
+    "status|Mole 状态|实时系统状态仪表盘|实时系统仪表盘"
 )
 
 log_step() { echo -e "${BLUE}${ICON_STEP}${NC} $1"; }
@@ -42,7 +42,7 @@ detect_mo() {
     elif command -v mole > /dev/null 2>&1; then
         command -v mole
     else
-        log_error "Mole not found. Install it first via Homebrew or ./install.sh."
+        log_error "未找到 Mole,请先通过 Homebrew 或 ./install.sh 安装。"
         exit 1
     fi
 }
@@ -76,7 +76,7 @@ write_raycast_script() {
 
 set -euo pipefail
 
-echo "🐹 Running ${title}..."
+echo "🐹 正在运行 ${title}..."
 echo ""
 
 MO_BIN="${mo_bin}"
@@ -229,14 +229,14 @@ if launch_with_app "\$TERM_APP"; then
 fi
 
 if [[ "\$TERM_APP" != "Terminal" ]]; then
-    echo "Could not control \$TERM_APP, falling back to Terminal..."
+    echo "无法控制 \$TERM_APP,正在回退到 Terminal..."
     if launch_with_app "Terminal"; then
         exit 0
     fi
 fi
 
-echo "TERM environment variable not set and no launcher succeeded."
-echo "Run this manually:"
+echo "未设置 TERM 环境变量且没有启动器成功。"
+echo "请手动运行:"
 echo "    \"\${MO_BIN}\" \${MO_SUBCOMMAND}"
 exit 1
 EOF
@@ -253,27 +253,27 @@ create_raycast_commands() {
     local description
     local alfred_subtitle
 
-    log_step "Installing Raycast commands..."
+    log_step "正在安装 Raycast 命令..."
     mkdir -p "$dir"
     for entry in "${LAUNCHER_COMMAND_SPECS[@]}"; do
         IFS="|" read -r subcommand title description alfred_subtitle <<< "$entry"
         write_raycast_script "$dir/mole-${subcommand}.sh" "$title" "$description" "$mo_bin" "$subcommand"
     done
-    log_success "Scripts ready in: $dir"
+    log_success "脚本已就绪: $dir"
 
-    log_header "Raycast Configuration"
-    log_step "Open Raycast → Settings → Extensions → Script Commands."
-    echo "1. Click \"+\" → Add Script Directory."
-    echo "2. Choose: $dir"
-    echo "3. Click \"Reload Script Directories\"."
+    log_header "Raycast 配置"
+    log_step "打开 Raycast → 设置 → 扩展 → 脚本命令。"
+    echo "1. 点击 \"+\" → 添加脚本目录。"
+    echo "2. 选择: $dir"
+    echo "3. 点击 \"重新加载脚本目录\"。"
 
     if is_interactive; then
-        log_header "Finalizing Setup"
-        log_warn "Please complete the Raycast steps above before continuing."
-        prompt_enter "Press [Enter] to continue..."
-        log_success "Raycast setup complete!"
+        log_header "完成设置"
+        log_warn "请先完成以上 Raycast 步骤,再继续。"
+        prompt_enter "按 [回车] 继续..."
+        log_success "Raycast 设置完成!"
     else
-        log_warn "Non-interactive mode; skip Raycast reload. Please run 'Reload Script Directories' in Raycast."
+        log_warn "非交互模式;跳过 Raycast 重新加载。请在 Raycast 中运行 '重新加载脚本目录'。"
     fi
 }
 
@@ -303,7 +303,7 @@ create_alfred_workflow() {
         return
     fi
 
-    log_step "Installing Alfred workflows..."
+    log_step "正在安装 Alfred 工作流..."
     for entry in "${LAUNCHER_COMMAND_SPECS[@]}"; do
         IFS="|" read -r subcommand title _ subtitle <<< "$entry"
         bundle="fun.tw93.mole.${subcommand}"
@@ -399,33 +399,33 @@ ${command}
 </dict>
 </plist>
 EOF
-        log_success "Workflow ready: ${title}, keyword: ${keyword}"
+        log_success "工作流已就绪: ${title},关键词: ${keyword}"
     done
 
-    log_step "Open Alfred preferences → Workflows if you need to adjust keywords."
+    log_step "如需调整关键词,请打开 Alfred 偏好设置 → Workflows。"
 }
 
 main() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  Mole Quick Launchers"
+    echo "  Mole 快速启动器"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     local mo_bin
     mo_bin="$(detect_mo)"
-    log_step "Detected Mole binary at: ${mo_bin}"
+    log_step "检测到 Mole 程序位于: ${mo_bin}"
 
     create_raycast_commands "$mo_bin"
     create_alfred_workflow "$mo_bin"
 
     echo ""
-    log_success "Done! Raycast and Alfred are ready with 5 commands:"
+    log_success "完成!Raycast 和 Alfred 已准备好 5 个命令:"
     local entry
     local subcommand
     local title
     for entry in "${LAUNCHER_COMMAND_SPECS[@]}"; do
         IFS="|" read -r subcommand title _ _ <<< "$entry"
-        echo "  • Raycast: ${title} | Alfred keyword: ${subcommand}"
+        echo "  • Raycast: ${title} | Alfred 关键词: ${subcommand}"
     done
     echo ""
 }

@@ -187,7 +187,7 @@ func parseCoreTopology(out string) (pCores, eCores int) {
 
 func fallbackLoadAvgFromUptime() (load.AvgStat, error) {
 	if !commandExists("uptime") {
-		return load.AvgStat{}, errors.New("uptime command unavailable")
+		return load.AvgStat{}, errors.New("uptime 命令不可用")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
@@ -206,7 +206,7 @@ func fallbackLoadAvgFromUptime() (load.AvgStat, error) {
 		}
 	}
 	if idx == -1 {
-		return load.AvgStat{}, errors.New("load averages not found in uptime output")
+		return load.AvgStat{}, errors.New("未在 uptime 输出中找到负载均值")
 	}
 
 	segment := strings.TrimSpace(out[idx:])
@@ -227,7 +227,7 @@ func fallbackLoadAvgFromUptime() (load.AvgStat, error) {
 		}
 	}
 	if len(values) < 3 {
-		return load.AvgStat{}, errors.New("could not parse load averages from uptime output")
+		return load.AvgStat{}, errors.New("无法从 uptime 输出解析负载均值")
 	}
 
 	return load.AvgStat{
@@ -323,10 +323,10 @@ func sampleCPUPercents(interval time.Duration) ([]float64, float64, error) {
 // percentages, so a core that barely ran cannot drag the total upward.
 func perCoreUsageFromTimes(before, after []cpu.TimesStat, elapsed float64) ([]float64, float64, error) {
 	if len(before) == 0 || len(before) != len(after) {
-		return nil, 0, errors.New("mismatched cpu times snapshots")
+		return nil, 0, errors.New("CPU 时间快照不匹配")
 	}
 	if elapsed <= 0 {
-		return nil, 0, errors.New("non-positive sampling window")
+		return nil, 0, errors.New("采样窗口必须为正")
 	}
 
 	percents := make([]float64, len(before))
@@ -352,7 +352,7 @@ func perCoreUsageFromTimes(before, after []cpu.TimesStat, elapsed float64) ([]fl
 		windowSum += window
 	}
 	if windowSum <= 0 {
-		return nil, 0, errors.New("empty cpu sampling window")
+		return nil, 0, errors.New("CPU 采样窗口为空")
 	}
 	total := busySum / windowSum * 100
 	if total < 0 {

@@ -29,7 +29,7 @@ func collectBatteries() (batts []BatteryStatus, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Swallow panics to keep UI alive.
-			err = fmt.Errorf("battery collection failed: %v", r)
+			err = fmt.Errorf("电池数据采集失败: %v", r)
 		}
 	}()
 
@@ -57,7 +57,7 @@ func collectBatteries() (batts []BatteryStatus, err error) {
 		percent, _ := strconv.ParseFloat(percentStr, 64)
 		status := strings.TrimSpace(string(statusData))
 		if status == "" {
-			status = "Unknown"
+			status = "未知"
 		}
 		batts = append(batts, BatteryStatus{
 			Percent: percent,
@@ -68,7 +68,7 @@ func collectBatteries() (batts []BatteryStatus, err error) {
 		return batts, nil
 	}
 
-	return nil, errors.New("no battery data found")
+	return nil, errors.New("未找到电池数据")
 }
 
 func parsePMSet(raw string, health string, cycles int, capacity int) []BatteryStatus {
@@ -93,7 +93,7 @@ func parsePMSet(raw string, health string, cycles int, capacity int) []BatterySt
 		var (
 			percent float64
 			found   bool
-			status  = "Unknown"
+			status  = "未知"
 		)
 		for i, f := range fields {
 			if strings.Contains(f, "%") {

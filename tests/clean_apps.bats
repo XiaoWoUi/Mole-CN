@@ -509,7 +509,7 @@ printf 'REGISTRY_CLEANUP_OK\n'
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"DEBUG:Scanned 0 unique applications"* ]] || return 1
+    [[ "$output" == *"DEBUG:已扫描 0 个独立应用"* ]] || return 1
     [[ "$output" == *"REGISTRY_CLEANUP_OK"* ]] || return 1
 }
 
@@ -547,7 +547,7 @@ printf 'SCAN_FAILURE_CLOSED\n'
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Skipped: Unable to scan installed applications"* ]] || return 1
+    [[ "$output" == *"已跳过:无法扫描已安装应用"* ]] || return 1
     [[ "$output" == *"SCAN_FAILURE_CLOSED"* ]]
 }
 
@@ -619,7 +619,7 @@ printf 'APP_DIRECTORY_SCAN_FAILURE_CLOSED\n'
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Skipped: Unable to scan installed applications"* ]] || return 1
+    [[ "$output" == *"已跳过:无法扫描已安装应用"* ]] || return 1
     [[ "$output" == *"APP_DIRECTORY_SCAN_FAILURE_CLOSED"* ]]
 }
 
@@ -674,7 +674,7 @@ printf 'ERREXIT_SCAN_FAILURE_CLOSED\n'
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Skipped: Unable to scan installed applications (Broken.app)"* ]] || return 1
+    [[ "$output" == *"已跳过:无法扫描已安装应用(Broken.app)"* ]] || return 1
     [[ "$output" == *"ERREXIT_SCAN_FAILURE_CLOSED"* ]]
 }
 
@@ -753,7 +753,7 @@ clean_orphaned_app_data
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"No permission"* ]]
+    [[ "$output" == *"无权访问"* ]]
 }
 
 @test "clean_orphaned_app_data handles paths with spaces correctly" {
@@ -944,7 +944,7 @@ clean_orphaned_app_data
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Would clean 1 items, about 2.0MB"* ]] || return 1
+    [[ "$output" == *"将清理 1 项,约 2.0MB"* ]] || return 1
     [[ "$output" != *"Cleaned 1 items"* ]] || return 1
     [ -d "$test_home/Library/Caches/com.test.orphan-dry-run" ] || return 1
 }
@@ -998,7 +998,7 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Orphaned Claude workspace VM"* ]] || return 1
+    [[ "$output" == *"残留的 Claude 工作区虚拟机"* ]] || return 1
     [[ "$output" == *"PASS: Claude VM removed"* ]]
 }
 
@@ -1137,7 +1137,7 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" != *"UNEXPECTED:Orphaned Claude workspace VM"* ]] || return 1
+    [[ "$output" != *"UNEXPECTED:残留的 Claude 工作区虚拟机"* ]] || return 1
     [[ "$output" == *"PASS: Recent Claude VM kept"* ]]
 }
 
@@ -1175,7 +1175,7 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" != *"UNEXPECTED:Orphaned Claude workspace VM"* ]] || return 1
+    [[ "$output" != *"UNEXPECTED:残留的 Claude 工作区虚拟机"* ]] || return 1
     [[ "$output" == *"PASS: Claude VM kept"* ]]
 }
 
@@ -1337,7 +1337,7 @@ EOF
     [[ "$output" != *"launchctl-called"* ]] || return 1
     # Positive control: every other assertion here is true on empty output, so
     # without this the test cannot distinguish "dry-run behaved" from "nothing ran".
-    [[ "$output" == *"Orphaned services · "*" found dry"* ]]
+    [[ "$output" == *"残留服务 · "*"个(预演)"* ]]
 }
 
 @test "clean_orphaned_system_services reports an authorization timeout" {
@@ -1352,7 +1352,7 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"authorization check timed out, skipped cleanup"* ]] || return 1
+    [[ "$output" == *"授权检查超时,已跳过清理"* ]] || return 1
     [[ "$output" == *"ACTIVITY"* ]]
 }
 
@@ -1376,7 +1376,7 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"scan incomplete, skipped cleanup"* ]] || return 1
+    [[ "$output" == *"扫描不完整,已跳过清理"* ]] || return 1
     [[ "$output" == *"ACTIVITY"* ]]
 }
 
@@ -1436,8 +1436,8 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" != *"Found 1 orphaned"* ]] || return 1
-    [[ "$output" != *"Would remove orphaned service"* ]] || return 1
+    [[ "$output" != *"发现 1 个残留的系统服务"* ]] || return 1
+    [[ "$output" != *"[预演] 将移除残留服务"* ]] || return 1
 }
 
 @test "clean_orphaned_system_services keeps earlier candidates when a later privileged inventory times out" {
@@ -1510,7 +1510,7 @@ EOF
     [[ "$output" == *"CANDIDATE_PROBED"* ]] || return 1
     [[ "$output" == *"IDENTITY_CAPTURED"* ]] || return 1
     [[ "$output" == *"SCAN:/Library/LaunchAgents"* ]] || return 1
-    [[ "$output" == *"scan incomplete, skipped cleanup"* ]] || return 1
+    [[ "$output" == *"扫描不完整,已跳过清理"* ]] || return 1
     [[ "$output" == *"ACTIVITY"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_REMOVE"* ]]
 }
@@ -1752,7 +1752,7 @@ EOF
 
     [ "$status" -eq 0 ] || return 1
     [[ "$output" == *"LAUNCHCTL_TIMEOUT"* ]] || return 1
-    [[ "$output" == *"unload timed out, stopped cleanup"* ]] || return 1
+    [[ "$output" == *"卸载超时,已停止清理"* ]] || return 1
     [[ "$output" == *"ACTIVITY"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_REMOVE"* ]]
 }
@@ -1818,7 +1818,7 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Keeping changed or no-longer-orphaned service before unload"* ]] || return 1
+    [[ "$output" == *"卸载前保留已更改或不再是残留的服务"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_UNLOAD"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_REMOVE"* ]]
 }
@@ -1886,8 +1886,8 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Orphaned services · skipped 1 protected"* ]] || return 1
-    [[ "$output" != *"Orphaned services · cleaned"* ]] || return 1
+    [[ "$output" == *"残留服务 · 已跳过 1 个受保护项"* ]] || return 1
+    [[ "$output" != *"残留服务 · 已清理"* ]] || return 1
     [[ "$output" != *"unexpected-remove"* ]] || return 1
     [[ "$output" != *"unexpected-launchctl"* ]]
 }
@@ -1963,7 +1963,7 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Orphaned services · cleaned 1"* ]] || return 1
+    [[ "$output" == *"残留服务 · 已清理 1 个"* ]] || return 1
     [[ "$output" == *"removed:"*"org.amnezia.awg.plist"* ]] || return 1
     # A LaunchDaemon orphan is unloaded before removal, so this call is the
     # expected order rather than a stray one.
@@ -2044,9 +2044,9 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Orphaned services · cleaned 1"* ]] || return 1
+    [[ "$output" == *"残留服务 · 已清理 1 个"* ]] || return 1
     [[ "$output" == *"removed:"* ]] || return 1
-    [[ "$output" != *"skipped 1 protected"* ]] || return 1
+    [[ "$output" != *"已跳过 1 个受保护项"* ]] || return 1
 }
 
 @test "clean_orphaned_system_services keeps daemons whose binary is root-only readable (#1188)" {
@@ -2115,7 +2115,7 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Orphaned services · cleaned 1"* ]] || return 1
+    [[ "$output" == *"残留服务 · 已清理 1 个"* ]] || return 1
     [[ "$output" == *"removed:"* ]] || return 1
     [[ "$output" == *"com.example.gone.daemon.plist"* ]] || return 1
     [[ "$output" != *"com.example.selfprotect.daemon.plist"* ]] || return 1
@@ -2184,8 +2184,8 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Found 1 orphaned"* ]] || return 1
-    [[ "$output" == *"Orphaned services · skipped 1 protected"* ]] || return 1
+    [[ "$output" == *"发现 1 个残留的系统服务"* ]] || return 1
+    [[ "$output" == *"残留服务 · 已跳过 1 个受保护项"* ]] || return 1
     [[ "$output" != *"rm-called"* ]] || return 1
     [[ "$output" != *"Failed to remove orphaned service"* ]] || return 1
 }
@@ -2232,9 +2232,9 @@ EOF
     # (bare `[[ ]]` in the middle of a test body gets swallowed by the next
     # passing command; see #886 review notes).
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Found 1 orphaned"* ]] || return 1
-    [[ "$output" == *"skipped 1 protected"* ]] || return 1
-    [[ "$output" != *"Would remove orphaned service"* ]] || return 1
+    [[ "$output" == *"发现 1 个残留的系统服务"* ]] || return 1
+    [[ "$output" == *"已跳过 1 个受保护项"* ]] || return 1
+    [[ "$output" != *"[预演] 将移除残留服务"* ]] || return 1
 }
 
 @test "clean_orphaned_system_services dry-run reports unprotected orphans (#886)" {
@@ -2274,9 +2274,9 @@ clean_orphaned_system_services
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Found 1 orphaned"* ]] || return 1
-    [[ "$output" == *"Would remove orphaned service"* ]] || return 1
-    [[ "$output" != *"Skipping protected"* ]] || return 1
+    [[ "$output" == *"发现 1 个残留的系统服务"* ]] || return 1
+    [[ "$output" == *"[预演] 将移除残留服务"* ]] || return 1
+    [[ "$output" != *"跳过受保护的残留服务"* ]] || return 1
 }
 
 @test "clean_orphaned_system_services dry-run writes orphan paths to the export list (#1210)" {
@@ -2321,7 +2321,7 @@ cat "$EXPORT_LIST_FILE"
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"found dry"* ]] || return 1
+    [[ "$output" == *"个(预演)"* ]] || return 1
     [[ "$output" == *"com.example.exported.orphan.plist  # "* ]] || return 1
 }
 
@@ -2364,7 +2364,7 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: stub removed"* ]] || return 1
-    [[ "$output" == *"Orphaned app container stubs"* ]]
+    [[ "$output" == *"残留的应用容器占位"* ]]
 }
 
 @test "clean_orphaned_container_stubs preserves content that appears during removal" {
@@ -2426,7 +2426,7 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: race content preserved"* ]] || return 1
-    [[ "$output" == *"could not be removed"* ]]
+    [[ "$output" == *"无法移除"* ]]
 }
 
 @test "container stub removal must bypass safe_remove because Containers are protected" {
@@ -2615,7 +2615,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *"unbound variable"* ]] || return 1
     # Whitelisted orphan must be filtered out, so nothing is reported for removal.
-    [[ "$output" != *"Would remove orphaned service"* ]] || return 1
+    [[ "$output" != *"[预演] 将移除残留服务"* ]] || return 1
 }
 
 @test "installed-app scan reads wrapped bundles and tolerates a missing bundle id" {

@@ -410,16 +410,16 @@ func TestFormatUnusedTime(t *testing.T) {
 		{"zero time", -1, ""},            // Special case: will use time.Time{}
 		{"recent file", 30, ""},          // < 90 days returns empty
 		{"just under threshold", 89, ""}, // Boundary: 89 days still empty
-		{"at 90 days", 90, ">3mo"},       // Boundary: exactly 90 days
-		{"4 months", 120, ">4mo"},
-		{"6 months", 180, ">6mo"},
-		{"11 months", 330, ">11mo"},
-		{"just under 1 year", 364, ">12mo"},
-		{"exactly 1 year", 365, ">1yr"},
-		{"18 months", 548, ">1yr"}, // Between 1 and 2 years
-		{"just under 2 years", 729, ">1yr"},
-		{"exactly 2 years", 730, ">2yr"},
-		{"3 years", 1095, ">3yr"},
+		{"at 90 days", 90, ">3月"},       // Boundary: exactly 90 days
+		{"4 months", 120, ">4月"},
+		{"6 months", 180, ">6月"},
+		{"11 months", 330, ">11月"},
+		{"just under 1 year", 364, ">12月"},
+		{"exactly 1 year", 365, ">1年"},
+		{"18 months", 548, ">1年"}, // Between 1 and 2 years
+		{"just under 2 years", 729, ">1年"},
+		{"exactly 2 years", 730, ">2年"},
+		{"3 years", 1095, ">3年"},
 	}
 
 	for _, tt := range tests {

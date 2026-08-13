@@ -32,7 +32,7 @@ func (m *model) scheduleOverviewScans() tea.Cmd {
 		m.overviewScanning = false
 		if !hasPendingOverviewEntries(m.entries) {
 			m.sortOverviewEntriesBySize()
-			m.status = "Ready"
+			m.status = "就绪"
 		}
 		return nil
 	}
@@ -55,9 +55,9 @@ func (m *model) scheduleOverviewScans() tea.Cmd {
 	if len(pendingIndices) > 0 {
 		firstEntry := m.entries[pendingIndices[0]]
 		if len(pendingIndices) == 1 {
-			m.status = fmt.Sprintf("Scanning %s..., %d left", firstEntry.Name, remaining)
+			m.status = fmt.Sprintf("正在扫描 %s...,剩余 %d", firstEntry.Name, remaining)
 		} else {
-			m.status = fmt.Sprintf("Scanning %d directories..., %d left", len(pendingIndices), remaining)
+			m.status = fmt.Sprintf("正在扫描 %d 个目录...,剩余 %d", len(pendingIndices), remaining)
 		}
 	}
 
@@ -195,7 +195,7 @@ func (m *model) applyLiveChildSize(entry dirEntry, complete bool, result scanRes
 		m.applyEntryFilter()
 	}
 	m.clampEntrySelection()
-	m.status = fmt.Sprintf("Scanning %s...", displayPath(m.path))
+	m.status = fmt.Sprintf("正在扫描 %s...", displayPath(m.path))
 }
 
 func (m *model) finishLiveScan(result scanResult) {
@@ -236,7 +236,7 @@ func (m *model) finishLiveScan(result scanResult) {
 	go func(path string, scan scanResult) {
 		_ = saveCacheToDisk(path, scan)
 	}(m.path, result)
-	m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+	m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 }
 
 func (m *model) finishCanceledLiveScan() {
@@ -246,7 +246,7 @@ func (m *model) finishCanceledLiveScan() {
 	m.liveScanEvents = nil
 	m.liveScanningPaths = nil
 	m.autoSortLiveEntries = false
-	m.status = "Scan cancelled"
+	m.status = "扫描已取消"
 }
 
 func (m *model) sortLiveEntriesForActiveMode() {
@@ -310,9 +310,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(removedPaths) > 0 {
 				invalidateCache(m.path)
 				if msg.err != nil {
-					m.status = fmt.Sprintf("Deleted %d items; some failed: %v", msg.count, msg.err)
+					m.status = fmt.Sprintf("已删除 %d 项;部分失败: %v", msg.count, msg.err)
 				} else {
-					m.status = fmt.Sprintf("Deleted %d items", msg.count)
+					m.status = fmt.Sprintf("已删除 %d 项", msg.count)
 				}
 
 				// Selective invalidation: only mark current path and ancestors as needing refresh
@@ -344,9 +344,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(m.scanCmd(m.path), tickCmd())
 			}
 			if msg.err != nil {
-				m.status = fmt.Sprintf("Failed to delete: %v", msg.err)
+				m.status = fmt.Sprintf("删除失败: %v", msg.err)
 			} else {
-				m.status = fmt.Sprintf("Deleted %d items", msg.count)
+				m.status = fmt.Sprintf("已删除 %d 项", msg.count)
 			}
 		}
 		return m, nil
@@ -362,7 +362,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.scanning = false
 		if msg.err != nil {
-			m.status = fmt.Sprintf("Scan failed: %v", msg.err)
+			m.status = fmt.Sprintf("扫描失败: %v", msg.err)
 			return m, nil
 		}
 		filteredEntries := filterNonEmptyEntries(msg.result.Entries)
@@ -392,7 +392,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.stale {
-			m.status = fmt.Sprintf("Loaded cached data for %s, refreshing...", displayPath(m.path))
+			m.status = fmt.Sprintf("已为 %s 加载缓存数据,正在刷新...", displayPath(m.path))
 			m.scanning = true
 			if m.totalFiles > 0 {
 				m.lastTotalFiles = m.totalFiles
@@ -406,7 +406,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(m.scanFreshCmd(m.path), tickCmd())
 		}
 
-		m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+		m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 		return m, nil
 	case liveScanStartMsg:
 		if msg.path != m.path {
@@ -418,7 +418,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cancelLiveScan()
 		if msg.err != nil {
 			m.scanning = false
-			m.status = fmt.Sprintf("Scan failed: %v", msg.err)
+			m.status = fmt.Sprintf("扫描失败: %v", msg.err)
 			return m, nil
 		}
 		m.liveScanID = msg.id
@@ -439,7 +439,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.totalFiles = msg.totalFiles
 		m.viewNeedsRefresh = false
 		m.scanning = true
-		m.status = fmt.Sprintf("Scanning %s...", displayPath(m.path))
+		m.status = fmt.Sprintf("正在扫描 %s...", displayPath(m.path))
 		m.sortLiveEntriesForActiveMode()
 		m.applyLargeFilter()
 		if selectedPath != "" {
@@ -462,7 +462,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.finishLiveScan(msg.result)
 			return m, nil
 		case liveScanFailed:
-			m.status = fmt.Sprintf("Scan failed: %v", msg.err)
+			m.status = fmt.Sprintf("扫描失败: %v", msg.err)
 			return m, waitLiveScanEventCmd(m.liveScanEvents)
 		case liveScanCanceled:
 			m.finishCanceledLiveScan()
@@ -494,7 +494,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.totalSize = sumKnownEntrySizes(m.entries)
 
 			if msg.Err != nil {
-				m.status = fmt.Sprintf("Unable to measure %s: %v", displayPath(msg.Path), msg.Err)
+				m.status = fmt.Sprintf("无法测量 %s: %v", displayPath(msg.Path), msg.Err)
 			}
 
 			cmd := m.scheduleOverviewScans()
@@ -516,7 +516,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.deleting && m.deleteCount != nil {
 				count := atomic.LoadInt64(m.deleteCount)
 				if count > 0 {
-					m.status = fmt.Sprintf("Moving to Trash... %s items", formatNumber(count))
+					m.status = fmt.Sprintf("正在移入废纸篓... %s 项", formatNumber(count))
 				}
 			}
 			return m, tickCmd()
@@ -560,20 +560,20 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.deleteTarget = nil
 			if len(pathsToDelete) == 0 {
 				m.deleting = false
-				m.status = "Nothing to delete"
+				m.status = "没有可删除的内容"
 				return m, nil
 			}
 
 			if len(pathsToDelete) == 1 {
 				targetPath := pathsToDelete[0]
-				m.status = fmt.Sprintf("Deleting %s...", filepath.Base(targetPath))
+				m.status = fmt.Sprintf("正在删除 %s...", filepath.Base(targetPath))
 				return m, tea.Batch(deletePathCmd(targetPath, m.deleteCount), tickCmd())
 			}
 
-			m.status = fmt.Sprintf("Deleting %d items...", len(pathsToDelete))
+			m.status = fmt.Sprintf("正在删除 %d 项...", len(pathsToDelete))
 			return m, tea.Batch(deleteMultiplePathsCmd(pathsToDelete, m.deleteCount), tickCmd())
 		case "esc", "q":
-			m.status = "Cancelled"
+			m.status = "已取消"
 			m.deleteConfirm = false
 			m.deleteTarget = nil
 			return m, nil
@@ -600,7 +600,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.largeFilter != "" {
 				m.resetLargeFilter()
 				m.clampLargeSelection()
-				m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+				m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 				return m, nil
 			}
 			m.showLargeFiles = false
@@ -609,7 +609,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.entryFilter != "" {
 			m.resetEntryFilter()
 			m.clampEntrySelection()
-			m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+			m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 			return m, nil
 		}
 		return m.goBack()
@@ -687,13 +687,13 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			m.totalSize = 0
 
-			m.status = "Refreshing..."
+			m.status = "正在刷新..."
 			m.overviewScanning = true
 			return m, tea.Batch(m.scheduleOverviewScans(), tickCmd())
 		}
 
 		invalidateCacheTree(m.path)
-		m.status = "Refreshing..."
+		m.status = "正在刷新..."
 		m.scanning = true
 		if m.totalFiles > 0 {
 			m.lastTotalFiles = m.totalFiles
@@ -707,7 +707,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.scanBypassingCacheCmd(m.path), tickCmd())
 	case "t", "T":
 		if m.scanning {
-			m.status = "Top files are available after the scan finishes"
+			m.status = "扫描完成后可查看大文件"
 			return m, nil
 		}
 		if !m.inOverviewMode() {
@@ -721,7 +721,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			} else {
 				m.multiSelected = make(map[string]bool)
 			}
-			m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+			m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 		}
 	case "/":
 		if m.inOverviewMode() {
@@ -730,11 +730,11 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.showLargeFiles {
 			if len(m.largeFilesAll) > 0 {
 				m.largeFiltering = true
-				m.status = "Filter: type to match, Enter to apply, Esc to clear"
+				m.status = "筛选:输入以匹配,回车应用,Esc 清除"
 			}
 		} else if len(m.entriesAll) > 0 {
 			m.entryFiltering = true
-			m.status = "Filter: type to match, Enter to apply, Esc to clear"
+			m.status = "筛选:输入以匹配,回车应用,Esc 清除"
 		}
 	case "s", "S":
 		if m.scanning && !m.inOverviewMode() {
@@ -743,7 +743,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.autoSortLiveEntries {
 				m.sortLiveEntriesForActiveMode()
 			}
-			m.status = fmt.Sprintf("Live sort: %s", liveSortModeLabel(m.liveSortMode))
+			m.status = fmt.Sprintf("实时排序: %s", liveSortModeLabel(m.liveSortMode))
 		}
 	case "o", "O":
 		// Open selected entries (multi-select aware).
@@ -753,7 +753,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if len(m.largeMultiSelected) > 0 {
 					count := len(m.largeMultiSelected)
 					if count > maxBatchOpen {
-						m.status = fmt.Sprintf("Too many items to open, max %d, selected %d", maxBatchOpen, count)
+						m.status = fmt.Sprintf("打开的项目过多,最多 %d,已选 %d", maxBatchOpen, count)
 						return m, nil
 					}
 					for path := range m.largeMultiSelected {
@@ -761,20 +761,20 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 							_ = safeOpen(p, false)
 						}(path)
 					}
-					m.status = fmt.Sprintf("Opening %d items...", count)
+					m.status = fmt.Sprintf("正在打开 %d 项...", count)
 				} else {
 					selected := m.largeFiles[m.largeSelected]
 					go func(path string) {
 						_ = safeOpen(path, false)
 					}(selected.Path)
-					m.status = fmt.Sprintf("Opening %s...", selected.Name)
+					m.status = fmt.Sprintf("正在打开 %s...", selected.Name)
 				}
 			}
 		} else if len(m.entries) > 0 {
 			if len(m.multiSelected) > 0 {
 				count := len(m.multiSelected)
 				if count > maxBatchOpen {
-					m.status = fmt.Sprintf("Too many items to open, max %d, selected %d", maxBatchOpen, count)
+					m.status = fmt.Sprintf("打开的项目过多,最多 %d,已选 %d", maxBatchOpen, count)
 					return m, nil
 				}
 				for path := range m.multiSelected {
@@ -782,13 +782,13 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 						_ = safeOpen(p, false)
 					}(path)
 				}
-				m.status = fmt.Sprintf("Opening %d items...", count)
+				m.status = fmt.Sprintf("正在打开 %d 项...", count)
 			} else {
 				selected := m.entries[m.selected]
 				go func(path string) {
 					_ = safeOpen(path, false)
 				}(selected.Path)
-				m.status = fmt.Sprintf("Opening %s...", selected.Name)
+				m.status = fmt.Sprintf("正在打开 %s...", selected.Name)
 			}
 		}
 	case "f", "F":
@@ -799,7 +799,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if len(m.largeMultiSelected) > 0 {
 					count := len(m.largeMultiSelected)
 					if count > maxBatchReveal {
-						m.status = fmt.Sprintf("Too many items to reveal, max %d, selected %d", maxBatchReveal, count)
+						m.status = fmt.Sprintf("在 Finder 中显示的项目过多,最多 %d,已选 %d", maxBatchReveal, count)
 						return m, nil
 					}
 					for path := range m.largeMultiSelected {
@@ -807,20 +807,20 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 							_ = safeOpen(p, true)
 						}(path)
 					}
-					m.status = fmt.Sprintf("Showing %d items in Finder...", count)
+					m.status = fmt.Sprintf("正在 Finder 中显示 %d 项...", count)
 				} else {
 					selected := m.largeFiles[m.largeSelected]
 					go func(path string) {
 						_ = safeOpen(path, true)
 					}(selected.Path)
-					m.status = fmt.Sprintf("Showing %s in Finder...", selected.Name)
+					m.status = fmt.Sprintf("正在 Finder 中显示 %s...", selected.Name)
 				}
 			}
 		} else if len(m.entries) > 0 {
 			if len(m.multiSelected) > 0 {
 				count := len(m.multiSelected)
 				if count > maxBatchReveal {
-					m.status = fmt.Sprintf("Too many items to reveal, max %d, selected %d", maxBatchReveal, count)
+					m.status = fmt.Sprintf("在 Finder 中显示的项目过多,最多 %d,已选 %d", maxBatchReveal, count)
 					return m, nil
 				}
 				for path := range m.multiSelected {
@@ -828,13 +828,13 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 						_ = safeOpen(p, true)
 					}(path)
 				}
-				m.status = fmt.Sprintf("Showing %d items in Finder...", count)
+				m.status = fmt.Sprintf("正在 Finder 中显示 %d 项...", count)
 			} else {
 				selected := m.entries[m.selected]
 				go func(path string) {
 					_ = safeOpen(path, true)
 				}(selected.Path)
-				m.status = fmt.Sprintf("Showing %s in Finder...", selected.Name)
+				m.status = fmt.Sprintf("正在 Finder 中显示 %s...", selected.Name)
 			}
 		}
 	case "p", "P":
@@ -845,7 +845,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				go func(path string) {
 					_ = safePreview(path)
 				}(selected.Path)
-				m.status = fmt.Sprintf("Previewing %s...", selected.Name)
+				m.status = fmt.Sprintf("正在预览 %s...", selected.Name)
 			}
 		} else if len(m.entries) > 0 {
 			selected := m.entries[m.selected]
@@ -853,7 +853,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				go func(path string) {
 					_ = safePreview(path)
 				}(selected.Path)
-				m.status = fmt.Sprintf("Previewing %s...", selected.Name)
+				m.status = fmt.Sprintf("正在预览 %s...", selected.Name)
 			}
 		}
 	case " ":
@@ -886,7 +886,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 					m.status = fmt.Sprintf("%d selected, %s", count, humanizeBytes(totalSize))
 				} else {
-					m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+					m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 				}
 			}
 		} else if len(m.entries) > 0 && !m.inOverviewMode() && m.selected < len(m.entries) {
@@ -912,7 +912,7 @@ func (m model) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 				m.status = fmt.Sprintf("%d selected, %s", count, humanizeBytes(totalSize))
 			} else {
-				m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+				m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 			}
 		}
 	case "delete", "backspace":
@@ -985,12 +985,12 @@ func (m model) updateLargeFilterInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEsc:
 		m.resetLargeFilter()
 		m.clampLargeSelection()
-		m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+		m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 		return m, nil
 	case tea.KeyEnter:
 		m.largeFiltering = false
 		if m.largeFilter == "" {
-			m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+			m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 		} else {
 			m.status = fmt.Sprintf("Filter %q, %d matches", m.largeFilter, len(m.largeFiles))
 		}
@@ -1028,14 +1028,14 @@ func (m model) updateEntryFilterInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEsc:
 		m.resetEntryFilter()
 		m.clampEntrySelection()
-		m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+		m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 		return m, nil
 	case tea.KeyEnter:
 		m.entryFiltering = false
 		if m.entryFilter == "" {
-			m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+			m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 		} else {
-			m.status = fmt.Sprintf("Filter %q, %d matches", m.entryFilter, len(m.entries))
+			m.status = fmt.Sprintf("筛选 %q,%d 个匹配", m.entryFilter, len(m.entries))
 		}
 		return m, nil
 	case tea.KeyBackspace, tea.KeyDelete:
@@ -1097,7 +1097,7 @@ func (m model) goBack() (tea.Model, tea.Cmd) {
 		m.selected = 0
 	}
 	if last.NeedsRefresh {
-		m.status = fmt.Sprintf("Loaded cached data for %s, refreshing...", displayPath(m.path))
+		m.status = fmt.Sprintf("已为 %s 加载缓存数据,正在刷新...", displayPath(m.path))
 		m.scanning = true
 		if m.totalFiles > 0 {
 			m.lastTotalFiles = m.totalFiles
@@ -1110,7 +1110,7 @@ func (m model) goBack() (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Batch(m.scanFreshCmd(m.path), tickCmd())
 	}
-	m.status = fmt.Sprintf("Scanned %s", humanizeBytes(m.totalSize))
+	m.status = fmt.Sprintf("已扫描 %s", humanizeBytes(m.totalSize))
 	m.scanning = false
 	return m, nil
 }
@@ -1135,7 +1135,7 @@ func (m *model) switchToOverviewMode() tea.Cmd {
 	m.hydrateOverviewEntries()
 	cmd := m.scheduleOverviewScans()
 	if cmd == nil {
-		m.status = "Ready"
+		m.status = "就绪"
 		return nil
 	}
 	return tea.Batch(cmd, tickCmd())
@@ -1168,7 +1168,7 @@ func (m model) enterSelectedDir() (tea.Model, tea.Cmd) {
 		m.path = selected.Path
 		m.selected = 0
 		m.offset = 0
-		m.status = "Scanning..."
+		m.status = "正在扫描..."
 		m.scanning = true
 		m.isOverview = false
 		m.viewNeedsRefresh = false
@@ -1198,14 +1198,14 @@ func (m model) enterSelectedDir() (tea.Model, tea.Cmd) {
 			m.clampEntrySelection()
 			m.clampLargeSelection()
 			if cached.NeedsRefresh {
-				m.status = fmt.Sprintf("Loaded cached data for %s, refreshing...", displayPath(m.path))
+				m.status = fmt.Sprintf("已为 %s 加载缓存数据,正在刷新...", displayPath(m.path))
 				m.scanning = true
 				if m.totalFiles > 0 {
 					m.lastTotalFiles = m.totalFiles
 				}
 				return m, tea.Batch(m.scanFreshCmd(m.path), tickCmd())
 			}
-			m.status = fmt.Sprintf("Cached view for %s", displayPath(m.path))
+			m.status = fmt.Sprintf("%s 的缓存视图", displayPath(m.path))
 			m.scanning = false
 			return m, nil
 		}
@@ -1215,7 +1215,7 @@ func (m model) enterSelectedDir() (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Batch(m.scanCmd(m.path), tickCmd())
 	}
-	m.status = fmt.Sprintf("File: %s, %s", selected.Name, humanizeBytes(selected.Size))
+	m.status = fmt.Sprintf("文件: %s,%s", selected.Name, humanizeBytes(selected.Size))
 	return m, nil
 }
 

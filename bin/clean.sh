@@ -81,30 +81,30 @@ if [[ -f "$MOLE_USER_HOME/.config/mole/whitelist" ]]; then
         line="${line//\$HOME/$MOLE_USER_HOME}"
         line="${line//\$\{HOME\}/$MOLE_USER_HOME}"
         if [[ "$line" =~ \.\. ]]; then
-            WHITELIST_WARNINGS+=("Path traversal not allowed: $line")
+            WHITELIST_WARNINGS+=("不允许路径穿越: $line")
             continue
         fi
 
         if [[ "$line" != "$FINDER_METADATA_SENTINEL" ]]; then
             if [[ "$line" =~ [[:cntrl:]] ]]; then
-                WHITELIST_WARNINGS+=("Invalid path format: $line")
+                WHITELIST_WARNINGS+=("无效的路径格式: $line")
                 continue
             fi
 
             if [[ "$line" != /* ]]; then
-                WHITELIST_WARNINGS+=("Must be absolute path: $line")
+                WHITELIST_WARNINGS+=("必须是绝对路径: $line")
                 continue
             fi
         fi
 
         if [[ "$line" =~ // ]]; then
-            WHITELIST_WARNINGS+=("Consecutive slashes: $line")
+            WHITELIST_WARNINGS+=("路径含连续斜杠: $line")
             continue
         fi
 
         case "$line" in
             / | /System | /System/* | /bin | /bin/* | /sbin | /sbin/* | /usr/bin | /usr/bin/* | /usr/sbin | /usr/sbin/* | /etc | /etc/* | /var/db | /var/db/*)
-                WHITELIST_WARNINGS+=("Protected system path: $line")
+                WHITELIST_WARNINGS+=("受保护的系统路径: $line")
                 continue
                 ;;
         esac
@@ -241,7 +241,7 @@ defer_cleanup_family() {
         ! -L "$DEFERRED_CLEANUP_FAMILIES_FILE" ]]; then
         printf '%s\0' "$family" >> "$DEFERRED_CLEANUP_FAMILIES_FILE"
     fi
-    debug_log "Deferred cleanup while active: $family"
+    debug_log "运行期间推迟的清理: $family"
 }
 
 # The Cloud & Office section runs in a timeout worker, so its array writes stay
@@ -310,7 +310,7 @@ append_dry_run_cleanup_target() {
 
     if [[ -n "${CLEAN_PREVIEW_LEDGER_FILE:-}" && -f "$CLEAN_PREVIEW_LEDGER_FILE" && ! -L "$CLEAN_PREVIEW_LEDGER_FILE" ]]; then
         printf '%s\0%s\0%s\0%s\0%s\0%s\0' \
-            "$identity" "$size_kb" "$item_count" "$size_known" "${CURRENT_SECTION:-Uncategorized}" "$path" \
+            "$identity" "$size_kb" "$item_count" "$size_known" "${CURRENT_SECTION:-未分类}" "$path" \
             >> "$CLEAN_PREVIEW_LEDGER_FILE"
         return 0
     fi
@@ -322,7 +322,7 @@ append_dry_run_cleanup_target() {
         if [[ "$size_known" == "true" ]]; then
             echo "$path  # $(bytes_to_human "$((size_kb * 1024))")" >> "$EXPORT_LIST_FILE"
         else
-            echo "$path  # size unknown" >> "$EXPORT_LIST_FILE"
+            echo "$path  # 大小未知" >> "$EXPORT_LIST_FILE"
         fi
     fi
 }
@@ -415,13 +415,13 @@ emit_deduplicated_dry_run_ledger() {
 
 write_clean_preview_header() {
     cat > "$EXPORT_LIST_FILE" << EOF
-# Mole Cleanup Preview - $(date '+%Y-%m-%d %H:%M:%S')
+# Mole 清理预演 - $(date '+%Y-%m-%d %H:%M:%S')
 #
-# How to protect files:
-# 1. Copy any path below to ~/.config/mole/whitelist
-# 2. Run: mo clean --whitelist
+# 如何保护文件:
+# 1. 将下面的任意路径复制到 ~/.config/mole/whitelist
+# 2. 运行: mo clean --whitelist
 #
-# Example:
+# 示例:
 #   /Users/*/Library/Caches/com.example.app
 #
 
@@ -459,11 +459,11 @@ render_clean_preview_from_ledger() {
             [[ "$size_kb" =~ ^[0-9]+$ ]] || size_kb=0
             [[ "$count" =~ ^[0-9]+$ && "$count" -gt 0 ]] || count=1
             local item_note=""
-            [[ "$count" -gt 1 ]] && item_note=", $count items"
+            [[ "$count" -gt 1 ]] && item_note=", $count 项"
             if [[ "$size_known" == "true" ]]; then
                 echo "$path  # $(bytes_to_human "$((size_kb * 1024))")$item_note" >> "$EXPORT_LIST_FILE"
             else
-                echo "$path  # size unknown$item_note" >> "$EXPORT_LIST_FILE"
+                echo "$path  # 大小未知$item_note" >> "$EXPORT_LIST_FILE"
                 unknown_size_count=$((unknown_size_count + 1))
             fi
 
@@ -518,7 +518,7 @@ read_clean_sudo_password_remainder() {
 prompt_for_system_clean() {
     local prompt_attempt=0
     while true; do
-        echo -ne "${PURPLE}${ICON_ARROW}${NC} System caches need sudo. ${GREEN}Enter${NC} continue, ${GRAY}Space${NC} skip: "
+        echo -ne "${PURPLE}${ICON_ARROW}${NC} 系统缓存需要 sudo。${GREEN}回车${NC} 继续,${GRAY}空格${NC} 跳过: "
 
         local choice
         choice=$(read_clean_sudo_choice)
@@ -526,25 +526,25 @@ prompt_for_system_clean() {
         # ESC aborts, Space skips, Enter (or any typed key, e.g. someone who
         # starts typing their password) proceeds to authentication.
         if [[ "$choice" == "QUIT" ]]; then
-            echo -e " ${GRAY}Canceled${NC}"
+            echo -e " ${GRAY}已取消${NC}"
             exit 0
         fi
 
         if [[ "$choice" == "SPACE" ]]; then
-            echo -e " ${GRAY}Skipped${NC}"
+            echo -e " ${GRAY}已跳过${NC}"
             echo ""
             SYSTEM_CLEAN=false
             break
         elif [[ "$choice" == "ENTER" ]]; then
             printf "\r\033[K" # Clear the prompt line
-            if ensure_sudo_session "System cleanup requires admin access"; then
+            if ensure_sudo_session "系统清理需要管理员权限"; then
                 SYSTEM_CLEAN=true
-                echo -e "${GREEN}${ICON_SUCCESS}${NC} Admin access granted"
+                echo -e "${GREEN}${ICON_SUCCESS}${NC} 已授予管理员权限"
                 echo ""
             else
                 SYSTEM_CLEAN=false
                 echo ""
-                echo -e "${YELLOW}Authentication failed${NC}, continuing with user-level cleanup"
+                echo -e "${YELLOW}身份验证失败${NC},继续执行用户级清理"
             fi
             break
         elif [[ "$choice" == CHAR:* ]]; then
@@ -554,14 +554,14 @@ prompt_for_system_clean() {
             typed_password="${typed_password}${password_remainder}"
 
             printf "\r\033[K" # Clear the prompt line
-            if ensure_sudo_session_with_password "$typed_password" "System cleanup requires admin access"; then
+            if ensure_sudo_session_with_password "$typed_password" "系统清理需要管理员权限"; then
                 SYSTEM_CLEAN=true
-                echo -e "${GREEN}${ICON_SUCCESS}${NC} Admin access granted"
+                echo -e "${GREEN}${ICON_SUCCESS}${NC} 已授予管理员权限"
                 echo ""
             else
                 SYSTEM_CLEAN=false
                 echo ""
-                echo -e "${YELLOW}Authentication failed${NC}, continuing with user-level cleanup"
+                echo -e "${YELLOW}身份验证失败${NC},继续执行用户级清理"
             fi
             unset typed_password password_remainder
             break
@@ -570,12 +570,12 @@ prompt_for_system_clean() {
             drain_pending_input 0.05
             if [[ $prompt_attempt -ge 2 ]]; then
                 SYSTEM_CLEAN=false
-                echo -e " ${GRAY}Skipped${NC}"
+                echo -e " ${GRAY}已跳过${NC}"
                 echo ""
                 break
             fi
             printf "\r\033[K"
-            echo -e "${YELLOW}${ICON_WARNING}${NC} Press Enter to continue, or Space to skip"
+            echo -e "${YELLOW}${ICON_WARNING}${NC} 按回车继续,或按空格跳过"
         fi
     done
 }
@@ -659,7 +659,7 @@ end_section() {
         if [[ -t 1 && "${MO_DEBUG:-}" != "1" ]] && is_ansi_supported 2> /dev/null; then
             IDLE_SECTION_PENDING=1
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Nothing to clean"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} 没有可清理的内容"
         fi
     else
         IDLE_SECTION_PENDING=0
@@ -842,36 +842,36 @@ classify_cleanup_risk() {
 
     # HIGH RISK: System files, preference files, require sudo
     if [[ "$description" =~ [Ss]ystem || "$description" =~ [Ss]udo || "$path" =~ ^/System || "$path" =~ ^/Library ]]; then
-        echo "HIGH|System files or requires admin access"
+        echo "HIGH|系统文件或需要管理员权限"
         return
     fi
 
     # HIGH RISK: Preference files that might affect app functionality
     if [[ "$description" =~ [Pp]reference || "$path" =~ /Preferences/ ]]; then
-        echo "HIGH|Preference files may affect app settings"
+        echo "HIGH|偏好设置文件可能影响应用设置"
         return
     fi
 
     # MEDIUM RISK: Installers, large files, app bundles
     if [[ "$description" =~ [Ii]nstaller || "$description" =~ [Aa]pp.*[Bb]undle || "$description" =~ [Ll]arge ]]; then
-        echo "MEDIUM|Installer packages or app data"
+        echo "MEDIUM|安装包或应用数据"
         return
     fi
 
     # MEDIUM RISK: Old backups, downloads
     if [[ "$description" =~ [Bb]ackup || "$description" =~ [Dd]ownload || "$description" =~ [Oo]rphan ]]; then
-        echo "MEDIUM|Backup or downloaded files"
+        echo "MEDIUM|备份或下载的文件"
         return
     fi
 
     # LOW RISK: Caches, logs, temporary files (automatically regenerated)
     if [[ "$description" =~ [Cc]ache || "$description" =~ [Ll]og || "$description" =~ [Tt]emp || "$description" =~ [Tt]humbnail ]]; then
-        echo "LOW|Cache/log files, automatically regenerated"
+        echo "LOW|缓存/日志文件,可自动重新生成"
         return
     fi
 
     # DEFAULT: MEDIUM
-    echo "MEDIUM|User data files"
+    echo "MEDIUM|用户数据文件"
 }
 
 # Internal implementation shared by the normal and process-guarded cleanup
@@ -953,7 +953,7 @@ _safe_clean_impl() {
     if [[ ${#targets[@]} -gt 20 && -t 1 ]]; then
         show_scan_feedback=true
         # Updates a running section spinner in place instead of restarting it.
-        start_section_spinner "Scanning ${#targets[@]} items..."
+        start_section_spinner "正在扫描 ${#targets[@]} 项..."
     fi
 
     local _perf_scan_start
@@ -1003,7 +1003,7 @@ _safe_clean_impl() {
         fi
     fi
 
-    debug_timer_end "$description: path scan" _perf_scan_start
+    debug_timer_end "$description: 路径扫描" _perf_scan_start
 
     # Keep the spinner alive between phases; the next phase swaps its text in
     # place. Under MO_DEBUG stop it so debug lines print on a clean line.
@@ -1011,7 +1011,7 @@ _safe_clean_impl() {
         stop_section_spinner
     fi
 
-    debug_log "Cleaning: $description, ${#existing_paths[@]} items"
+    debug_log "正在清理: $description,共 ${#existing_paths[@]} 项"
 
     # Enhanced debug output with risk level and details
     if [[ "${MO_DEBUG:-}" == "1" && ${#existing_paths[@]} -gt 0 ]]; then
@@ -1023,13 +1023,13 @@ _safe_clean_impl() {
 
         debug_operation_start "$description"
         debug_risk_level "$risk_level" "$risk_reason"
-        debug_operation_detail "Item count" "${#existing_paths[@]}"
+        debug_operation_detail "项数" "${#existing_paths[@]}"
 
         # Log sample of files (first 10) with details
         if [[ ${#existing_paths[@]} -le 10 ]]; then
-            debug_operation_detail "Files to be removed" "All files listed below"
+            debug_operation_detail "要移除的文件" "下方列出全部文件"
         else
-            debug_operation_detail "Files to be removed" "Showing first 10 of ${#existing_paths[@]} files"
+            debug_operation_detail "要移除的文件" "显示 ${#existing_paths[@]} 个文件中的前 10 个"
         fi
     fi
 
@@ -1051,7 +1051,7 @@ _safe_clean_impl() {
     if [[ ${#existing_paths[@]} -gt 10 ]]; then
         show_spinner=true
         local total_paths=${#existing_paths[@]}
-        if [[ -t 1 ]]; then start_section_spinner "Scanning items..."; fi
+        if [[ -t 1 ]]; then start_section_spinner "正在扫描..."; fi
     fi
 
     local cleaning_spinner_started=false
@@ -1076,7 +1076,7 @@ _safe_clean_impl() {
         # Heuristic: mostly files -> bulk stat is faster than per-file subshells.
         if [[ $dir_count -lt 5 && ${#existing_paths[@]} -gt 20 ]]; then
             if [[ -t 1 && "$show_spinner" == "false" ]]; then
-                start_section_spinner "Scanning items..."
+                start_section_spinner "正在扫描..."
                 show_spinner=true
             fi
 
@@ -1217,7 +1217,7 @@ _safe_clean_impl() {
             return "$cleanup_interrupt_rc"
         fi
 
-        debug_timer_end "$description: size calc" _perf_size_start
+        debug_timer_end "$description: 大小计算" _perf_size_start
 
         local _perf_del_start
         debug_timer_start _perf_del_start
@@ -1225,7 +1225,7 @@ _safe_clean_impl() {
         # Read results back in original order.
         # Start spinner for cleaning phase
         if [[ "$DRY_RUN" != "true" && ${#existing_paths[@]} -gt 0 && -t 1 ]]; then
-            start_section_spinner "Cleaning..."
+            start_section_spinner "正在清理..."
             cleaning_spinner_started=true
         fi
         idx=0
@@ -1314,17 +1314,17 @@ _safe_clean_impl() {
             done
         fi
 
-        debug_timer_end "$description: deletion" _perf_del_start
+        debug_timer_end "$description: 删除" _perf_del_start
 
     else
-        debug_timer_end "$description: size calc" _perf_size_start
+        debug_timer_end "$description: 大小计算" _perf_size_start
 
         local _perf_del_start
         debug_timer_start _perf_del_start
 
         # Start spinner for cleaning phase (small batch)
         if [[ "$DRY_RUN" != "true" && ${#existing_paths[@]} -gt 0 && -t 1 ]]; then
-            start_section_spinner "Cleaning..."
+            start_section_spinner "正在清理..."
             cleaning_spinner_started=true
         fi
         local idx=0
@@ -1420,7 +1420,7 @@ _safe_clean_impl() {
             done
         fi
 
-        debug_timer_end "$description: deletion" _perf_del_start
+        debug_timer_end "$description: 删除" _perf_del_start
     fi
 
     if [[ "$show_spinner" == "true" || "$cleaning_spinner_started" == "true" || "$show_scan_feedback" == "true" ]]; then
@@ -1436,10 +1436,10 @@ _safe_clean_impl() {
     local permission_end=${MOLE_PERMISSION_DENIED_COUNT:-0}
     # Track permission failures in debug output (avoid noisy user warnings).
     if [[ $permission_end -gt $permission_start && $removed_any -eq 0 ]]; then
-        debug_log "Permission denied while cleaning: $description"
+        debug_log "清理时权限被拒: $description"
     fi
     if [[ $removal_failed_count -gt 0 && "$DRY_RUN" != "true" ]]; then
-        debug_log "Skipped $removal_failed_count items, permission denied, in use, or timed out, for: $description"
+        debug_log "已跳过 $removal_failed_count 项(权限被拒、正在使用或超时): $description"
     fi
 
     if [[ $removed_any -eq 1 ]]; then
@@ -1462,7 +1462,7 @@ _safe_clean_impl() {
         if [[ "$DRY_RUN" == "true" ]]; then
             local size_display
             size_display=$(colorize_human_size "$size_human")
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} $description${NC} · ${count_note}${size_display} ${YELLOW}dry${NC}"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} $description${NC} · ${count_note}${size_display} ${YELLOW}预演${NC}"
         else
             local line_color
             line_color=$(cleanup_result_color_kb "$total_size_kb")
@@ -1514,31 +1514,31 @@ start_cleanup() {
     fi
     printf '\n'
     if [[ -n "$EXTERNAL_VOLUME_TARGET" ]]; then
-        echo -e "${PURPLE_BOLD}Clean External Volume${NC}"
+        echo -e "${PURPLE_BOLD}清理外部卷${NC}"
         echo -e "${GRAY}${EXTERNAL_VOLUME_TARGET}${NC}"
         echo ""
 
         if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "${YELLOW}Dry Run Mode${NC}, Preview only, no deletions"
+            echo -e "${YELLOW}预演模式${NC},仅预览,不执行删除"
             echo ""
         fi
         SYSTEM_CLEAN=false
         return 0
     fi
 
-    echo -e "${PURPLE_BOLD}Clean Your Mac${NC}"
+    echo -e "${PURPLE_BOLD}清理你的 Mac${NC}"
     echo ""
 
     if [[ "$DRY_RUN" != "true" && -t 0 ]]; then
-        echo -e "${GRAY}${ICON_WARNING} Use --dry-run to preview, --whitelist to manage protected paths${NC}"
+        echo -e "${GRAY}${ICON_WARNING} 使用 --dry-run 预览,--whitelist 管理受保护路径${NC}"
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}Dry Run Mode${NC}, Preview only, no deletions"
+        echo -e "${YELLOW}预演模式${NC},仅预览,不执行删除"
         echo ""
 
         prepare_clean_preview_file || {
-            echo -e "${YELLOW}${ICON_WARNING}${NC} Unable to create a safe cleanup preview file" >&2
+            echo -e "${YELLOW}${ICON_WARNING}${NC} 无法创建安全的清理预览文件" >&2
             return 1
         }
         write_clean_preview_header
@@ -1546,11 +1546,11 @@ start_cleanup() {
         # Preview system section when sudo is already cached (no password prompt).
         if adopt_sudo_session; then
             SYSTEM_CLEAN=true
-            echo -e "${GREEN}${ICON_SUCCESS}${NC} Admin access available, system preview included"
+            echo -e "${GREEN}${ICON_SUCCESS}${NC} 管理员权限可用,已包含系统预览"
             echo ""
         else
             SYSTEM_CLEAN=false
-            echo -e "${GRAY}${ICON_WARNING} System caches need sudo, run ${NC}sudo -v && mo clean --dry-run${GRAY} for full preview${NC}"
+            echo -e "${GRAY}${ICON_WARNING} 系统缓存需要 sudo,请运行 ${NC}sudo -v && mo clean --dry-run${GRAY} 以获取完整预览${NC}"
             echo ""
         fi
         return
@@ -1559,22 +1559,22 @@ start_cleanup() {
     if [[ -t 0 ]]; then
         if adopt_sudo_session; then
             SYSTEM_CLEAN=true
-            echo -e "${GREEN}${ICON_SUCCESS}${NC} Admin access already available"
+            echo -e "${GREEN}${ICON_SUCCESS}${NC} 管理员权限已可用"
             echo ""
         else
             prompt_for_system_clean
         fi
     else
         echo ""
-        echo "Running in non-interactive mode"
+        echo "正在以非交互模式运行"
         if adopt_sudo_session; then
             SYSTEM_CLEAN=true
-            echo "  ${ICON_LIST} System-level cleanup enabled, sudo session active"
+            echo "  ${ICON_LIST} 已启用系统级清理,sudo 会话有效"
         else
             SYSTEM_CLEAN=false
-            echo "  ${ICON_LIST} System-level cleanup skipped, requires sudo"
+            echo "  ${ICON_LIST} 已跳过系统级清理,需要 sudo"
         fi
-        echo "  ${ICON_LIST} User-level cleanup will proceed automatically"
+        echo "  ${ICON_LIST} 用户级清理将自动进行"
         echo ""
     fi
 }
@@ -1594,10 +1594,10 @@ perform_cleanup() {
     if [[ -z "$EXTERNAL_VOLUME_TARGET" && "${MOLE_TEST_MODE:-0}" == "1" ]]; then
         test_mode_enabled=true
         if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "${YELLOW}Dry Run Mode${NC}, Preview only, no deletions"
+            echo -e "${YELLOW}预演模式${NC},仅预览,不执行删除"
             echo ""
         fi
-        echo -e "${GREEN}${ICON_LIST}${NC} User app cache"
+        echo -e "${GREEN}${ICON_LIST}${NC} 用户应用缓存"
         if [[ ${#WHITELIST_PATTERNS[@]} -gt 0 ]]; then
             local -a expanded_defaults
             expanded_defaults=()
@@ -1614,11 +1614,11 @@ perform_cleanup() {
                 done
                 [[ "$is_default" == "false" ]] && has_custom=true && break
             done
-            [[ "$has_custom" == "true" ]] && echo -e "${GREEN}${ICON_SUCCESS}${NC} Protected items found"
+            [[ "$has_custom" == "true" ]] && echo -e "${GREEN}${ICON_SUCCESS}${NC} 发现受保护的项"
         fi
         if [[ "$DRY_RUN" == "true" ]]; then
             echo ""
-            echo -e "Potential space: $(colorize_human_size "0.00GB")"
+            echo -e "可释放空间: $(colorize_human_size "0.00GB")"
         fi
         total_items=1
         files_cleaned=0
@@ -1630,14 +1630,14 @@ perform_cleanup() {
             initial_free_space_kb=""
         fi
         initial_free_space_display=$(format_free_space_kb "$initial_free_space_kb")
-        echo -e "${BLUE}${ICON_ADMIN}${NC} $(detect_architecture) | Free space: $initial_free_space_display"
+        echo -e "${BLUE}${ICON_ADMIN}${NC} $(detect_architecture) | 可用空间: $initial_free_space_display"
     fi
 
     if [[ "$test_mode_enabled" == "true" ]]; then
-        local summary_heading="Test mode complete"
+        local summary_heading="测试模式完成"
         local -a summary_details
         summary_details=()
-        summary_details+=("Test mode - no actual cleanup performed")
+        summary_details+=("测试模式 - 未执行实际清理")
         print_summary_block "$summary_heading" "${summary_details[@]}"
         printf '\n'
         return 0
@@ -1671,12 +1671,12 @@ perform_cleanup() {
 
         if [[ $custom_count -gt 0 || $predefined_count -gt 0 ]]; then
             local summary=""
-            [[ $predefined_count -gt 0 ]] && summary+="$predefined_count core"
+            [[ $predefined_count -gt 0 ]] && summary+="$predefined_count 条内置"
             [[ $custom_count -gt 0 && $predefined_count -gt 0 ]] && summary+=" + "
-            [[ $custom_count -gt 0 ]] && summary+="$custom_count custom"
-            summary+=" patterns active"
+            [[ $custom_count -gt 0 ]] && summary+="$custom_count 条自定义"
+            summary+=" 规则生效"
 
-            echo -e "${BLUE}${ICON_SUCCESS}${NC} Whitelist: $summary"
+            echo -e "${BLUE}${ICON_SUCCESS}${NC} 白名单: $summary"
 
             if [[ "$DRY_RUN" == "true" ]]; then
                 for pattern in "${WHITELIST_PATTERNS[@]}"; do
@@ -1693,7 +1693,7 @@ perform_cleanup() {
         fda_status=$?
         if [[ $fda_status -eq 1 ]]; then
             echo ""
-            echo -e "${GRAY}${ICON_REVIEW}${NC} ${GRAY}Grant Full Disk Access to your terminal in System Settings for best results${NC}"
+            echo -e "${GRAY}${ICON_REVIEW}${NC} ${GRAY}在系统设置中为你的终端授予完全磁盘访问权限以获得最佳效果${NC}"
         fi
     fi
 
@@ -1734,13 +1734,13 @@ perform_cleanup() {
     # final summary instead of returning from perform_cleanup with no output.
     run_clean_sections() {
         if [[ -n "$EXTERNAL_VOLUME_TARGET" ]]; then
-            start_section "External volume"
+            start_section "外部卷"
             _run_cleanup_step clean_external_volume_target "$EXTERNAL_VOLUME_TARGET" || return $?
             end_section
         else
             # ===== 1. System =====
             if [[ "$SYSTEM_CLEAN" == "true" ]]; then
-                start_section "System"
+                start_section "系统"
                 _run_cleanup_step clean_deep_system || return $?
                 _run_cleanup_step clean_local_snapshots || return $?
                 end_section
@@ -1750,28 +1750,28 @@ perform_cleanup() {
                 flush_idle_section_slot
                 echo ""
                 for warning in "${WHITELIST_WARNINGS[@]}"; do
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Whitelist: $warning"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} 白名单: $warning"
                 done
             fi
 
             # ===== 2. User essentials =====
-            start_section "User essentials"
+            start_section "用户常用"
             _run_cleanup_step clean_user_essentials || return $?
             _run_cleanup_step clean_finder_metadata || return $?
             end_section
 
             # ===== 3. App caches (merged sandboxed and standard app caches) =====
-            start_section "App caches"
+            start_section "应用缓存"
             _run_cleanup_step clean_app_caches || return $?
             end_section
 
             # ===== 4. Browsers =====
-            start_section "Browsers"
+            start_section "浏览器"
             _run_cleanup_step clean_browsers || return $?
             end_section
 
             # ===== 5. Cloud & Office =====
-            start_section "Cloud & Office"
+            start_section "云与办公"
             # Force shell fallback so timeout runs in this shell context.
             # The Cloud/Office cleaners rely on helpers (safe_clean, whitelist checks)
             # defined in this script and sourced modules.
@@ -1780,27 +1780,27 @@ perform_cleanup() {
             else
                 local ret=$?
                 if [[ $ret -eq 124 ]]; then
-                    log_warning "Cloud & Office cleanup timed out after 5 minutes, skipping remaining items"
+                    log_warning "云与办公清理超过 5 分钟超时,跳过剩余项"
                 elif [[ $ret -ge 128 ]]; then
                     return "$ret"
                 else
-                    log_warning "Cloud & Office cleanup failed with exit code $ret"
+                    log_warning "云与办公清理失败,退出码 $ret"
                 fi
             fi
             end_section
 
             # ===== 6. Developer tools (merged CLI and GUI tooling) =====
-            start_section "Developer tools"
+            start_section "开发者工具"
             _run_cleanup_step clean_developer_tools || return $?
             end_section
 
             # ===== 7. Apps & utilities =====
-            start_section "Apps & utilities"
+            start_section "应用与工具"
             _run_cleanup_step clean_user_gui_applications || return $?
             end_section
 
             # ===== 8. Virtualization =====
-            start_section "Virtualization"
+            start_section "虚拟化"
             _run_cleanup_step clean_virtualization_tools || return $?
             end_section
 
@@ -1810,7 +1810,7 @@ perform_cleanup() {
             end_section
 
             # ===== 10. App leftovers =====
-            start_section "App leftovers"
+            start_section "应用残留"
             _run_cleanup_step clean_orphaned_app_data || return $?
             _run_cleanup_step clean_orphaned_system_services || return $?
             # No stale-LaunchServices step here on purpose. `lsregister -u`
@@ -1830,7 +1830,7 @@ perform_cleanup() {
             # ===== 12. Device backups & firmware =====
             # iOS backups are reported once, in the Large files section; a second
             # row here used a different size formatter and confused users.
-            start_section "Device backups & firmware"
+            start_section "设备备份与固件"
             _run_cleanup_step clean_cached_device_firmware || return $?
             end_section
 
@@ -1840,12 +1840,12 @@ perform_cleanup() {
             end_section
 
             # ===== 14. Large files =====
-            start_section "Large files"
+            start_section "大文件"
             _run_cleanup_step check_large_file_candidates || return $?
             end_section
 
             # ===== 15. Project artifacts =====
-            start_section "Project artifacts"
+            start_section "项目产物"
             _run_cleanup_step show_project_artifact_hint_notice || return $?
             end_section
         fi
@@ -1866,30 +1866,30 @@ perform_cleanup() {
     local summary_status="success"
     if [[ $cleanup_cancel_rc -eq 124 ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            summary_heading="Dry run cancelled"
+            summary_heading="预演已取消"
         else
-            summary_heading="Cleanup cancelled"
+            summary_heading="清理已取消"
         fi
         summary_status="warning"
     elif [[ $cleanup_cancel_rc -ge 128 ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            summary_heading="Dry run interrupted"
+            summary_heading="预演被中断"
         else
-            summary_heading="Cleanup interrupted"
+            summary_heading="清理被中断"
         fi
         summary_status="warning"
     elif [[ "$DRY_RUN" == "true" ]]; then
-        summary_heading="Dry run complete - no changes made"
+        summary_heading="预演完成 - 未做任何更改"
     else
-        summary_heading="Cleanup complete"
+        summary_heading="清理完成"
     fi
 
     local -a summary_details=()
     if [[ $cleanup_cancel_rc -ne 0 ]]; then
         if [[ $cleanup_cancel_rc -eq 124 ]]; then
-            summary_details+=("${GRAY}${ICON_WARNING}${NC} Cancelled: a scan or size check timed out (exit 124). Remaining cleanup was skipped.")
+            summary_details+=("${GRAY}${ICON_WARNING}${NC} 已取消:扫描或大小检查超时(退出码 124)。已跳过剩余清理。")
         elif [[ $cleanup_cancel_rc -ge 128 ]]; then
-            summary_details+=("${GRAY}${ICON_WARNING}${NC} Cancelled: a cleanup step was interrupted (exit $cleanup_cancel_rc). Remaining cleanup was skipped.")
+            summary_details+=("${GRAY}${ICON_WARNING}${NC} 已取消:某个清理步骤被中断(退出码 $cleanup_cancel_rc)。已跳过剩余清理。")
         fi
     fi
 
@@ -1899,7 +1899,7 @@ perform_cleanup() {
     emit_free_space_summary() {
         local initial_kb="$1"
         if [[ "$DRY_RUN" == "true" ]]; then
-            printf 'Free space: %s\n' "$(get_free_space)"
+            printf '可用空间: %s\n' "$(get_free_space)"
             return 0
         fi
 
@@ -1911,7 +1911,7 @@ perform_cleanup() {
         if [[ "$initial_kb" =~ ^[0-9]+$ && "$final_kb" =~ ^[0-9]+$ && "$initial_kb" -ne "$final_kb" ]]; then
             delta_note=" ($(format_free_space_delta_kb "$((final_kb - initial_kb))"))"
         fi
-        printf 'Free space: %s%s\n' "$(format_free_space_kb "$final_kb")" "$delta_note"
+        printf '可用空间: %s%s\n' "$(format_free_space_kb "$final_kb")" "$delta_note"
     }
 
     if [[ $total_size_cleaned -gt 0 ||
@@ -1922,34 +1922,34 @@ perform_cleanup() {
         if [[ "$DRY_RUN" == "true" ]]; then
             local potential_label
             if [[ "$DRY_RUN_TOTAL_PARTIAL" == "true" ]]; then
-                potential_label="At least $freed_size_human"
+                potential_label="至少 $freed_size_human"
             else
                 potential_label="$freed_size_human"
             fi
-            local stats="Potential space: $(colorize_human_size "$potential_label")"
-            [[ $files_cleaned -gt 0 ]] && stats+=" | Items: $files_cleaned"
-            [[ $total_items -gt 0 ]] && stats+=" | Categories: $total_items"
+            local stats="可释放空间: $(colorize_human_size "$potential_label")"
+            [[ $files_cleaned -gt 0 ]] && stats+=" | 项: $files_cleaned"
+            [[ $total_items -gt 0 ]] && stats+=" | 分类: $total_items"
             summary_details+=("$stats")
 
             {
                 echo ""
                 echo "# ============================================"
-                echo "# Summary"
+                echo "# 摘要"
                 echo "# ============================================"
-                echo "# Potential cleanup: ${potential_label}"
-                echo "# Items: $files_cleaned"
-                echo "# Categories: $total_items"
+                echo "# 可释放空间: ${potential_label}"
+                echo "# 项: $files_cleaned"
+                echo "# 分类: $total_items"
             } >> "$EXPORT_LIST_FILE"
 
         else
-            local summary_line="Tracked cleanup: ${GREEN}${freed_size_human}${NC}"
+            local summary_line="释放空间: ${GREEN}${freed_size_human}${NC}"
 
             if [[ $files_cleaned -gt 0 && $total_items -gt 0 ]]; then
-                summary_line+=" | Items cleaned: $files_cleaned | Categories: $total_items"
+                summary_line+=" | 已清理项: $files_cleaned | 分类: $total_items"
             elif [[ $files_cleaned -gt 0 ]]; then
-                summary_line+=" | Items cleaned: $files_cleaned"
+                summary_line+=" | 已清理项: $files_cleaned"
             elif [[ $total_items -gt 0 ]]; then
-                summary_line+=" | Categories: $total_items"
+                summary_line+=" | 分类: $total_items"
             fi
 
             summary_details+=("$summary_line")
@@ -1961,9 +1961,9 @@ perform_cleanup() {
 
                 if [[ $movies -gt 0 ]]; then
                     if [[ $movies -eq 1 ]]; then
-                        summary_details+=("Equivalent to ~$movies 4K movie of storage.")
+                        summary_details+=("相当于约 $movies 部 4K 电影的存储空间。")
                     else
-                        summary_details+=("Equivalent to ~$movies 4K movies of storage.")
+                        summary_details+=("相当于约 $movies 部 4K 电影的存储空间。")
                     fi
                 fi
             fi
@@ -1977,14 +1977,14 @@ perform_cleanup() {
         summary_status="info"
         if [[ ${#DEFERRED_CLEANUP_FAMILIES[@]} -gt 0 ]]; then
             if [[ "$DRY_RUN" == "true" ]]; then
-                summary_details+=("No additional reclaimable space detected.")
+                summary_details+=("未检测到更多可回收空间。")
             else
-                summary_details+=("No additional space freed.")
+                summary_details+=("未释放更多空间。")
             fi
         elif [[ "$DRY_RUN" == "true" ]]; then
-            summary_details+=("No significant reclaimable space detected, system already clean.")
+            summary_details+=("未检测到明显的可回收空间,系统已经很干净。")
         else
-            summary_details+=("System was already clean; no additional space freed.")
+            summary_details+=("系统本来就很干净;未释放更多空间。")
         fi
         local free_space_line
         while IFS= read -r free_space_line; do
@@ -2003,21 +2003,21 @@ perform_cleanup() {
     if [[ "$DRY_RUN" == "true" &&
         ($total_size_cleaned -gt 0 || "$DRY_RUN_TOTAL_PARTIAL" == "true" || $files_cleaned -gt 0) ]]; then
         if publish_clean_preview_file; then
-            summary_details+=("Detailed file list: ${GRAY}$CLEAN_PREVIEW_FINAL_FILE${NC}")
-            summary_details+=("Use ${GRAY}mo clean --whitelist${NC} to add protection rules")
+            summary_details+=("详细文件列表: ${GRAY}$CLEAN_PREVIEW_FINAL_FILE${NC}")
+            summary_details+=("使用 ${GRAY}mo clean --whitelist${NC} 添加保护规则")
         else
-            summary_details+=("Cleanup preview file could not be written safely")
+            summary_details+=("无法安全写入清理预览文件")
         fi
     elif [[ "$DRY_RUN" == "true" ]]; then
         publish_clean_preview_file || true
     fi
 
     if [[ ${MOLE_CLEAN_SIZING_TIMEOUTS:-0} -gt 0 ]]; then
-        summary_details+=("${GRAY}${ICON_WARNING}${NC} Some items exceeded the ${MOLE_TIMEOUT_DISK_VERIFY_SEC}s size-check budget and were counted as 0, so the total is under-reported. Raise ${GRAY}MOLE_TIMEOUT_DISK_VERIFY_SEC${NC} to measure them.")
+        summary_details+=("${GRAY}${ICON_WARNING}${NC} 部分项超出 ${MOLE_TIMEOUT_DISK_VERIFY_SEC} 秒的大小检查预算,按 0 计算,因此总量被低估。可调高 ${GRAY}MOLE_TIMEOUT_DISK_VERIFY_SEC${NC} 以测量它们。")
     fi
 
     if [[ ${MOLE_CLEAN_REMOVAL_TIMEOUTS:-0} -gt 0 ]]; then
-        summary_details+=("${GRAY}${ICON_WARNING}${NC} ${MOLE_CLEAN_REMOVAL_TIMEOUTS} item(s) exceeded the ${MOLE_TIMEOUT_DISK_VERIFY_SEC}s removal budget and may be only partly removed. Run clean again, or raise ${GRAY}MOLE_TIMEOUT_DISK_VERIFY_SEC${NC} for slower disks.")
+        summary_details+=("${GRAY}${ICON_WARNING}${NC} ${MOLE_CLEAN_REMOVAL_TIMEOUTS} 项超出 ${MOLE_TIMEOUT_DISK_VERIFY_SEC} 秒的移除预算,可能只被部分移除。请再次运行清理,或为较慢的磁盘调高 ${GRAY}MOLE_TIMEOUT_DISK_VERIFY_SEC${NC}。")
     fi
 
     if [[ $had_errexit -eq 1 ]]; then
@@ -2064,7 +2064,7 @@ main() {
             "--external")
                 shift
                 if [[ $# -eq 0 ]]; then
-                    echo "Missing path for --external" >&2
+                    echo "缺少 --external 的路径参数" >&2
                     exit 1
                 fi
                 EXTERNAL_VOLUME_TARGET=$(validate_external_volume_target "$1") || exit 1
@@ -2075,18 +2075,18 @@ main() {
                 exit 0
                 ;;
             "--select" | "--categories" | "--exclude")
-                echo "mo clean $1 was removed in this release." >&2
-                echo "Use 'mo clean --dry-run' to preview cleanup and 'mo clean --whitelist' to protect paths." >&2
+                echo "mo clean $1 已在本版本中移除。" >&2
+                echo "使用 'mo clean --dry-run' 预演清理,使用 'mo clean --whitelist' 保护路径。" >&2
                 exit 1
                 ;;
             -*)
-                echo "Unknown option for mo clean: $1" >&2
-                echo "Run 'mo clean --help' for usage." >&2
+                echo "mo clean 的未知选项: $1" >&2
+                echo "运行 'mo clean --help' 查看用法。" >&2
                 exit 1
                 ;;
             *)
-                echo "Unexpected argument for mo clean: $1" >&2
-                echo "Run 'mo clean --help' for usage." >&2
+                echo "mo clean 的意外参数: $1" >&2
+                echo "运行 'mo clean --help' 查看用法。" >&2
                 exit 1
                 ;;
         esac

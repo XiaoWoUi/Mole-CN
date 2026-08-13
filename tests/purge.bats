@@ -502,7 +502,7 @@ confirm_purge_cleanup 2 1024 0 0 "~/www/app/node_modules" "~/www/app/dist" <<< '
 EOF
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"Selected paths:"* ]] || return 1
+	[[ "$output" == *"已选路径:"* ]] || return 1
 	[[ "$output" == *"~/www/app/node_modules"* ]] || return 1
 	[[ "$output" == *"~/www/app/dist"* ]]
 }
@@ -516,14 +516,14 @@ confirm_purge_cleanup 2 1024 0 1 "[cloud] ~/Library/CloudStorage/Provider/app/ta
 EOF
 
 	[ "$status" -eq 0 ] || return 1
-	[[ "$output" == *"Cloud-synced artifacts may also be removed from other devices."* ]] || return 1
+	[[ "$output" == *"云同步的构建产物也可能从其他设备上被移除。"* ]] || return 1
 	[[ "$output" == *"mo purge --paths"* ]] || return 1
 	local warning_count
-	warning_count=$(printf '%s\n' "$output" | grep -cF "Cloud-synced artifacts may also be removed from other devices.")
+	warning_count=$(printf '%s\n' "$output" | grep -cF "云同步的构建产物也可能从其他设备上被移除。")
 	[ "$warning_count" -eq 1 ] || return 1
 	local warning_line prompt_line
-	warning_line=$(printf '%s\n' "$output" | grep -nF "Cloud-synced artifacts may also be removed from other devices." | cut -d: -f1)
-	prompt_line=$(printf '%s\n' "$output" | grep -nF "Remove 2 artifacts" | cut -d: -f1)
+	warning_line=$(printf '%s\n' "$output" | grep -nF "云同步的构建产物也可能从其他设备上被移除。" | cut -d: -f1)
+	prompt_line=$(printf '%s\n' "$output" | grep -nF "移除 2 个构建产物" | cut -d: -f1)
 	[ "$warning_line" -lt "$prompt_line" ] || return 1
 }
 
@@ -1095,7 +1095,7 @@ clean_project_artifacts </dev/null
 EOF
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"No artifacts found to purge"* ]]
+	[[ "$output" == *"未找到可清理的构建产物"* ]]
 }
 
 @test "clean_project_artifacts: include-empty exposes zero-size artifacts (#869)" {
@@ -1146,7 +1146,7 @@ clean_project_artifacts </dev/null
 EOF
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"No artifacts found to purge"* ]] || return 1
+	[[ "$output" == *"未找到可清理的构建产物"* ]] || return 1
 	[[ "$output" != *"0B"* ]]
 }
 
@@ -1295,7 +1295,7 @@ clean_project_artifacts </dev/null
 EOF
 
 	[ "$status" -eq 0 ] || return 1
-	[[ "$output" == *"Skipped 1 cloud-synced artifact in non-interactive mode"* ]] || return 1
+	[[ "$output" == *"非交互模式下已跳过 1 个云同步 构建产物"* ]] || return 1
 	[[ "$output" == *"REMOVE:$HOME/www/LocalProject/node_modules"* ]] || return 1
 	[[ "$output" != *"REMOVE:$HOME/Library/CloudStorage/TestProvider/CloudProject/target"* ]] || return 1
 }
@@ -1339,7 +1339,7 @@ EOF
 	run env HOME="$HOME" "$PROJECT_ROOT/mole" purge --help
 	[ "$status" -eq 0 ]
 	[[ "$output" == *"--include-empty"* ]] || return 1
-	[[ "$output" == *"Show zero-size project artifact directories"* ]]
+	[[ "$output" == *"显示大小为零的项目构建产物目录"* ]]
 }
 
 @test "mo purge: accepts --debug flag" {

@@ -14,10 +14,10 @@ clean_tool_cache() {
 
     if [[ -n "$cache_path" ]] && is_path_whitelisted "$cache_path"; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} $description · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} $description · 将跳过(白名单)"
             note_activity
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} $description · skipped (whitelist)"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} $description · 已跳过(白名单)"
             note_activity
         fi
         return 0
@@ -26,7 +26,7 @@ clean_tool_cache() {
     if [[ "$DRY_RUN" != "true" ]]; then
         local command_succeeded=false
         if [[ -t 1 ]]; then
-            start_section_spinner "Cleaning $description..."
+            start_section_spinner "正在清理 $description..."
         fi
         if "$@" > /dev/null 2>&1; then
             command_succeeded=true
@@ -39,7 +39,7 @@ clean_tool_cache() {
             note_activity
         fi
     else
-        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} $description · would clean"
+        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} $description · 将清理"
         note_activity
     fi
     return 0
@@ -50,7 +50,7 @@ clean_corepack_cache() {
     [[ -n "$corepack_home" && "$corepack_home" == /* ]] || return 0
     case "$corepack_home" in
         / | "$HOME" | "$HOME/" | "$HOME/Library" | "$HOME/Library/")
-            debug_log "Skipping unsafe Corepack cache path: $corepack_home"
+            debug_log "跳过不安全的 Corepack 缓存路径: $corepack_home"
             return 0
             ;;
     esac
@@ -61,9 +61,9 @@ clean_corepack_cache() {
     # where corepack is installed; machines without corepack take the else
     # branch and never hit this).
     if command -v corepack > /dev/null 2>&1 && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 run_with_timeout "$MOLE_TIMEOUT_QUICK_DETECT_SEC" corepack --version > /dev/null 2>&1; then
-        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 clean_tool_cache "Corepack cache" "$corepack_home" run_with_timeout "$MOLE_TIMEOUT_PKG_CLEANUP_SEC" corepack cache clean
+        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 clean_tool_cache "Corepack 缓存" "$corepack_home" run_with_timeout "$MOLE_TIMEOUT_PKG_CLEANUP_SEC" corepack cache clean
     else
-        safe_clean "$corepack_home"/* "Corepack cache"
+        safe_clean "$corepack_home"/* "Corepack 缓存"
     fi
 }
 
@@ -75,9 +75,9 @@ clean_uv_cache() {
         if [[ -n "$detected_cache" && "$detected_cache" == /* ]]; then
             uv_cache_path="$detected_cache"
         fi
-        clean_tool_cache "uv cache" "$uv_cache_path" run_with_timeout "$MOLE_TIMEOUT_PKG_CLEANUP_SEC" uv cache prune
+        clean_tool_cache "uv 缓存" "$uv_cache_path" run_with_timeout "$MOLE_TIMEOUT_PKG_CLEANUP_SEC" uv cache prune
     else
-        safe_clean "$uv_cache_path"/* "uv cache"
+        safe_clean "$uv_cache_path"/* "uv 缓存"
     fi
 }
 
@@ -102,9 +102,9 @@ clean_conda_metadata_caches() {
     )
     if conda_cache_whitelisted "${conda_pkg_roots[@]}"; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} conda index/tarball/log caches · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} conda 索引/tarball/日志缓存 · 将跳过(白名单)"
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} conda index/tarball/log caches · skipped (whitelist)"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} conda 索引/tarball/日志缓存 · 已跳过(白名单)"
             note_activity
         fi
         return 0
@@ -112,7 +112,7 @@ clean_conda_metadata_caches() {
 
     local conda_cache_hint="$HOME/.conda/pkgs"
     if command -v conda > /dev/null 2>&1 && run_with_timeout "$MOLE_TIMEOUT_QUICK_DETECT_SEC" conda --version > /dev/null 2>&1; then
-        clean_tool_cache "conda index/tarball/log caches" "$conda_cache_hint" \
+        clean_tool_cache "conda 索引/tarball/日志缓存" "$conda_cache_hint" \
             run_with_timeout "$MOLE_TIMEOUT_DISK_VERIFY_SEC" conda clean --yes --index-cache --tarballs --logfiles
         note_activity
         return 0
@@ -121,7 +121,7 @@ clean_conda_metadata_caches() {
     local root
     for root in "${conda_pkg_roots[@]}"; do
         [[ -d "$root" ]] || continue
-        debug_log "Conda package cache present but conda is unavailable, leaving for manual review: $root"
+        debug_log "检测到 conda 包缓存但 conda 不可用,留待手动处理: $root"
     done
 }
 
@@ -203,9 +203,9 @@ clean_pnpm_stores() {
     local pnpm_default_store="$HOME/Library/pnpm/store"
 
     if pnpm_process_blocks_prune; then
-        debug_log "pnpm process running or process state unknown, skipping store prune"
+        debug_log "pnpm 进程正在运行或进程状态未知,跳过存储清理"
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} pnpm cache · would skip (pnpm busy)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} pnpm 缓存 · 将跳过(pnpm 忙碌)"
             note_activity
         fi
         return 0
@@ -219,7 +219,7 @@ clean_pnpm_stores() {
     done < <(list_installed_pnpm_binaries)
 
     if [[ ${#pnpm_bins[@]} -eq 0 ]]; then
-        debug_log "pnpm is unavailable, leaving global pnpm store for manual review: $pnpm_default_store"
+        debug_log "pnpm 不可用,全局 pnpm 存储留待手动处理: $pnpm_default_store"
         return 0
     fi
 
@@ -230,17 +230,17 @@ clean_pnpm_stores() {
         # Usable binary only; never prompt Corepack to download another major.
         if ! COREPACK_ENABLE_DOWNLOAD_PROMPT=0 run_with_timeout \
             "$MOLE_TIMEOUT_QUICK_DETECT_SEC" "$pnpm_bin" --version > /dev/null 2>&1; then
-            debug_log "Skipping unusable pnpm binary: $pnpm_bin"
+            debug_log "跳过不可用的 pnpm 二进制: $pnpm_bin"
             continue
         fi
 
-        start_section_spinner "Checking pnpm store path..."
+        start_section_spinner "正在检查 pnpm 存储路径..."
         store_path=$(COREPACK_ENABLE_DOWNLOAD_PROMPT=0 run_with_timeout \
             "$MOLE_TIMEOUT_QUICK_DETECT_SEC" "$pnpm_bin" store path 2> /dev/null) || store_path=""
         stop_section_spinner
 
         if ! is_safe_pnpm_store_path "$store_path"; then
-            debug_log "Rejecting unsafe or empty pnpm store path from $pnpm_bin: ${store_path:-<empty>}"
+            debug_log "拒绝来自 $pnpm_bin 的不安全或空 pnpm 存储路径: ${store_path:-<空>}"
             continue
         fi
         store_path="${store_path%/}"
@@ -253,19 +253,19 @@ clean_pnpm_stores() {
             fi
         done
         if [[ "$store_seen" == "true" ]]; then
-            debug_log "pnpm store already scheduled: $store_path"
+            debug_log "pnpm 存储已排期: $store_path"
             continue
         fi
         seen_stores+=("$store_path")
 
-        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 clean_tool_cache "pnpm cache" "$store_path" \
+        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 clean_tool_cache "pnpm 缓存" "$store_path" \
             run_with_timeout "$MOLE_TIMEOUT_PKG_CLEANUP_SEC" \
             env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 "$pnpm_bin" store prune
         pruned_any=true
     done
 
     if [[ "$pruned_any" != "true" ]]; then
-        debug_log "No pruneable pnpm store resolved from installed binaries"
+        debug_log "已安装的二进制中未解析出可清理的 pnpm 存储"
     fi
 }
 
@@ -275,7 +275,7 @@ clean_dev_npm() {
     local npm_cache_path="$npm_default_cache"
 
     if command -v npm > /dev/null 2>&1; then
-        start_section_spinner "Checking npm cache path..."
+        start_section_spinner "正在检查 npm 缓存路径..."
         npm_cache_path=$(run_with_timeout "$MOLE_TIMEOUT_QUICK_DETECT_SEC" npm config get cache 2> /dev/null) || npm_cache_path=""
         stop_section_spinner
 
@@ -283,13 +283,13 @@ clean_dev_npm() {
             npm_cache_path="$npm_default_cache"
         fi
 
-        clean_tool_cache "npm cache" "$npm_cache_path" npm cache clean --force
+        clean_tool_cache "npm 缓存" "$npm_cache_path" npm cache clean --force
         note_activity
     fi
 
     # These residual directories are not removed by `npm cache clean --force`
     local -a npm_residual_dirs=("_cacache" "_npx" "_logs" "_prebuilds")
-    local -a npm_descriptions=("npm cache directory" "npm npx cache" "npm logs" "npm prebuilds")
+    local -a npm_descriptions=("npm 缓存目录" "npm npx 缓存" "npm 日志" "npm 预构建文件")
 
     # Clean default npm cache path
     local i
@@ -310,7 +310,7 @@ clean_dev_npm() {
     # Clean custom npm cache path (if different from default)
     if [[ "$npm_cache_path_normalized" != "$npm_default_cache_normalized" ]]; then
         for i in "${!npm_residual_dirs[@]}"; do
-            safe_clean "$npm_cache_path/${npm_residual_dirs[$i]}"/* "${npm_descriptions[$i]} (custom path)"
+            safe_clean "$npm_cache_path/${npm_residual_dirs[$i]}"/* "${npm_descriptions[$i]} (自定义路径)"
         done
     fi
 
@@ -321,7 +321,7 @@ clean_dev_npm() {
     local bun_cache_cleaned=false
     local bun_dry_run="${DRY_RUN:-false}"
     if command -v bun > /dev/null 2>&1 && bun --version > /dev/null 2>&1; then
-        if [[ -t 1 ]]; then start_section_spinner "Checking bun cache path..."; fi
+        if [[ -t 1 ]]; then start_section_spinner "正在检查 bun 缓存路径..."; fi
         bun_cache_path=$(run_with_timeout "$MOLE_TIMEOUT_QUICK_DETECT_SEC" bun pm cache 2> /dev/null) || bun_cache_path=""
         if [[ -t 1 ]]; then stop_section_spinner; fi
 
@@ -334,15 +334,15 @@ clean_dev_npm() {
 
         if [[ "$bun_protected" == "true" ]]; then
             if [[ "$bun_dry_run" == "true" ]]; then
-                echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} bun cache · would skip (whitelist)"
+                echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} bun 缓存 · 将跳过(白名单)"
             else
-                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} bun cache · skipped (whitelist)"
+                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} bun 缓存 · 已跳过(白名单)"
                 note_activity
             fi
             bun_cache_cleaned=true
         elif [[ "$bun_dry_run" != "true" ]]; then
             if [[ -t 1 ]]; then
-                start_section_spinner "Cleaning bun cache..."
+                start_section_spinner "正在清理 bun 缓存..."
             fi
             if run_with_timeout "$MOLE_TIMEOUT_PKG_LIST_SEC" bun pm cache rm > /dev/null 2>&1; then
                 bun_cache_cleaned=true
@@ -351,11 +351,11 @@ clean_dev_npm() {
                 stop_section_spinner
             fi
             if [[ "$bun_cache_cleaned" == "true" ]]; then
-                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} bun cache"
+                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} bun 缓存"
                 note_activity
             fi
         else
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} bun cache · would clean"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} bun 缓存 · 将清理"
             note_activity
             bun_cache_cleaned=true
         fi
@@ -370,22 +370,22 @@ clean_dev_npm() {
         fi
 
         if [[ "$bun_cache_path_normalized" != "$bun_default_cache_normalized" ]]; then
-            safe_clean "$bun_default_cache"/* "Orphaned bun cache"
+            safe_clean "$bun_default_cache"/* "残留的 bun 缓存"
         fi
 
         # If bun pm cache rm fails, fall back to filesystem cleanup to avoid no-op.
         if [[ "$bun_cache_cleaned" != "true" ]]; then
-            safe_clean "$bun_cache_path"/* "Bun cache"
+            safe_clean "$bun_cache_path"/* "Bun 缓存"
         fi
     else
-        safe_clean "$bun_default_cache"/* "Bun cache"
+        safe_clean "$bun_default_cache"/* "Bun 缓存"
     fi
 
     note_activity
-    safe_clean ~/.tnpm/_cacache/* "tnpm cache directory"
-    safe_clean ~/.tnpm/_logs/* "tnpm logs"
-    safe_clean ~/.yarn/cache/* "Yarn cache"
-    safe_clean ~/Library/Caches/Yarn/* "Yarn v1 cache"
+    safe_clean ~/.tnpm/_cacache/* "tnpm 缓存目录"
+    safe_clean ~/.tnpm/_logs/* "tnpm 日志"
+    safe_clean ~/.yarn/cache/* "Yarn 缓存"
+    safe_clean ~/Library/Caches/Yarn/* "Yarn v1 缓存"
 }
 # Python/pip ecosystem caches.
 clean_dev_python() {
@@ -396,21 +396,21 @@ clean_dev_python() {
         if [[ -z "$pip_cache_path" || "$pip_cache_path" != /* ]]; then
             pip_cache_path="$HOME/Library/Caches/pip"
         fi
-        clean_tool_cache "pip cache" "$pip_cache_path" bash -c 'pip3 cache purge > /dev/null 2>&1 || true'
+        clean_tool_cache "pip 缓存" "$pip_cache_path" bash -c 'pip3 cache purge > /dev/null 2>&1 || true'
         note_activity
     fi
-    safe_clean ~/.pyenv/cache/* "pyenv cache"
-    safe_clean ~/.cache/poetry/* "Poetry cache"
+    safe_clean ~/.pyenv/cache/* "pyenv 缓存"
+    safe_clean ~/.cache/poetry/* "Poetry 缓存"
     clean_uv_cache
-    safe_clean ~/.cache/ruff/* "Ruff cache"
-    safe_clean ~/.cache/mypy/* "MyPy cache"
-    safe_clean ~/.pytest_cache/* "Pytest cache"
-    safe_clean ~/.jupyter/runtime/* "Jupyter runtime cache"
-    safe_clean ~/.cache/huggingface/* "Hugging Face cache"
-    safe_clean ~/.cache/torch/* "PyTorch cache"
-    safe_clean ~/.cache/tensorflow/* "TensorFlow cache"
+    safe_clean ~/.cache/ruff/* "Ruff 缓存"
+    safe_clean ~/.cache/mypy/* "MyPy 缓存"
+    safe_clean ~/.pytest_cache/* "Pytest 缓存"
+    safe_clean ~/.jupyter/runtime/* "Jupyter 运行时缓存"
+    safe_clean ~/.cache/huggingface/* "Hugging Face 缓存"
+    safe_clean ~/.cache/torch/* "PyTorch 缓存"
+    safe_clean ~/.cache/tensorflow/* "TensorFlow 缓存"
     clean_conda_metadata_caches
-    safe_clean ~/.cache/wandb/* "Weights & Biases cache"
+    safe_clean ~/.cache/wandb/* "Weights & Biases 缓存"
 }
 # Go build/module caches.
 clean_dev_go() {
@@ -426,23 +426,23 @@ clean_dev_go() {
 
     if [[ "$build_protected" == "true" && "$mod_protected" == "true" ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Go cache · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Go 缓存 · 将跳过(白名单)"
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Go cache · skipped (whitelist)"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Go 缓存 · 已跳过(白名单)"
             note_activity
         fi
         return 0
     fi
 
     if [[ "$build_protected" != "true" && "$mod_protected" != "true" ]]; then
-        clean_tool_cache "Go cache" "" bash -c 'go clean -modcache > /dev/null 2>&1 || true; go clean -cache > /dev/null 2>&1 || true'
+        clean_tool_cache "Go 缓存" "" bash -c 'go clean -modcache > /dev/null 2>&1 || true; go clean -cache > /dev/null 2>&1 || true'
     elif [[ "$build_protected" == "true" ]]; then
-        clean_tool_cache "Go module cache" "" bash -c 'go clean -modcache > /dev/null 2>&1 || true'
-        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Go build cache · skipped (whitelist)"
+        clean_tool_cache "Go 模块缓存" "" bash -c 'go clean -modcache > /dev/null 2>&1 || true'
+        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Go 构建缓存 · 已跳过(白名单)"
         note_activity
     else
-        clean_tool_cache "Go build cache" "" bash -c 'go clean -cache > /dev/null 2>&1 || true'
-        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Go module cache · skipped (whitelist)"
+        clean_tool_cache "Go 构建缓存" "" bash -c 'go clean -cache > /dev/null 2>&1 || true'
+        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Go 模块缓存 · 已跳过(白名单)"
     fi
     note_activity
 }
@@ -471,18 +471,18 @@ clean_dev_mise() {
 
     if command -v mise > /dev/null 2>&1; then
         if [[ "${DRY_RUN:-false}" != "true" ]]; then
-            clean_tool_cache "mise cache" "$mise_cache_path" bash -c 'mise cache clear > /dev/null 2>&1 || true'
+            clean_tool_cache "mise 缓存" "$mise_cache_path" bash -c 'mise cache clear > /dev/null 2>&1 || true'
             note_activity
         elif is_path_whitelisted "$mise_cache_path"; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} mise cache · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} mise 缓存 · 将跳过(白名单)"
             note_activity
         else
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} mise cache · would clean"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} mise 缓存 · 将清理"
             note_activity
         fi
     fi
 
-    safe_clean "$mise_cache_path"/* "mise cache"
+    safe_clean "$mise_cache_path"/* "mise 缓存"
 }
 # Resolve a tool home from an optional env value plus default.
 # Only absolute paths without ".." / control characters are accepted from
@@ -580,7 +580,7 @@ clean_rust_dependency_cache_root() {
 
     local physical_root
     if ! physical_root=$(rust_cache_root_physical_path "$cargo_home" "$cache_root"); then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (cache path leaves CARGO_HOME)"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(缓存路径超出 CARGO_HOME)"
         note_activity
         return 0
     fi
@@ -588,7 +588,7 @@ clean_rust_dependency_cache_root() {
     local _MOLE_RUST_CARGO_HOME="$cargo_home"
     local _MOLE_RUST_CACHE_ROOT="$cache_root"
     local _MOLE_RUST_CACHE_PHYSICAL="$physical_root"
-    local _MOLE_DEV_PROCESS_GUARD_UNKNOWN_REASON="process or cache path state unknown"
+    local _MOLE_DEV_PROCESS_GUARD_UNKNOWN_REASON="进程或缓存路径状态未知"
     _dev_safe_clean_process_guarded \
         rust_cache_cleanup_state \
         "Rust" \
@@ -618,33 +618,33 @@ clean_dev_rust() {
             clean_rust_dependency_cache_root \
                 "$cargo_home" \
                 "${cargo_home}/registry/cache" \
-                "Rust cargo cache" || return 0
+                "Rust cargo 缓存" || return 0
             clean_rust_dependency_cache_root \
                 "$cargo_home" \
                 "${cargo_home}/registry/src" \
-                "Rust crate sources" || return 0
+                "Rust crate 源文件" || return 0
             clean_rust_dependency_cache_root \
                 "$cargo_home" \
                 "${cargo_home}/git" \
-                "Cargo git cache" || return 0
+                "Cargo git 缓存" || return 0
         else
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Rust dependency cache · stopped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Rust 依赖缓存 · 已停止(进程状态未知)"
             note_activity
         fi
     fi
-    safe_clean "${rustup_home}/downloads"/* "Rustup downloads cache"
+    safe_clean "${rustup_home}/downloads"/* "Rustup 下载缓存"
 }
 # Ruby/gem ecosystem caches (not installed versions).
 clean_dev_ruby() {
-    safe_clean ~/.rbenv/cache/* "rbenv download cache"
-    safe_clean ~/.gem/specs/* "gem spec cache"
-    safe_clean ~/.gem/ruby/*/cache/*.gem "gem package cache"
-    safe_clean ~/.bundle/cache/* "Ruby Bundler cache"
+    safe_clean ~/.rbenv/cache/* "rbenv 下载缓存"
+    safe_clean ~/.gem/specs/* "gem spec 缓存"
+    safe_clean ~/.gem/ruby/*/cache/*.gem "gem 包缓存"
+    safe_clean ~/.bundle/cache/* "Ruby Bundler 缓存"
 }
 # Perl ecosystem caches (not installed modules).
 clean_dev_perl() {
-    safe_clean ~/.cpan/build/* "CPAN build artifacts"
-    safe_clean ~/.cpan/sources/* "CPAN source cache"
+    safe_clean ~/.cpan/build/* "CPAN 构建产物"
+    safe_clean ~/.cpan/sources/* "CPAN 源码缓存"
 }
 
 # Helper: Check for multiple versions in a directory.
@@ -668,7 +668,7 @@ check_multiple_versions() {
         if [[ -n "$list_cmd" ]]; then
             hint=" ${GRAY}(${list_cmd})${NC}"
         fi
-        echo -e "  ${YELLOW}${ICON_REVIEW}${NC} ${tool_name} · ${count} found${hint}"
+        echo -e "  ${YELLOW}${ICON_REVIEW}${NC} ${tool_name} · 发现 ${count} 个${hint}"
     fi
 }
 
@@ -698,8 +698,8 @@ find_orbstack_data_dir() {
 clean_dev_docker() {
     if command -v docker > /dev/null 2>&1; then
         note_activity
-        echo -e "  ${GRAY}${ICON_REVIEW}${NC} Docker unused data · review with docker system df"
-        debug_log "Docker daemon-managed cleanup skipped by default"
+        echo -e "  ${GRAY}${ICON_REVIEW}${NC} Docker 未使用数据 · 使用 docker system df 审查"
+        debug_log "Docker 守护进程管理的清理默认跳过"
     fi
 
     local orb_data=""
@@ -714,46 +714,46 @@ clean_dev_docker() {
             [[ "$orb_size" =~ ^[0-9]+$ ]] || orb_size=0
         fi
         note_activity
-        echo -e "  ${GRAY}${ICON_REVIEW}${NC} OrbStack container data · $(bytes_to_human $((orb_size * 1024))) · review with docker system df"
-        debug_log "OrbStack daemon-managed data left for manual prune ($orb_size KB)"
+        echo -e "  ${GRAY}${ICON_REVIEW}${NC} OrbStack 容器数据 · $(bytes_to_human $((orb_size * 1024))) · 使用 docker system df 审查"
+        debug_log "OrbStack 守护进程管理的数据留待手动清理 ($orb_size KB)"
     fi
-    safe_clean ~/.docker/buildx/cache/* "Docker BuildX cache"
+    safe_clean ~/.docker/buildx/cache/* "Docker BuildX 缓存"
 }
 # Nix garbage collection.
 clean_dev_nix() {
     if command -v nix-collect-garbage > /dev/null 2>&1; then
         if [[ "$DRY_RUN" != "true" ]]; then
-            clean_tool_cache "Nix garbage collection" "/nix/store" nix-collect-garbage --delete-older-than 30d
+            clean_tool_cache "Nix 垃圾回收" "/nix/store" nix-collect-garbage --delete-older-than 30d
         elif is_path_whitelisted "/nix/store"; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Nix garbage collection · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Nix 垃圾回收 · 将跳过(白名单)"
             note_activity
         else
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Nix garbage collection · would clean"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Nix 垃圾回收 · 将清理"
         fi
         note_activity
     fi
 }
 # Cloud CLI caches.
 clean_dev_cloud() {
-    safe_clean ~/.kube/cache/* "Kubernetes cache"
-    safe_clean ~/.local/share/containers/storage/tmp/* "Container storage temp"
-    safe_clean ~/.aws/cli/cache/* "AWS CLI cache"
-    safe_clean ~/.config/gcloud/logs/* "Google Cloud logs"
-    safe_clean ~/.azure/logs/* "Azure CLI logs"
+    safe_clean ~/.kube/cache/* "Kubernetes 缓存"
+    safe_clean ~/.local/share/containers/storage/tmp/* "容器存储临时文件"
+    safe_clean ~/.aws/cli/cache/* "AWS CLI 缓存"
+    safe_clean ~/.config/gcloud/logs/* "Google Cloud 日志"
+    safe_clean ~/.azure/logs/* "Azure CLI 日志"
 }
 # Frontend build caches.
 clean_dev_frontend() {
-    safe_clean ~/.cache/typescript/* "TypeScript cache"
-    safe_clean ~/.cache/electron/* "Electron cache"
-    safe_clean ~/.cache/node-gyp/* "node-gyp cache"
-    safe_clean ~/.node-gyp/* "node-gyp build cache"
-    safe_clean ~/.turbo/cache/* "Turbo cache"
-    safe_clean ~/.vite/cache/* "Vite cache"
-    safe_clean ~/.cache/vite/* "Vite global cache"
-    safe_clean ~/.cache/webpack/* "Webpack cache"
-    safe_clean ~/.parcel-cache/* "Parcel cache"
-    safe_clean ~/.cache/eslint/* "ESLint cache"
-    safe_clean ~/.cache/prettier/* "Prettier cache"
+    safe_clean ~/.cache/typescript/* "TypeScript 缓存"
+    safe_clean ~/.cache/electron/* "Electron 缓存"
+    safe_clean ~/.cache/node-gyp/* "node-gyp 缓存"
+    safe_clean ~/.node-gyp/* "node-gyp 构建缓存"
+    safe_clean ~/.turbo/cache/* "Turbo 缓存"
+    safe_clean ~/.vite/cache/* "Vite 缓存"
+    safe_clean ~/.cache/vite/* "Vite 全局缓存"
+    safe_clean ~/.cache/webpack/* "Webpack 缓存"
+    safe_clean ~/.parcel-cache/* "Parcel 缓存"
+    safe_clean ~/.cache/eslint/* "ESLint 缓存"
+    safe_clean ~/.cache/prettier/* "Prettier 缓存"
 }
 # Check for multiple Android NDK versions.
 check_android_ndk() {
@@ -835,11 +835,11 @@ clean_xcode_documentation_cache() {
     _xcode_xctest_devices_process_running || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $pre_skipped_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · skipped ${pre_skipped_count} protected items"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已跳过 ${pre_skipped_count} 个受保护项"
             note_activity
         fi
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Xcode"
@@ -850,15 +850,15 @@ clean_xcode_documentation_cache() {
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         _xcode_safe_clean_guarded \
             _xcode_delete_guard_allows \
-            "Xcode documentation cache" \
+            "Xcode 文档缓存" \
             "${stale_entries[@]}" \
-            "Xcode documentation cache (old indexes)" || return 0
+            "Xcode 文档缓存(旧索引)" || return 0
         return 0
     fi
 
     if ! has_sudo_session; then
-        if ! ensure_sudo_session "Cleaning Xcode documentation cache requires admin access"; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · skipped (sudo denied)"
+        if ! ensure_sudo_session "清理 Xcode 文档缓存需要管理员权限"; then
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已跳过(sudo 被拒绝)"
             note_activity
             return 0
         fi
@@ -881,8 +881,8 @@ clean_xcode_documentation_cache() {
         process_state=0
         _xcode_xctest_devices_process_running || process_state=$?
         if [[ $process_state -ne 1 ]]; then
-            stop_reason="Xcode or build tools started"
-            [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+            stop_reason="Xcode 或构建工具已启动"
+            [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
             break
         fi
         if safe_sudo_remove "$stale_entry" "$stale_size_kb"; then
@@ -894,33 +894,33 @@ clean_xcode_documentation_cache() {
     done
 
     if [[ $removed_count -gt 0 ]]; then
-        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Xcode documentation cache · removed ${removed_count} old indexes"
+        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Xcode 文档缓存 · 已移除 ${removed_count} 个旧索引"
         files_cleaned=$((${files_cleaned:-0} + removed_count))
         total_size_cleaned=$((${total_size_cleaned:-0} + removed_size_kb))
         total_items=$((${total_items:-0} + 1))
         if [[ $skipped_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · skipped ${skipped_count} protected items"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已跳过 ${skipped_count} 个受保护项"
         fi
         if [[ $failed_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · could not remove ${failed_count} old indexes"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 无法移除 ${failed_count} 个旧索引"
         fi
         note_activity
     elif [[ $failed_count -gt 0 ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · could not remove ${failed_count} old indexes"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 无法移除 ${failed_count} 个旧索引"
         if [[ $skipped_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · skipped ${skipped_count} protected items"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已跳过 ${skipped_count} 个受保护项"
         fi
         note_activity
     elif [[ $skipped_count -gt 0 ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · skipped ${skipped_count} protected items"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已跳过 ${skipped_count} 个受保护项"
         note_activity
     elif [[ -z "$stop_reason" ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · no items removed"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 未移除任何项"
         note_activity
     fi
     if [[ -n "$stop_reason" ]]; then
-        if [[ "$stop_reason" == "process state unknown" ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode documentation cache · stopped (${stop_reason})"
+        if [[ "$stop_reason" == "进程状态未知" ]]; then
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 文档缓存 · 已停止(${stop_reason})"
             note_activity
         else
             mole_defer_cleanup_family "Xcode"
@@ -944,13 +944,13 @@ _coresimulator_cache_process_running() {
         [[ -n "$match_pattern" ]] || continue
         if pgrep "$match_mode" "$match_pattern" > /dev/null 2>&1; then
             _MOLE_XCODE_PROCESS_MATCH="$match_label"
-            debug_log "CoreSimulator process detected: $match_label"
+            debug_log "检测到 CoreSimulator 进程: $match_label"
             return 0
         else
             probe_status=$?
         fi
         if [[ $probe_status -ne 1 ]]; then
-            debug_log "CoreSimulator process check failed: $match_label (exit=$probe_status)"
+            debug_log "CoreSimulator 进程检查失败: $match_label (退出码=$probe_status)"
             return 2
         fi
     done << 'EOF'
@@ -971,7 +971,7 @@ EOF
 _coresimulator_booted_device_state() {
     if [[ "$_MOLE_SIMCTL_RESOLUTION_STATUS" != "ready" ]]; then
         if ! command -v xcrun > /dev/null 2>&1 || ! _resolve_simctl_developer_dir; then
-            debug_log "Unable to resolve simctl for booted-device check"
+            debug_log "无法解析 simctl 以检查已启动设备"
             return 2
         fi
     fi
@@ -980,16 +980,16 @@ _coresimulator_booted_device_state() {
     local probe_status=0
     booted_output=$(_run_simctl "$MOLE_TIMEOUT_MEDIUM_PROBE_SEC" list devices booted -j 2> /dev/null) || probe_status=$?
     if [[ $probe_status -ne 0 ]]; then
-        debug_log "Booted simulator probe failed (exit=$probe_status)"
+        debug_log "已启动模拟器探测失败 (退出码=$probe_status)"
         return 2
     fi
     if [[ "$booted_output" != *'"devices"'* ]]; then
-        debug_log "Booted simulator probe returned an unexpected response"
+        debug_log "已启动模拟器探测返回意外响应"
         return 2
     fi
     if [[ "$booted_output" == *'"udid"'* ]]; then
         _MOLE_XCODE_PROCESS_MATCH="booted simulator"
-        debug_log "CoreSimulator active state detected: booted simulator"
+        debug_log "检测到 CoreSimulator 活动状态: 已启动模拟器"
         return 0
     fi
 
@@ -1042,13 +1042,13 @@ _xcode_xctest_devices_process_running() {
         [[ -n "$match_pattern" ]] || continue
         if pgrep "$match_mode" "$match_pattern" > /dev/null 2>&1; then
             _MOLE_XCODE_PROCESS_MATCH="$match_label"
-            debug_log "XCTest process detected: $match_label"
+            debug_log "检测到 XCTest 进程: $match_label"
             return 0
         else
             probe_status=$?
         fi
         if [[ $probe_status -ne 1 ]]; then
-            debug_log "XCTest process check failed: $match_label (exit=$probe_status)"
+            debug_log "XCTest 进程检查失败: $match_label (退出码=$probe_status)"
             return 2
         fi
     done << 'EOF'
@@ -1060,11 +1060,11 @@ EOF
 }
 
 _xcode_delete_guard_allows() {
-    mole_clean_process_guard _xcode_xctest_devices_process_running "Xcode or build tools started"
+    mole_clean_process_guard _xcode_xctest_devices_process_running "Xcode 或构建工具已启动"
 }
 
 _coresimulator_delete_guard_allows() {
-    mole_clean_process_guard _coresimulator_activity_state "CoreSimulator started"
+    mole_clean_process_guard _coresimulator_activity_state "CoreSimulator 已启动"
 }
 
 _xctest_devices_activity_state() {
@@ -1072,7 +1072,7 @@ _xctest_devices_activity_state() {
 }
 
 _xctest_devices_delete_guard_allows() {
-    mole_clean_process_guard _xctest_devices_activity_state "Xcode, XCTest, or Simulator started"
+    mole_clean_process_guard _xctest_devices_activity_state "Xcode、XCTest 或模拟器已启动"
 }
 
 _dev_process_delete_guard_allows() {
@@ -1082,8 +1082,8 @@ _dev_process_delete_guard_allows() {
     local _MOLE_DEV_GUARDED_PATH="${1:-}"
     mole_clean_process_guard \
         "$_MOLE_DEV_PROCESS_GUARD_PROBE" \
-        "$_MOLE_DEV_PROCESS_GUARD_FAMILY started" \
-        "${_MOLE_DEV_PROCESS_GUARD_UNKNOWN_REASON:-process state unknown}"
+        "$_MOLE_DEV_PROCESS_GUARD_FAMILY 已启动" \
+        "${_MOLE_DEV_PROCESS_GUARD_UNKNOWN_REASON:-进程状态未知}"
 }
 
 _dev_report_process_guard_stop() {
@@ -1091,8 +1091,8 @@ _dev_report_process_guard_stop() {
     local family="$2"
     local reason="$3"
 
-    if [[ "$reason" == "process state unknown" || "$reason" == "process or cache path state unknown" ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${reason})"
+    if [[ "$reason" == "进程状态未知" || "$reason" == "进程或缓存路径状态未知" ]]; then
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${reason})"
         note_activity
     else
         mole_defer_cleanup_family "$family"
@@ -1108,7 +1108,7 @@ _dev_safe_clean_process_guarded() {
     shift 3
     local _MOLE_DEV_PROCESS_GUARD_PROBE="$probe"
     local _MOLE_DEV_PROCESS_GUARD_FAMILY="$family"
-    local _MOLE_CLEAN_GUARD_REASON="${family} started"
+    local _MOLE_CLEAN_GUARD_REASON="${family} 已启动"
 
     if ! declare -f safe_clean_guarded > /dev/null 2>&1; then
         if ! _dev_process_delete_guard_allows; then
@@ -1136,7 +1136,7 @@ _dev_clean_service_worker_process_guarded() {
     local cache_path="$5"
     local _MOLE_DEV_PROCESS_GUARD_PROBE="$probe"
     local _MOLE_DEV_PROCESS_GUARD_FAMILY="$family"
-    local _MOLE_CLEAN_GUARD_REASON="${family} started"
+    local _MOLE_CLEAN_GUARD_REASON="${family} 已启动"
     local guarded_rc=0
 
     clean_service_worker_cache \
@@ -1157,12 +1157,12 @@ _xcode_safe_clean_guarded() {
     local delete_guard="$1"
     local display_name="$2"
     shift 2
-    local _MOLE_CLEAN_GUARD_REASON="process state changed"
+    local _MOLE_CLEAN_GUARD_REASON="进程状态已更改"
 
     if ! declare -f safe_clean_guarded > /dev/null 2>&1; then
         if ! "$delete_guard"; then
-            if [[ "$_MOLE_CLEAN_GUARD_REASON" == "process state unknown" ]]; then
-                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+            if [[ "$_MOLE_CLEAN_GUARD_REASON" == "进程状态未知" ]]; then
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
                 note_activity
             elif [[ "$delete_guard" == "_coresimulator_delete_guard_allows" ]]; then
                 mole_defer_cleanup_family "Simulator"
@@ -1178,8 +1178,8 @@ _xcode_safe_clean_guarded() {
     local guarded_rc=0
     safe_clean_guarded "$delete_guard" "$@" || guarded_rc=$?
     if [[ $guarded_rc -eq 75 ]]; then
-        if [[ "$_MOLE_CLEAN_GUARD_REASON" == "process state unknown" ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+        if [[ "$_MOLE_CLEAN_GUARD_REASON" == "进程状态未知" ]]; then
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
             note_activity
         elif [[ "$delete_guard" == "_coresimulator_delete_guard_allows" ]]; then
             mole_defer_cleanup_family "Simulator"
@@ -1219,7 +1219,7 @@ clean_xcode_xctest_devices() {
     _xctest_devices_activity_state || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode XCTestDevices · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode XCTestDevices · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Xcode"
@@ -1231,7 +1231,7 @@ clean_xcode_xctest_devices() {
         _xctest_devices_delete_guard_allows \
         "Xcode XCTestDevices" \
         "$xctest_devices_dir" \
-        "Xcode XCTestDevices test data" || true
+        "Xcode XCTestDevices 测试数据" || true
 }
 
 clean_xcode_system_coresimulator_caches() {
@@ -1265,7 +1265,7 @@ clean_xcode_system_coresimulator_caches() {
     _coresimulator_activity_state || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode Simulator system cache · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Simulator"
@@ -1281,8 +1281,8 @@ clean_xcode_system_coresimulator_caches() {
             process_state=0
             _coresimulator_activity_state || process_state=$?
             if [[ $process_state -ne 1 ]]; then
-                stop_reason="CoreSimulator started"
-                [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+                stop_reason="CoreSimulator 已启动"
+                [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
                 break
             fi
             if should_protect_path "$entry" || is_path_whitelisted "$entry" || holds_compiled_model_cache "$entry"; then
@@ -1298,8 +1298,8 @@ clean_xcode_system_coresimulator_caches() {
             process_state=0
             _coresimulator_activity_state || process_state=$?
             if [[ $process_state -ne 1 ]]; then
-                stop_reason="CoreSimulator started"
-                [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+                stop_reason="CoreSimulator 已启动"
+                [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
                 break
             fi
             if declare -f record_dry_run_cleanup_target > /dev/null 2>&1; then
@@ -1311,12 +1311,12 @@ clean_xcode_system_coresimulator_caches() {
         if [[ "$cleanable_count" -gt 0 ]]; then
             local total_size_human
             total_size_human=$(bytes_to_human "$((total_size_kb * 1024))")
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Xcode Simulator system cache · would remove ${cleanable_count} entries (${total_size_human})"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Xcode 模拟器系统缓存 · 将移除 ${cleanable_count} 项(${total_size_human})"
             note_activity
         fi
         if [[ -n "$stop_reason" ]]; then
-            if [[ "$stop_reason" == "process state unknown" ]]; then
-                echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode Simulator system cache · stopped (${stop_reason})"
+            if [[ "$stop_reason" == "进程状态未知" ]]; then
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 已停止(${stop_reason})"
                 note_activity
             else
                 mole_defer_cleanup_family "Simulator"
@@ -1326,8 +1326,8 @@ clean_xcode_system_coresimulator_caches() {
     fi
 
     if ! has_sudo_session; then
-        if ! ensure_sudo_session "Cleaning Xcode Simulator system cache requires admin access"; then
-            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode Simulator system cache · skipped (sudo denied)"
+        if ! ensure_sudo_session "清理 Xcode 模拟器系统缓存需要管理员权限"; then
+            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 已跳过(sudo 被拒绝)"
             note_activity
             return 0
         fi
@@ -1342,8 +1342,8 @@ clean_xcode_system_coresimulator_caches() {
         process_state=0
         _coresimulator_activity_state || process_state=$?
         if [[ $process_state -ne 1 ]]; then
-            stop_reason="CoreSimulator started"
-            [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+            stop_reason="CoreSimulator 已启动"
+            [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
             break
         fi
         if should_protect_path "$entry" || is_path_whitelisted "$entry" || holds_compiled_model_cache "$entry"; then
@@ -1362,8 +1362,8 @@ clean_xcode_system_coresimulator_caches() {
         process_state=0
         _coresimulator_activity_state || process_state=$?
         if [[ $process_state -ne 1 ]]; then
-            stop_reason="CoreSimulator started"
-            [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+            stop_reason="CoreSimulator 已启动"
+            [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
             break
         fi
         if safe_sudo_remove "$entry" "$entry_size_kb"; then
@@ -1380,30 +1380,30 @@ clean_xcode_system_coresimulator_caches() {
         local line_color
         line_color=$(cleanup_result_color_kb "$removed_size_kb")
         if [[ $skipped_count -gt 0 ]]; then
-            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode Simulator system cache · removed ${removed_count} (${line_color}${removed_human}${NC}), skipped ${skipped_count} protected"
+            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode 模拟器系统缓存 · 已移除 ${removed_count} 项(${line_color}${removed_human}${NC}),已跳过 ${skipped_count} 个受保护项"
         else
-            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode Simulator system cache · removed ${removed_count} (${line_color}${removed_human}${NC})"
+            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode 模拟器系统缓存 · 已移除 ${removed_count} 项(${line_color}${removed_human}${NC})"
         fi
         if [[ $failed_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode Simulator system cache · could not remove ${failed_count} entries"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 无法移除 ${failed_count} 项"
         fi
         files_cleaned=$((${files_cleaned:-0} + removed_count))
         total_size_cleaned=$((${total_size_cleaned:-0} + removed_size_kb))
         total_items=$((${total_items:-0} + 1))
         note_activity
     elif [[ $failed_count -gt 0 ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode Simulator system cache · could not remove ${failed_count} entries"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 无法移除 ${failed_count} 项"
         if [[ $skipped_count -gt 0 ]]; then
-            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode Simulator system cache · skipped ${skipped_count} protected"
+            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 已跳过 ${skipped_count} 个受保护项"
         fi
         note_activity
     elif [[ $skipped_count -gt 0 ]]; then
-        echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode Simulator system cache · skipped ${skipped_count} protected, none removed"
+        echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 已跳过 ${skipped_count} 个受保护项,未移除任何项"
         note_activity
     fi
     if [[ -n "$stop_reason" ]]; then
-        if [[ "$stop_reason" == "process state unknown" ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode Simulator system cache · stopped (${stop_reason})"
+        if [[ "$stop_reason" == "进程状态未知" ]]; then
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 模拟器系统缓存 · 已停止(${stop_reason})"
             note_activity
         else
             mole_defer_cleanup_family "Simulator"
@@ -1440,7 +1440,7 @@ clean_xcode_device_support() {
         local preflight_mtime=""
         for candidate in "${preflight_dirs[@]}"; do
             if ! preflight_mtime=$(stat -f%m "$candidate" 2> /dev/null) || [[ ! "$preflight_mtime" =~ ^[0-9]+$ ]]; then
-                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · skipped (metadata unavailable)"
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已跳过(元数据不可用)"
                 note_activity
                 return 0
             fi
@@ -1483,7 +1483,7 @@ clean_xcode_device_support() {
     _xcode_xctest_devices_process_running || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Xcode"
@@ -1495,13 +1495,13 @@ clean_xcode_device_support() {
     local -a version_dirs=()
     local scan_file=""
     scan_file=$(mktemp "${TMPDIR:-/tmp}/mole-device-support.XXXXXX") || {
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · skipped (scan unavailable)"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已跳过(扫描不可用)"
         note_activity
         return 0
     }
     if ! command find "$ds_dir" -mindepth 1 -maxdepth 1 -print0 > "$scan_file" 2> /dev/null; then
         rm -f "$scan_file" # SAFE: exact temporary file created by mktemp above
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · skipped (scan unavailable)"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已跳过(扫描不可用)"
         note_activity
         return 0
     fi
@@ -1517,7 +1517,7 @@ clean_xcode_device_support() {
         local mtime=""
         for entry in "${version_dirs[@]}"; do
             if ! mtime=$(stat -f%m "$entry" 2> /dev/null) || [[ ! "$mtime" =~ ^[0-9]+$ ]]; then
-                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · skipped (metadata unavailable)"
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已跳过(元数据不可用)"
                 note_activity
                 return 0
             fi
@@ -1561,8 +1561,8 @@ clean_xcode_device_support() {
                     process_state=0
                     _xcode_xctest_devices_process_running || process_state=$?
                     if [[ $process_state -ne 1 ]]; then
-                        dry_stop_reason="Xcode or build tools started"
-                        [[ $process_state -eq 2 ]] && dry_stop_reason="process state unknown"
+                        dry_stop_reason="Xcode 或构建工具已启动"
+                        [[ $process_state -eq 2 ]] && dry_stop_reason="进程状态未知"
                         break
                     fi
                     if should_protect_path "$stale_entry" || is_path_whitelisted "$stale_entry" || holds_compiled_model_cache "$stale_entry"; then
@@ -1577,8 +1577,8 @@ clean_xcode_device_support() {
                     process_state=0
                     _xcode_xctest_devices_process_running || process_state=$?
                     if [[ $process_state -ne 1 ]]; then
-                        dry_stop_reason="Xcode or build tools started"
-                        [[ $process_state -eq 2 ]] && dry_stop_reason="process state unknown"
+                        dry_stop_reason="Xcode 或构建工具已启动"
+                        [[ $process_state -eq 2 ]] && dry_stop_reason="进程状态未知"
                         break
                     fi
                     if declare -f record_dry_run_cleanup_target > /dev/null 2>&1; then
@@ -1590,12 +1590,12 @@ clean_xcode_device_support() {
                 done
                 if [[ "$dry_run_count" -gt 0 ]]; then
                     stale_size_human=$(bytes_to_human "$((stale_size_kb * 1024))")
-                    echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} ${display_name} · would remove ${dry_run_count} old versions (${stale_size_human}), keeping ${keep_count} most recent"
+                    echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} ${display_name} · 将移除 ${dry_run_count} 个旧版本(${stale_size_human}),保留最近 ${keep_count} 个"
                     note_activity
                 fi
                 if [[ -n "$dry_stop_reason" ]]; then
-                    if [[ "$dry_stop_reason" == "process state unknown" ]]; then
-                        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${dry_stop_reason})"
+                    if [[ "$dry_stop_reason" == "进程状态未知" ]]; then
+                        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${dry_stop_reason})"
                         note_activity
                     else
                         mole_defer_cleanup_family "Xcode"
@@ -1611,8 +1611,8 @@ clean_xcode_device_support() {
                     process_state=0
                     _xcode_xctest_devices_process_running || process_state=$?
                     if [[ $process_state -ne 1 ]]; then
-                        stop_reason="Xcode or build tools started"
-                        [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+                        stop_reason="Xcode 或构建工具已启动"
+                        [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
                         break
                     fi
                     if should_protect_path "$stale_entry" || is_path_whitelisted "$stale_entry" || holds_compiled_model_cache "$stale_entry"; then
@@ -1630,8 +1630,8 @@ clean_xcode_device_support() {
                     process_state=0
                     _xcode_xctest_devices_process_running || process_state=$?
                     if [[ $process_state -ne 1 ]]; then
-                        stop_reason="Xcode or build tools started"
-                        [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
+                        stop_reason="Xcode 或构建工具已启动"
+                        [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
                         break
                     fi
                     if safe_remove "$stale_entry" "true" "$entry_size_kb"; then
@@ -1644,15 +1644,15 @@ clean_xcode_device_support() {
                     stale_size_human=$(bytes_to_human "$((removed_size_kb * 1024))")
                     local line_color
                     line_color=$(cleanup_result_color_kb "$removed_size_kb")
-                    echo -e "  ${line_color}${ICON_SUCCESS}${NC} ${display_name} · removed ${removed_count} old versions, ${line_color}${stale_size_human}${NC}"
+                    echo -e "  ${line_color}${ICON_SUCCESS}${NC} ${display_name} · 已移除 ${removed_count} 个旧版本,${line_color}${stale_size_human}${NC}"
                     files_cleaned=$((${files_cleaned:-0} + removed_count))
                     total_size_cleaned=$((${total_size_cleaned:-0} + removed_size_kb))
                     total_items=$((${total_items:-0} + 1))
                     note_activity
                 fi
                 if [[ -n "$stop_reason" ]]; then
-                    if [[ "$stop_reason" == "process state unknown" ]]; then
-                        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${stop_reason})"
+                    if [[ "$stop_reason" == "进程状态未知" ]]; then
+                        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${stop_reason})"
                         note_activity
                     else
                         mole_defer_cleanup_family "Xcode"
@@ -1695,10 +1695,10 @@ clean_xcode_device_support() {
         process_state=0
         _xcode_xctest_devices_process_running || process_state=$?
         if [[ $process_state -ne 1 ]]; then
-            local stop_reason="Xcode or build tools started"
-            [[ $process_state -eq 2 ]] && stop_reason="process state unknown"
-            if [[ "$stop_reason" == "process state unknown" ]]; then
-                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${stop_reason})"
+            local stop_reason="Xcode 或构建工具已启动"
+            [[ $process_state -eq 2 ]] && stop_reason="进程状态未知"
+            if [[ "$stop_reason" == "进程状态未知" ]]; then
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${stop_reason})"
                 note_activity
             else
                 mole_defer_cleanup_family "Xcode"
@@ -1709,16 +1709,16 @@ clean_xcode_device_support() {
     if [[ ${#inner_cache_targets[@]} -gt 0 ]]; then
         _xcode_safe_clean_guarded \
             _xcode_delete_guard_allows \
-            "$display_name symbol cache" \
+            "$display_name 符号缓存" \
             "${inner_cache_targets[@]}" \
-            "$display_name symbol cache" || return 0
+            "$display_name 符号缓存" || return 0
     fi
     if [[ ${#log_targets[@]} -gt 0 ]]; then
         _xcode_safe_clean_guarded \
             _xcode_delete_guard_allows \
-            "$display_name logs" \
+            "$display_name 日志" \
             "${log_targets[@]}" \
-            "$display_name logs" || return 0
+            "$display_name 日志" || return 0
     fi
 }
 
@@ -1795,19 +1795,19 @@ clean_xcode_simulator_runtime_volumes() {
 
     # Only show scanning message in debug mode; spinner provides visual feedback otherwise
     if [[ "${MO_DEBUG:-0}" == "1" ]]; then
-        echo -e "  ${GRAY}${ICON_LIST}${NC} Xcode runtime volumes · scanning ${#sorted_candidates[@]} entries"
+        echo -e "  ${GRAY}${ICON_LIST}${NC} Xcode 运行时卷 · 正在扫描 ${#sorted_candidates[@]} 项"
     fi
     local runtime_scan_spinner=false
     if [[ -t 1 ]]; then
-        start_section_spinner "Scanning Xcode runtime volumes..."
+        start_section_spinner "正在扫描 Xcode 运行时卷..."
         runtime_scan_spinner=true
     fi
 
     local in_use_count=0
     for candidate in "${sorted_candidates[@]}"; do
-        local status="UNUSED"
+        local status="未使用"
         if [[ ${#mount_points[@]} -gt 0 ]] && _sim_runtime_is_path_in_use "$candidate" "${mount_points[@]}"; then
-            status="IN_USE"
+            status="使用中"
             in_use_count=$((in_use_count + 1))
         fi
         entry_statuses+=("$status")
@@ -1824,8 +1824,8 @@ clean_xcode_simulator_runtime_volumes() {
         for candidate in "${sorted_candidates[@]}"; do
             local size_kb
             size_kb=$(_sim_runtime_size_kb "$candidate")
-            local status="${entry_statuses[$i]:-UNUSED}"
-            if [[ "$status" == "IN_USE" ]]; then
+            local status="${entry_statuses[$i]:-未使用}"
+            if [[ "$status" == "使用中" ]]; then
                 size_values+=("$size_kb")
                 in_use_kb=$((in_use_kb + size_kb))
                 preview_in_use_count=$((preview_in_use_count + 1))
@@ -1835,11 +1835,11 @@ clean_xcode_simulator_runtime_volumes() {
                     [[ -n "$line" ]] && current_mount_points+=("$line")
                 done < <(_sim_runtime_mount_points)
                 if [[ ${#current_mount_points[@]} -eq 0 ]]; then
-                    dry_stop_reason="mount state unknown"
+                    dry_stop_reason="挂载状态未知"
                     break
                 fi
                 if _sim_runtime_is_path_in_use "$candidate" "${current_mount_points[@]}"; then
-                    dry_stop_reason="runtime became mounted"
+                    dry_stop_reason="运行时已被挂载"
                     break
                 fi
                 if ! should_protect_path "$candidate" && ! is_path_whitelisted "$candidate"; then
@@ -1862,7 +1862,7 @@ clean_xcode_simulator_runtime_volumes() {
             runtime_scan_spinner=false
         fi
 
-        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Xcode runtime volumes · ${cleanable_unused_count} unused, ${preview_in_use_count} in use"
+        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Xcode 运行时卷 · ${cleanable_unused_count} 个未使用,${preview_in_use_count} 个使用中"
         local dryrun_total_kb=$((unused_kb + in_use_kb))
         local dryrun_total_human
         dryrun_total_human=$(bytes_to_human "$((dryrun_total_kb * 1024))")
@@ -1870,7 +1870,7 @@ clean_xcode_simulator_runtime_volumes() {
         dryrun_unused_human=$(bytes_to_human "$((unused_kb * 1024))")
         local dryrun_in_use_human
         dryrun_in_use_human=$(bytes_to_human "$((in_use_kb * 1024))")
-        echo -e "  ${GRAY}${ICON_LIST}${NC} Runtime volumes total: ${dryrun_total_human} (unused ${dryrun_unused_human}, in-use ${dryrun_in_use_human})"
+        echo -e "  ${GRAY}${ICON_LIST}${NC} 运行时卷总计: ${dryrun_total_human} (未使用 ${dryrun_unused_human},使用中 ${dryrun_in_use_human})"
 
         local dryrun_max_items="${MOLE_SIM_RUNTIME_DRYRUN_MAX_ITEMS:-20}"
         [[ "$dryrun_max_items" =~ ^[0-9]+$ ]] || dryrun_max_items=20
@@ -1892,7 +1892,7 @@ clean_xcode_simulator_runtime_volumes() {
         done < <(
             local j=0
             while [[ $j -lt ${#sorted_candidates[@]} ]]; do
-                printf '%s\t%s\t%s\n' "${size_values[$j]:-0}" "${entry_statuses[$j]:-UNUSED}" "${sorted_candidates[$j]}"
+                printf '%s\t%s\t%s\n' "${size_values[$j]:-0}" "${entry_statuses[$j]:-未使用}" "${sorted_candidates[$j]}"
                 j=$((j + 1))
             done | LC_ALL=C sort -nr -k1,1
         )
@@ -1900,11 +1900,11 @@ clean_xcode_simulator_runtime_volumes() {
         local total_entries="${#size_values[@]}"
         if [[ "$total_entries" -gt "$shown" ]]; then
             local remaining=$((total_entries - shown))
-            echo -e "    ${GRAY}${ICON_LIST}${NC} ... and ${remaining} more runtime volume entries"
+            echo -e "    ${GRAY}${ICON_LIST}${NC} ...以及另外 ${remaining} 个运行时卷项"
         fi
         note_activity
         if [[ -n "$dry_stop_reason" ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode runtime volumes · stopped (${dry_stop_reason})"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 运行时卷 · 已停止(${dry_stop_reason})"
             note_activity
         fi
         return 0
@@ -1915,8 +1915,8 @@ clean_xcode_simulator_runtime_volumes() {
     local skipped_protected=0
     local i=0
     for ((i = 0; i < ${#sorted_candidates[@]}; i++)); do
-        local status="${entry_statuses[$i]:-UNUSED}"
-        [[ "$status" == "IN_USE" ]] && continue
+        local status="${entry_statuses[$i]:-未使用}"
+        [[ "$status" == "使用中" ]] && continue
 
         local candidate_path="${sorted_candidates[$i]}"
         if should_protect_path "$candidate_path" || is_path_whitelisted "$candidate_path"; then
@@ -1932,13 +1932,13 @@ clean_xcode_simulator_runtime_volumes() {
     fi
 
     if [[ ${#selected_paths[@]} -eq 0 ]]; then
-        debug_log "Xcode runtime volumes have no unused cleanable entries"
+        debug_log "Xcode 运行时卷没有可清理的未使用项"
         return 0
     fi
 
     if ! has_sudo_session; then
-        if ! ensure_sudo_session "Cleaning Xcode runtime volumes requires admin access"; then
-            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode runtime volumes · skipped (sudo denied)"
+        if ! ensure_sudo_session "清理 Xcode 运行时卷需要管理员权限"; then
+            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 运行时卷 · 已跳过(sudo 被拒绝)"
             note_activity
             return 0
         fi
@@ -1962,11 +1962,11 @@ clean_xcode_simulator_runtime_volumes() {
             [[ -n "$line" ]] && current_mount_points+=("$line")
         done < <(_sim_runtime_mount_points)
         if [[ ${#current_mount_points[@]} -eq 0 ]]; then
-            stop_reason="mount state unknown"
+            stop_reason="挂载状态未知"
             break
         fi
         if _sim_runtime_is_path_in_use "$selected_path" "${current_mount_points[@]}"; then
-            stop_reason="runtime became mounted"
+            stop_reason="运行时已被挂载"
             break
         fi
 
@@ -1985,29 +1985,29 @@ clean_xcode_simulator_runtime_volumes() {
         local line_color
         line_color=$(cleanup_result_color_kb "$removed_size_kb")
         if [[ $skipped_protected -gt 0 ]]; then
-            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode runtime volumes · removed ${removed_count} (${line_color}${removed_human}${NC}), skipped ${skipped_protected} protected"
+            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode 运行时卷 · 已移除 ${removed_count} 项(${line_color}${removed_human}${NC}),已跳过 ${skipped_protected} 个受保护项"
         else
-            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode runtime volumes · removed ${removed_count} (${line_color}${removed_human}${NC})"
+            echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode 运行时卷 · 已移除 ${removed_count} 项(${line_color}${removed_human}${NC})"
         fi
         if [[ $failed_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode runtime volumes · could not remove ${failed_count} entries"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 运行时卷 · 无法移除 ${failed_count} 项"
         fi
         note_activity
     else
         if [[ $failed_count -gt 0 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode runtime volumes · could not remove ${failed_count} entries"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 运行时卷 · 无法移除 ${failed_count} 项"
             if [[ $skipped_protected -gt 0 ]]; then
-                echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode runtime volumes · skipped ${skipped_protected} protected"
+                echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 运行时卷 · 已跳过 ${skipped_protected} 个受保护项"
             fi
         elif [[ $skipped_protected -gt 0 ]]; then
-            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode runtime volumes · skipped ${skipped_protected} protected, none removed"
+            echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 运行时卷 · 已跳过 ${skipped_protected} 个受保护项,未移除任何项"
         fi
         if [[ $failed_count -gt 0 || $skipped_protected -gt 0 ]]; then
             note_activity
         fi
     fi
     if [[ -n "$stop_reason" ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode runtime volumes · stopped (${stop_reason})"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 运行时卷 · 已停止(${stop_reason})"
         note_activity
     fi
 }
@@ -2042,7 +2042,7 @@ _resolve_simctl_developer_dir() {
         fi
 
         _MOLE_SIMCTL_RESOLUTION_STATUS="explicit-invalid"
-        debug_log "Explicit DEVELOPER_DIR does not provide simctl: $DEVELOPER_DIR"
+        debug_log "显式指定的 DEVELOPER_DIR 不提供 simctl: $DEVELOPER_DIR"
         return 1
     fi
 
@@ -2062,7 +2062,7 @@ _resolve_simctl_developer_dir() {
                 _MOLE_SIMCTL_RESOLUTION_STATUS="ready"
                 return 0
             fi
-            debug_log "Selected Xcode does not provide simctl: $selected_developer_dir"
+            debug_log "所选 Xcode 不提供 simctl: $selected_developer_dir"
             return 1
             ;;
     esac
@@ -2089,14 +2089,14 @@ _resolve_simctl_developer_dir() {
     if [[ ${#candidates[@]} -eq 1 ]]; then
         _MOLE_SIMCTL_DEVELOPER_DIR="${candidates[0]}"
         _MOLE_SIMCTL_RESOLUTION_STATUS="ready"
-        debug_log "Using detected Xcode for simctl: ${candidates[0]%/Contents/Developer}"
+        debug_log "使用检测到的 Xcode 解析 simctl: ${candidates[0]%/Contents/Developer}"
         return 0
     fi
 
     if [[ ${#candidates[@]} -gt 1 ]]; then
         _MOLE_SIMCTL_RESOLUTION_STATUS="ambiguous"
         for candidate_developer_dir in "${candidates[@]}"; do
-            debug_log "simctl Xcode candidate: ${candidate_developer_dir%/Contents/Developer}"
+            debug_log "simctl Xcode 候选: ${candidate_developer_dir%/Contents/Developer}"
         done
     fi
 
@@ -2137,7 +2137,7 @@ _debug_simctl_probe_stderr() {
     local excerpt
     excerpt=$(_simctl_debug_excerpt "$raw_stderr")
     [[ -n "$excerpt" ]] || return 0
-    debug_log "simctl probe $attempt stderr: $excerpt"
+    debug_log "simctl 探测第 $attempt 次 stderr: $excerpt"
 }
 
 clean_dev_mobile() {
@@ -2150,14 +2150,14 @@ clean_dev_mobile() {
     if command -v xcrun > /dev/null 2>&1; then
         _resolve_simctl_developer_dir || true
         if [[ "$_MOLE_SIMCTL_RESOLUTION_STATUS" == "ambiguous" ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · multiple Xcode apps found; set DEVELOPER_DIR"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · 发现多个 Xcode 应用;请设置 DEVELOPER_DIR"
             note_activity
         elif [[ "$_MOLE_SIMCTL_RESOLUTION_STATUS" == "explicit-invalid" ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · DEVELOPER_DIR has no simctl"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · DEVELOPER_DIR 中没有 simctl"
             note_activity
         elif [[ "$_MOLE_SIMCTL_RESOLUTION_STATUS" == "ready" ]]; then
-            debug_log "Checking for unavailable Xcode simulators"
-            debug_log "Resolved simctl DEVELOPER_DIR: $_MOLE_SIMCTL_DEVELOPER_DIR"
+            debug_log "正在检查不可用的 Xcode 模拟器"
+            debug_log "已解析的 simctl DEVELOPER_DIR: $_MOLE_SIMCTL_DEVELOPER_DIR"
             local unavailable_before=0
             local unavailable_after=0
             local removed_unavailable=0
@@ -2183,7 +2183,7 @@ clean_dev_mobile() {
             if [[ -n "$simctl_probe_stderr_file" ]]; then
                 simctl_probe_stderr_target="$simctl_probe_stderr_file"
             else
-                debug_log "Unable to create simctl probe stderr capture file"
+                debug_log "无法创建 simctl 探测 stderr 捕获文件"
             fi
 
             if _run_simctl "$MOLE_TIMEOUT_MEDIUM_PROBE_SEC" list devices > /dev/null 2> "$simctl_probe_stderr_target"; then
@@ -2197,14 +2197,14 @@ clean_dev_mobile() {
                 if _run_simctl 8 list devices > /dev/null 2> "$simctl_probe_stderr_target"; then # 8s: simctl retry after warmup, see lib/core/timeouts.sh
                     simctl_probe_ok=true
                     simctl_probe_retry_status=0
-                    debug_log "simctl probe succeeded on retry (CoreSimulatorService warmup)"
+                    debug_log "simctl 探测重试成功 (CoreSimulatorService 预热)"
                 else
                     simctl_probe_retry_status=$?
                 fi
                 if [[ -n "$simctl_probe_stderr_file" ]]; then
                     simctl_probe_retry_stderr=$(< "$simctl_probe_stderr_file")
                 fi
-                debug_log "simctl probe statuses: first=$simctl_probe_first_status retry=$simctl_probe_retry_status"
+                debug_log "simctl 探测状态: 首次=$simctl_probe_first_status 重试=$simctl_probe_retry_status"
                 _debug_simctl_probe_stderr "first" "$simctl_probe_first_stderr"
                 _debug_simctl_probe_stderr "retry" "$simctl_probe_retry_stderr"
             fi
@@ -2213,13 +2213,13 @@ clean_dev_mobile() {
             fi
             if [[ "$simctl_probe_ok" != "true" ]]; then
                 if [[ $simctl_probe_first_status -eq 124 && $simctl_probe_retry_status -eq 124 ]]; then
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · simctl probe timed out"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · simctl 探测超时"
                 else
                     local simctl_probe_exit_code=$simctl_probe_retry_status
                     if [[ $simctl_probe_exit_code -eq 124 ]]; then
                         simctl_probe_exit_code=$simctl_probe_first_status
                     fi
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · simctl probe failed (exit=${simctl_probe_exit_code})"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · simctl 探测失败(退出码=${simctl_probe_exit_code})"
                 fi
                 note_activity
                 simctl_available=false
@@ -2230,8 +2230,8 @@ clean_dev_mobile() {
                 local unavailable_list_exit_code=0
                 unavailable_devices_output=$(_run_simctl "$MOLE_TIMEOUT_PKG_LIST_SEC" list devices unavailable 2> /dev/null) || unavailable_list_exit_code=$?
                 if [[ $unavailable_list_exit_code -ne 0 ]]; then
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · simctl list failed (exit=${unavailable_list_exit_code})"
-                    debug_log "simctl list devices unavailable returned $unavailable_list_exit_code"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · simctl 列表获取失败(退出码=${unavailable_list_exit_code})"
+                    debug_log "simctl list devices unavailable 返回 $unavailable_list_exit_code"
                     note_activity
                     simctl_available=false
                 fi
@@ -2278,17 +2278,17 @@ clean_dev_mobile() {
                                 record_dry_run_cleanup_target "$unavailable_path" "$unavailable_path_size_kb" 1 true || true
                             fi
                         done
-                        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Xcode unavailable simulators · would clean ${unavailable_before}, ${unavailable_size_human}"
+                        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Xcode 不可用模拟器 · 将清理 ${unavailable_before} 个,${unavailable_size_human}"
                         note_activity
                     else
-                        debug_log "Xcode unavailable simulators already clean"
+                        debug_log "Xcode 不可用模拟器已经很干净"
                     fi
                 else
                     # Skip if no unavailable simulators
                     if ((unavailable_before == 0)); then
-                        debug_log "Xcode unavailable simulators already clean"
+                        debug_log "Xcode 不可用模拟器已经很干净"
                     else
-                        start_section_spinner "Checking unavailable simulators..."
+                        start_section_spinner "正在检查不可用模拟器..."
 
                         # Capture error output for diagnostics
                         local delete_output
@@ -2300,8 +2300,8 @@ clean_dev_mobile() {
                             local recount_exit_code=0
                             unavailable_devices_output=$(_run_simctl "$MOLE_TIMEOUT_PKG_LIST_SEC" list devices unavailable 2> /dev/null) || recount_exit_code=$?
                             if [[ $recount_exit_code -ne 0 ]]; then
-                                echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode unavailable simulators · cleanup completed, unable to verify remaining devices"
-                                debug_log "simctl recount returned $recount_exit_code"
+                                echo -e "  ${YELLOW}${ICON_WARNING}${NC} Xcode 不可用模拟器 · 清理完成,但无法验证剩余设备"
+                                debug_log "simctl 重新计数返回 $recount_exit_code"
                             else
                                 unavailable_after=$(printf '%s\n' "$unavailable_devices_output" | command awk '/\(unavailable/ { count++ } END { print count+0 }')
                                 [[ "$unavailable_after" =~ ^[0-9]+$ ]] || unavailable_after=0
@@ -2314,9 +2314,9 @@ clean_dev_mobile() {
                                 local line_color
                                 line_color=$(cleanup_result_color_kb "$unavailable_size_kb")
                                 if ((removed_unavailable > 0)); then
-                                    echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode unavailable simulators · removed ${removed_unavailable}, ${line_color}${unavailable_size_human}${NC}"
+                                    echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode 不可用模拟器 · 已移除 ${removed_unavailable} 个,${line_color}${unavailable_size_human}${NC}"
                                 else
-                                    echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode unavailable simulators · cleanup completed, ${line_color}${unavailable_size_human}${NC}"
+                                    echo -e "  ${line_color}${ICON_SUCCESS}${NC} Xcode 不可用模拟器 · 清理完成,${line_color}${unavailable_size_human}${NC}"
                                 fi
                             fi
                         else
@@ -2325,24 +2325,24 @@ clean_dev_mobile() {
                             # Analyze error and provide helpful message
                             local error_hint=""
                             if echo "$delete_output" | grep -qi "permission denied"; then
-                                error_hint=" (permission denied)"
+                                error_hint=" (权限被拒绝)"
                             elif echo "$delete_output" | grep -qi "in use\|busy"; then
-                                error_hint=" (device in use)"
+                                error_hint=" (设备使用中)"
                             elif echo "$delete_output" | grep -qi "unable to boot\|failed to boot"; then
-                                error_hint=" (boot failure)"
+                                error_hint=" (启动失败)"
                             elif echo "$delete_output" | grep -qi "service"; then
-                                error_hint=" (CoreSimulator service issue)"
+                                error_hint=" (CoreSimulator 服务问题)"
                             fi
 
                             # Native simctl owns simulator state. A nonzero result can
                             # mean the device became active after the list, so never
                             # bypass it with direct directory removal.
                             if [[ $delete_exit_code -eq 124 ]]; then
-                                echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · cleanup timed out"
-                                debug_log "simctl delete unavailable timed out"
+                                echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · 清理超时"
+                                debug_log "simctl delete unavailable 超时"
                             else
-                                echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators cleanup failed${error_hint}"
-                                debug_log "simctl delete error: $delete_output"
+                                echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器清理失败${error_hint}"
+                                debug_log "simctl 删除错误: $delete_output"
                             fi
                         fi
                         note_activity
@@ -2350,7 +2350,7 @@ clean_dev_mobile() {
                 fi # Close if ((unavailable_before == 0))
             fi     # End of simctl_available check
         else
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode unavailable simulators · simctl could not be resolved"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode 不可用模拟器 · 无法解析 simctl"
             note_activity
         fi
     fi
@@ -2363,29 +2363,29 @@ clean_dev_mobile() {
     # Simulator runtime caches.
     _xcode_safe_clean_guarded \
         _coresimulator_delete_guard_allows \
-        "Simulator runtime cache" \
+        "模拟器运行时缓存" \
         ~/Library/Developer/CoreSimulator/Profiles/Runtimes/*/Contents/Resources/RuntimeRoot/System/Library/Caches/* \
-        "Simulator runtime cache" || return 0
-    safe_clean ~/Library/Caches/Google/AndroidStudio*/* "Android Studio cache"
+        "模拟器运行时缓存" || return 0
+    safe_clean ~/Library/Caches/Google/AndroidStudio*/* "Android Studio 缓存"
     # safe_clean ~/Library/Caches/CocoaPods/* "CocoaPods cache"
     # safe_clean ~/.cache/flutter/* "Flutter cache"
-    safe_clean ~/.android/build-cache/* "Android build cache"
-    safe_clean ~/.android/cache/* "Android SDK cache"
+    safe_clean ~/.android/build-cache/* "Android 构建缓存"
+    safe_clean ~/.android/cache/* "Android SDK 缓存"
     _xcode_safe_clean_guarded \
         _xcode_delete_guard_allows \
-        "Xcode Interface Builder cache" \
+        "Xcode Interface Builder 缓存" \
         ~/Library/Developer/Xcode/UserData/IB\ Support/* \
-        "Xcode Interface Builder cache" || return 0
-    safe_clean ~/.cache/swift-package-manager/* "Swift package manager cache"
-    safe_clean ~/Library/Caches/org.swift.swiftpm/* "Swift package manager library cache"
+        "Xcode Interface Builder 缓存" || return 0
+    safe_clean ~/.cache/swift-package-manager/* "Swift 包管理器缓存"
+    safe_clean ~/Library/Caches/org.swift.swiftpm/* "Swift 包管理器库缓存"
     # Expo/React Native caches (preserve state.json which contains auth tokens).
-    safe_clean ~/.expo/expo-go/* "Expo Go cache"
-    safe_clean ~/.expo/android-apk-cache/* "Expo Android APK cache"
-    safe_clean ~/.expo/ios-simulator-app-cache/* "Expo iOS simulator app cache"
-    safe_clean ~/.expo/native-modules-cache/* "Expo native modules cache"
-    safe_clean ~/.expo/schema-cache/* "Expo schema cache"
-    safe_clean ~/.expo/template-cache/* "Expo template cache"
-    safe_clean ~/.expo/versions-cache/* "Expo versions cache"
+    safe_clean ~/.expo/expo-go/* "Expo Go 缓存"
+    safe_clean ~/.expo/android-apk-cache/* "Expo Android APK 缓存"
+    safe_clean ~/.expo/ios-simulator-app-cache/* "Expo iOS 模拟器应用缓存"
+    safe_clean ~/.expo/native-modules-cache/* "Expo 原生模块缓存"
+    safe_clean ~/.expo/schema-cache/* "Expo 模式缓存"
+    safe_clean ~/.expo/template-cache/* "Expo 模板缓存"
+    safe_clean ~/.expo/versions-cache/* "Expo 版本缓存"
 }
 # JVM ecosystem caches.
 # Gradle: Respects whitelist, cleaned when not protected via: mo clean --whitelist
@@ -2396,9 +2396,9 @@ clean_dev_jvm() {
     if declare -f clean_maven_repository > /dev/null 2>&1; then
         clean_maven_repository
     fi
-    safe_clean ~/.sbt/boot/* "SBT boot cache"
-    safe_clean ~/.sbt/launchers/* "SBT launcher cache"
-    safe_clean ~/.ivy2/cache/* "Ivy cache"
+    safe_clean ~/.sbt/boot/* "SBT 启动缓存"
+    safe_clean ~/.sbt/launchers/* "SBT 启动器缓存"
+    safe_clean ~/.ivy2/cache/* "Ivy 缓存"
     if mole_cleanup_targets_exist \
         "$HOME/.gradle/caches/build-cache-"*/* \
         "$HOME/.gradle/notifications"/* \
@@ -2414,24 +2414,24 @@ clean_dev_jvm() {
             _dev_safe_clean_process_guarded \
                 gradle_daemon_running \
                 "Gradle" \
-                "Gradle build cache" \
+                "Gradle 构建缓存" \
                 "$HOME/.gradle/caches/build-cache-"*/* \
-                "Gradle build cache" || return 0
+                "Gradle 构建缓存" || return 0
             _dev_safe_clean_process_guarded \
                 gradle_daemon_running \
                 "Gradle" \
-                "Gradle notifications cache" \
+                "Gradle 通知缓存" \
                 "$HOME/.gradle/notifications"/* \
-                "Gradle notifications cache" || return 0
+                "Gradle 通知缓存" || return 0
             _dev_safe_clean_process_guarded \
                 gradle_daemon_running \
                 "Gradle" \
-                "Gradle daemon/workers" \
+                "Gradle 守护进程/工作进程" \
                 "$HOME/.gradle/daemon"/* \
                 "$HOME/.gradle/workers"/* \
-                "Gradle daemon/workers" || return 0
+                "Gradle 守护进程/工作进程" || return 0
         else
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Gradle targets · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Gradle 目标 · 已跳过(进程状态未知)"
             note_activity
         fi
     fi
@@ -2532,7 +2532,7 @@ clean_dev_jetbrains_toolbox() {
                     idx=$((idx + 1))
                     continue
                 fi
-                safe_clean "$dir_path" "JetBrains Toolbox old IDE version"
+                safe_clean "$dir_path" "JetBrains Toolbox 旧 IDE 版本"
                 note_activity
                 idx=$((idx + 1))
             done
@@ -2545,7 +2545,7 @@ clean_dev_jetbrains_toolbox() {
 # JetBrains IDE logs are safe to rebuild, unlike some cache subtrees that can
 # invalidate IDE indexes and trigger expensive reindexing.
 clean_dev_jetbrains_logs() {
-    safe_clean ~/Library/Logs/JetBrains/* "JetBrains IDE logs"
+    safe_clean ~/Library/Logs/JetBrains/* "JetBrains IDE 日志"
 }
 
 # AI coding agents (Claude Code, Cursor Agent, etc.) auto-update but never
@@ -2773,7 +2773,7 @@ _versioned_agent_delete_guard_allows() {
             "$_MOLE_VERSIONED_AGENT_GUARD_ROOT" \
             "$_MOLE_VERSIONED_AGENT_GUARD_ACTIVE_SYMLINK" || active_status=$?
         if [[ $active_status -eq 124 || $active_status -ge 128 ]]; then
-            _MOLE_CLEAN_GUARD_REASON="inventory interrupted"
+            _MOLE_CLEAN_GUARD_REASON="清单被中断"
             return "$active_status"
         fi
         if [[ $active_status -eq 0 ]]; then
@@ -2781,10 +2781,10 @@ _versioned_agent_delete_guard_allows() {
         elif [[ $active_status -eq 1 && "$_MOLE_VERSIONED_AGENT_GUARD_ACTIVE_REQUIRED" != "true" ]]; then
             : # This agent currently has no active launcher symlink to preserve.
         elif [[ $active_status -eq 1 ]]; then
-            _MOLE_CLEAN_GUARD_REASON="active version changed"
+            _MOLE_CLEAN_GUARD_REASON="活动版本已更改"
             return 1
         else
-            _MOLE_CLEAN_GUARD_REASON="active version unknown"
+            _MOLE_CLEAN_GUARD_REASON="活动版本未知"
             return "$active_status"
         fi
     fi
@@ -2798,7 +2798,7 @@ _versioned_agent_delete_guard_allows() {
         "$_MOLE_VERSIONED_AGENT_GUARD_KEEP" \
         "$active_path" || plan_rc=$?
     if [[ $plan_rc -ne 0 ]]; then
-        _MOLE_CLEAN_GUARD_REASON="inventory unknown"
+        _MOLE_CLEAN_GUARD_REASON="清单未知"
         [[ $plan_rc -eq 124 || $plan_rc -ge 128 ]] && return "$plan_rc"
         return 1
     fi
@@ -2810,20 +2810,20 @@ _versioned_agent_delete_guard_allows() {
             "$_MOLE_VERSIONED_AGENT_GUARD_ROOT" \
             "$_MOLE_VERSIONED_AGENT_GUARD_ACTIVE_SYMLINK" || verified_active_status=$?
         if [[ $verified_active_status -eq 124 || $verified_active_status -ge 128 ]]; then
-            _MOLE_CLEAN_GUARD_REASON="inventory interrupted"
+            _MOLE_CLEAN_GUARD_REASON="清单被中断"
             return "$verified_active_status"
         fi
         [[ $verified_active_status -ne 0 ]] || verified_active_path="$_MOLE_VERSIONED_AGENT_ACTIVE_PATH"
         if [[ $verified_active_status -ne 0 && $verified_active_status -ne 1 ]]; then
-            _MOLE_CLEAN_GUARD_REASON="active version unknown"
+            _MOLE_CLEAN_GUARD_REASON="活动版本未知"
             return "$verified_active_status"
         fi
         if [[ $verified_active_status -eq 1 && "$_MOLE_VERSIONED_AGENT_GUARD_ACTIVE_REQUIRED" == "true" ]]; then
-            _MOLE_CLEAN_GUARD_REASON="active version changed"
+            _MOLE_CLEAN_GUARD_REASON="活动版本已更改"
             return 1
         fi
         if [[ $verified_active_status -ne $active_status || "$verified_active_path" != "$active_path" ]]; then
-            _MOLE_CLEAN_GUARD_REASON="active version changed"
+            _MOLE_CLEAN_GUARD_REASON="活动版本已更改"
             return 1
         fi
     fi
@@ -2835,13 +2835,13 @@ _versioned_agent_delete_guard_allows() {
         done
     fi
 
-    _MOLE_CLEAN_GUARD_REASON="retention changed"
+    _MOLE_CLEAN_GUARD_REASON="保留策略已更改"
     return 1
 }
 
 _report_versioned_agent_guard_stop() {
     local label="$1"
-    echo -e "  ${GRAY}${ICON_WARNING}${NC} ${label} · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+    echo -e "  ${GRAY}${ICON_WARNING}${NC} ${label} · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
     note_activity
 }
 
@@ -2856,7 +2856,7 @@ clean_versioned_agent_root() {
     _plan_versioned_agent_cleanup_targets \
         "$versions_root" "$keep_previous" "$active_path" || plan_rc=$?
     if [[ $plan_rc -ne 0 ]]; then
-        _MOLE_CLEAN_GUARD_REASON="inventory unknown"
+        _MOLE_CLEAN_GUARD_REASON="清单未知"
         [[ $plan_rc -eq 124 || $plan_rc -ge 128 ]] && return "$plan_rc"
         _report_versioned_agent_guard_stop "$label"
         return "$plan_rc"
@@ -2868,7 +2868,7 @@ clean_versioned_agent_root() {
     _MOLE_VERSIONED_AGENT_GUARD_ACTIVE_REQUIRED=false
     [[ -n "$active_path" ]] && _MOLE_VERSIONED_AGENT_GUARD_ACTIVE_REQUIRED=true
     _MOLE_VERSIONED_AGENT_GUARD_KEEP="$keep_previous"
-    _MOLE_CLEAN_GUARD_REASON="retention changed"
+    _MOLE_CLEAN_GUARD_REASON="保留策略已更改"
 
     if declare -f safe_clean_guarded > /dev/null 2>&1; then
         local guarded_rc=0
@@ -2969,7 +2969,7 @@ _MOLE_CLEAN_GUARD_REASON=""
 
 _claude_desktop_delete_guard_allows() {
     local target="${1:-}"
-    mole_clean_process_guard claude_desktop_running "Claude Desktop started" || return 1
+    mole_clean_process_guard claude_desktop_running "Claude Desktop 已启动" || return 1
 
     local current_sdk=""
     current_sdk=$(claude_desktop_sdk_version "$_MOLE_CLAUDE_DESKTOP_GUARD_SUPPORT" || true)
@@ -2985,7 +2985,7 @@ _claude_desktop_delete_guard_allows() {
         [[ -n "$active_root" ]] || continue
         active_entry="$active_root/$current_sdk"
         if [[ -L "$active_entry" || (! -f "$active_entry" && ! -d "$active_entry") ]]; then
-            _MOLE_CLEAN_GUARD_REASON="active version changed"
+            _MOLE_CLEAN_GUARD_REASON="活动版本已更改"
             return 1
         fi
     done
@@ -2998,7 +2998,7 @@ _claude_desktop_delete_guard_allows() {
         "$_MOLE_CLAUDE_DESKTOP_GUARD_KEEP" \
         "$_MOLE_CLAUDE_DESKTOP_GUARD_VERSIONS_ROOT/$current_sdk" || plan_rc=$?
     if [[ $plan_rc -ne 0 ]]; then
-        _MOLE_CLEAN_GUARD_REASON="inventory unknown"
+        _MOLE_CLEAN_GUARD_REASON="清单未知"
         [[ $plan_rc -eq 124 || $plan_rc -ge 128 ]] && return "$plan_rc"
         return 1
     fi
@@ -3018,7 +3018,7 @@ _claude_desktop_delete_guard_allows() {
         [[ -n "$active_root" ]] || continue
         active_entry="$active_root/$verified_sdk"
         if [[ -L "$active_entry" || (! -f "$active_entry" && ! -d "$active_entry") ]]; then
-            _MOLE_CLEAN_GUARD_REASON="active version changed"
+            _MOLE_CLEAN_GUARD_REASON="活动版本已更改"
             return 1
         fi
     done
@@ -3030,14 +3030,14 @@ _claude_desktop_delete_guard_allows() {
         done
     fi
 
-    _MOLE_CLEAN_GUARD_REASON="retention changed"
+    _MOLE_CLEAN_GUARD_REASON="保留策略已更改"
     return 1
 }
 
 _claude_desktop_safe_clean_guarded() {
     local display_name="$1"
     shift
-    _MOLE_CLEAN_GUARD_REASON="process state changed"
+    _MOLE_CLEAN_GUARD_REASON="进程状态已更改"
 
     if ! declare -f safe_clean_guarded > /dev/null 2>&1; then
         local -a cleanup_args=("$@")
@@ -3051,10 +3051,10 @@ _claude_desktop_safe_clean_guarded() {
             _claude_desktop_delete_guard_allows "$target" || guard_rc=$?
             if [[ $guard_rc -ne 0 ]]; then
                 [[ $guard_rc -eq 124 || $guard_rc -ge 128 ]] && return "$guard_rc"
-                if [[ "$_MOLE_CLEAN_GUARD_REASON" == "Claude Desktop started" ]]; then
+                if [[ "$_MOLE_CLEAN_GUARD_REASON" == "Claude Desktop 已启动" ]]; then
                     mole_defer_cleanup_family "Claude Desktop"
                 else
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
                     note_activity
                 fi
                 return 1
@@ -3067,7 +3067,7 @@ _claude_desktop_safe_clean_guarded() {
     local guarded_rc=0
     safe_clean_guarded _claude_desktop_delete_guard_allows "$@" || guarded_rc=$?
     if [[ $guarded_rc -eq 75 ]]; then
-        if [[ "$_MOLE_CLEAN_GUARD_REASON" == "Claude Desktop started" ]]; then
+        if [[ "$_MOLE_CLEAN_GUARD_REASON" == "Claude Desktop 已启动" ]]; then
             mole_defer_cleanup_family "Claude Desktop"
         else
             echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${_MOLE_CLEAN_GUARD_REASON})"
@@ -3090,8 +3090,8 @@ clean_claude_desktop_bundled_versions() {
     _MOLE_CLAUDE_DESKTOP_GUARD_VM_ROOT=""
 
     local -a desktop_specs=(
-        "$claude_support/claude-code|Claude Desktop bundled Claude Code old version"
-        "$claude_support/claude-code-vm|Claude Desktop bundled Claude Code VM old version"
+        "$claude_support/claude-code|Claude Desktop 内置 Claude Code 旧版本"
+        "$claude_support/claude-code-vm|Claude Desktop 内置 Claude Code VM 旧版本"
     )
 
     local has_multiple_versions=false
@@ -3117,7 +3117,7 @@ clean_claude_desktop_bundled_versions() {
     sdk_version=$(claude_desktop_sdk_version "$claude_support" || true)
     if [[ -z "$sdk_version" ]]; then
         note_activity
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Claude Desktop bundled Claude Code · skipped (active version unknown)"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Claude Desktop 内置 Claude Code · 已跳过(活动版本未知)"
         return 0
     fi
 
@@ -3129,7 +3129,7 @@ clean_claude_desktop_bundled_versions() {
         local active_entry="$versions_root/$sdk_version"
         if [[ -L "$active_entry" || (! -f "$active_entry" && ! -d "$active_entry") ]]; then
             note_activity
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · skipped (active version unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · 已跳过(活动版本未知)"
             return 0
         fi
     done
@@ -3188,7 +3188,7 @@ clean_claude_desktop_bundled_versions() {
     claude_desktop_running || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Claude Desktop bundled Claude Code · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Claude Desktop 内置 Claude Code · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Claude Desktop"
@@ -3232,9 +3232,9 @@ clean_dev_ai_agents() {
     [[ "$keep_previous" =~ ^[0-9]+$ ]] || keep_previous=1
 
     local -a agent_specs=(
-        "$HOME/.local/share/claude/versions|Claude Code old version|$HOME/.local/bin/claude"
-        "$HOME/.local/share/cursor-agent/versions|Cursor Agent old version|$HOME/.local/bin/cursor-agent"
-        "$HOME/.copilot/pkg/universal|GitHub Copilot CLI old version|$HOME/.local/bin/copilot"
+        "$HOME/.local/share/claude/versions|Claude Code 旧版本|$HOME/.local/bin/claude"
+        "$HOME/.local/share/cursor-agent/versions|Cursor Agent 旧版本|$HOME/.local/bin/cursor-agent"
+        "$HOME/.copilot/pkg/universal|GitHub Copilot CLI 旧版本|$HOME/.local/bin/copilot"
     )
 
     local spec
@@ -3253,16 +3253,16 @@ clean_dev_ai_agents() {
             if [[ $active_status -ne 0 ]]; then
                 [[ $active_status -eq 124 || $active_status -ge 128 ]] && return "$active_status"
                 if [[ ! -e "$active_symlink" ]]; then
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · skipped (active symlink broken)"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · 已跳过(活动符号链接损坏)"
                 else
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · skipped (active version unknown)"
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · 已跳过(活动版本未知)"
                 fi
                 note_activity
                 continue
             fi
             active_path="$_MOLE_VERSIONED_AGENT_ACTIVE_PATH"
             if [[ -z "$active_path" ]]; then
-                echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · skipped (active symlink broken)"
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} $label · 已跳过(活动符号链接损坏)"
                 note_activity
                 continue
             fi
@@ -3277,42 +3277,42 @@ clean_dev_ai_agents() {
 
 # Other language tool caches.
 clean_dev_other_langs() {
-    safe_clean ~/.composer/cache/* "PHP Composer cache (legacy)"
-    safe_clean ~/Library/Caches/composer/* "PHP Composer cache"
-    safe_clean ~/.nuget/packages/* "NuGet packages cache"
+    safe_clean ~/.composer/cache/* "PHP Composer 缓存(旧版)"
+    safe_clean ~/Library/Caches/composer/* "PHP Composer 缓存"
+    safe_clean ~/.nuget/packages/* "NuGet 包缓存"
     # safe_clean ~/.pub-cache/* "Dart Pub cache"
-    safe_clean ~/.cache/bazel/* "Bazel cache"
-    safe_clean ~/.cache/zig/* "Zig cache"
-    safe_clean ~/Library/Caches/deno/* "Deno cache"
+    safe_clean ~/.cache/bazel/* "Bazel 缓存"
+    safe_clean ~/.cache/zig/* "Zig 缓存"
+    safe_clean ~/Library/Caches/deno/* "Deno 缓存"
 }
 # CI/CD and DevOps caches.
 clean_dev_cicd() {
-    safe_clean ~/.cache/terraform/* "Terraform cache"
-    safe_clean ~/.grafana/cache/* "Grafana cache"
-    safe_clean ~/.prometheus/data/wal/* "Prometheus WAL cache"
-    safe_clean ~/.jenkins/workspace/*/target/* "Jenkins workspace cache"
-    safe_clean ~/.cache/gitlab-runner/* "GitLab Runner cache"
-    safe_clean ~/.github/cache/* "GitHub Actions cache"
-    safe_clean ~/.circleci/cache/* "CircleCI cache"
-    safe_clean ~/.sonar/* "SonarQube cache"
+    safe_clean ~/.cache/terraform/* "Terraform 缓存"
+    safe_clean ~/.grafana/cache/* "Grafana 缓存"
+    safe_clean ~/.prometheus/data/wal/* "Prometheus WAL 缓存"
+    safe_clean ~/.jenkins/workspace/*/target/* "Jenkins 工作区缓存"
+    safe_clean ~/.cache/gitlab-runner/* "GitLab Runner 缓存"
+    safe_clean ~/.github/cache/* "GitHub Actions 缓存"
+    safe_clean ~/.circleci/cache/* "CircleCI 缓存"
+    safe_clean ~/.sonar/* "SonarQube 缓存"
 }
 # Database tool caches.
 clean_dev_database() {
-    safe_clean ~/Library/Caches/com.sequel-ace.sequel-ace/* "Sequel Ace cache"
-    safe_clean ~/Library/Caches/com.eggerapps.Sequel-Pro/* "Sequel Pro cache"
-    safe_clean ~/Library/Caches/redis-desktop-manager/* "Redis Desktop Manager cache"
-    safe_clean ~/Library/Caches/com.navicat.* "Navicat cache"
-    safe_clean ~/Library/Caches/com.dbeaver.* "DBeaver cache"
-    safe_clean ~/Library/Caches/com.redis.RedisInsight "Redis Insight cache"
+    safe_clean ~/Library/Caches/com.sequel-ace.sequel-ace/* "Sequel Ace 缓存"
+    safe_clean ~/Library/Caches/com.eggerapps.Sequel-Pro/* "Sequel Pro 缓存"
+    safe_clean ~/Library/Caches/redis-desktop-manager/* "Redis Desktop Manager 缓存"
+    safe_clean ~/Library/Caches/com.navicat.* "Navicat 缓存"
+    safe_clean ~/Library/Caches/com.dbeaver.* "DBeaver 缓存"
+    safe_clean ~/Library/Caches/com.redis.RedisInsight "Redis Insight 缓存"
 }
 # API/debugging tool caches.
 clean_dev_api_tools() {
-    safe_clean ~/Library/Caches/com.postmanlabs.mac/* "Postman cache"
-    safe_clean ~/Library/Caches/com.konghq.insomnia/* "Insomnia cache"
-    safe_clean ~/Library/Caches/com.tinyapp.TablePlus/* "TablePlus cache"
-    safe_clean ~/Library/Caches/com.getpaw.Paw/* "Paw API cache"
-    safe_clean ~/Library/Caches/com.charlesproxy.charles/* "Charles Proxy cache"
-    safe_clean ~/Library/Caches/com.proxyman.NSProxy/* "Proxyman cache"
+    safe_clean ~/Library/Caches/com.postmanlabs.mac/* "Postman 缓存"
+    safe_clean ~/Library/Caches/com.konghq.insomnia/* "Insomnia 缓存"
+    safe_clean ~/Library/Caches/com.tinyapp.TablePlus/* "TablePlus 缓存"
+    safe_clean ~/Library/Caches/com.getpaw.Paw/* "Paw API 缓存"
+    safe_clean ~/Library/Caches/com.charlesproxy.charles/* "Charles Proxy 缓存"
+    safe_clean ~/Library/Caches/com.proxyman.NSProxy/* "Proxyman 缓存"
 }
 
 codex_desktop_process_state() {
@@ -3399,7 +3399,7 @@ codex_desktop_cache_physical_path() {
 }
 
 _codex_desktop_cache_delete_guard_allows() {
-    mole_clean_process_guard codex_desktop_process_state "Codex started"
+    mole_clean_process_guard codex_desktop_process_state "Codex 已启动"
 }
 
 _codex_desktop_safe_clean_guarded() {
@@ -3430,7 +3430,7 @@ clean_codex_desktop_caches() {
     [[ -d "$cache_root" ]] || return 0
 
     if ! codex_desktop_cache_physical_path "$cache_root" > /dev/null; then
-        debug_log "Codex Desktop caches skipped: unsafe cache root"
+        debug_log "Codex Desktop 缓存已跳过:不安全的缓存根目录"
         return 0
     fi
 
@@ -3456,7 +3456,7 @@ clean_codex_desktop_caches() {
                     cleanable_leaf_labels+=("$leaf")
                 fi
             else
-                debug_log "Codex Desktop cache leaf skipped: $profile/$leaf"
+                debug_log "Codex Desktop 缓存叶子已跳过: $profile/$leaf"
             fi
         done
     done
@@ -3466,7 +3466,7 @@ clean_codex_desktop_caches() {
     codex_desktop_process_state || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop caches · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop 缓存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Codex"
@@ -3479,7 +3479,7 @@ clean_codex_desktop_caches() {
         physical_leaf="${cleanable_physical_leaves[$cleanable_index]}"
         leaf="${cleanable_leaf_labels[$cleanable_index]}"
         _codex_desktop_safe_clean_guarded \
-            "Codex Desktop caches" \
+            "Codex Desktop 缓存" \
             "$physical_leaf"/* \
             "Codex Desktop $leaf" || return 0
     done
@@ -3622,7 +3622,7 @@ _codex_staging_delete_guard_allows() {
     _MOLE_CLEAN_GUARD_REASON="staging entry changed"
     _codex_staging_entry_is_still_stale || return 1
 
-    mole_clean_process_guard codex_desktop_process_state "Codex started" || return 1
+    mole_clean_process_guard codex_desktop_process_state "Codex 已启动" || return 1
 
     mole_clean_process_guard codex_sparkle_updater_running "Sparkle updater started" "updater state unknown" || return 1
 
@@ -3657,14 +3657,14 @@ _codex_staging_safe_clean_guarded() {
         if ! _codex_staging_delete_guard_allows; then
             return 75
         fi
-        safe_clean "$stale_entry" "Codex Desktop stale update staging"
+        safe_clean "$stale_entry" "Codex Desktop 过期更新暂存"
         return $?
     fi
 
     safe_clean_guarded \
         _codex_staging_delete_guard_allows \
         "$stale_entry" \
-        "Codex Desktop stale update staging"
+        "Codex Desktop 过期更新暂存"
 }
 
 # Installed Codex Desktop build number, or failure. Two sources, per the
@@ -3756,7 +3756,7 @@ clean_codex_desktop_staging() {
     local staging_root="$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle/Installation"
     [[ -d "$staging_root" ]] || return 0
     if ! codex_sparkle_staging_physical_path "$staging_root" > /dev/null; then
-        debug_log "Codex Desktop staging skipped: unsafe staging root"
+        debug_log "Codex Desktop 暂存已跳过:不安全的暂存根目录"
         return 0
     fi
 
@@ -3800,9 +3800,9 @@ clean_codex_desktop_staging() {
 
     if is_path_whitelisted "$staging_root"; then
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex Desktop update staging · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex Desktop 更新暂存 · 将跳过(白名单)"
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex Desktop update staging · skipped (whitelist)"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex Desktop 更新暂存 · 已跳过(白名单)"
         fi
         note_activity
         return 0
@@ -3812,7 +3812,7 @@ clean_codex_desktop_staging() {
     codex_desktop_process_state || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop update staging · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop 更新暂存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Codex"
@@ -3824,7 +3824,7 @@ clean_codex_desktop_staging() {
     codex_sparkle_updater_running || updater_state=$?
     if [[ $updater_state -ne 1 ]]; then
         if [[ $updater_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop update staging · skipped (updater state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop 更新暂存 · 已跳过(更新程序状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Codex"
@@ -3840,7 +3840,7 @@ clean_codex_desktop_staging() {
         open_file_state=$?
     fi
     if [[ "$open_file_state" -eq 2 ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop update staging · skipped (open-file check unavailable)"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop 更新暂存 · 已跳过(无法检查打开的文件)"
         note_activity
         return 0
     fi
@@ -3853,12 +3853,12 @@ clean_codex_desktop_staging() {
         stale_entry_idx=$((stale_entry_idx + 1))
         if [[ $guarded_rc -eq 75 ]]; then
             case "$_MOLE_CLEAN_GUARD_REASON" in
-                "process state unknown" | "updater state unknown" | "open-file check unavailable")
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop update staging · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+                "进程状态未知" | "更新程序状态未知" | "无法检查打开的文件")
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex Desktop 更新暂存 · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
                     note_activity
                     ;;
-                "staging entry changed")
-                    debug_log "Codex Desktop staging entry changed before cleanup: $stale_entry"
+                "暂存项已更改")
+                    debug_log "清理前 Codex Desktop 暂存项已更改: $stale_entry"
                     ;;
                 *) mole_defer_cleanup_family "Codex" ;;
             esac
@@ -3928,7 +3928,7 @@ _codex_runtime_size_human() {
 }
 
 _codex_runtime_delete_guard_allows() {
-    mole_clean_process_guard codex_runtime_process_state "Codex started" || return 1
+    mole_clean_process_guard codex_runtime_process_state "Codex 已启动" || return 1
 
     if is_codex_runtime_active "$_MOLE_CODEX_RUNTIME_GUARD_PATH" ||
         ! is_codex_runtime_stale "$_MOLE_CODEX_RUNTIME_GUARD_PATH"; then
@@ -3941,7 +3941,7 @@ _codex_runtime_delete_guard_allows() {
 _codex_runtime_safe_clean_guarded() {
     local runtime_dir="$1"
     local _MOLE_CODEX_RUNTIME_GUARD_PATH="$runtime_dir"
-    local _MOLE_CLEAN_GUARD_REASON="Codex started"
+    local _MOLE_CLEAN_GUARD_REASON="Codex 已启动"
     local guarded_rc=0
 
     if ! declare -f safe_clean_guarded > /dev/null 2>&1; then
@@ -3959,10 +3959,10 @@ _codex_runtime_safe_clean_guarded() {
     fi
 
     if [[ $guarded_rc -eq 75 ]]; then
-        if [[ "$_MOLE_CLEAN_GUARD_REASON" == "Codex started" ]]; then
+        if [[ "$_MOLE_CLEAN_GUARD_REASON" == "Codex 已启动" ]]; then
             mole_defer_cleanup_family "Codex"
         else
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex runtimes · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex 运行时 · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
             note_activity
         fi
         return 1
@@ -3976,10 +3976,10 @@ clean_codex_runtimes() {
 
     if declare -f is_path_whitelisted > /dev/null 2>&1 && is_path_whitelisted "$runtime_root"; then
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex runtimes · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex 运行时 · 将跳过(白名单)"
             note_activity
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex runtimes · skipped (whitelist)"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex 运行时 · 已跳过(白名单)"
         fi
         note_activity
         return 0
@@ -4002,7 +4002,7 @@ clean_codex_runtimes() {
         if [[ "$has_stale_runtime" != "true" ]]; then
             return 0
         elif [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex runtimes · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex 运行时 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Codex"
@@ -4012,30 +4012,30 @@ clean_codex_runtimes() {
 
     local size_human=""
     _codex_runtime_size_human "$runtime_root" size_human || return $?
-    echo -e "  ${GRAY}${ICON_REVIEW}${NC} Codex runtimes · manual review (${size_human})"
+    echo -e "  ${GRAY}${ICON_REVIEW}${NC} Codex 运行时 · 需手动检查(${size_human})"
     note_activity
 
     while IFS= read -r -d '' runtime_dir; do
         if declare -f is_path_whitelisted > /dev/null 2>&1 && is_path_whitelisted "$runtime_dir"; then
             if [[ "${DRY_RUN:-false}" == "true" ]]; then
-                echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex runtimes · would skip (whitelist)"
+                echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex 运行时 · 将跳过(白名单)"
                 note_activity
             else
-                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex runtimes · skipped (whitelist)"
+                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex 运行时 · 已跳过(白名单)"
             fi
             note_activity
             continue
         fi
 
         if is_codex_runtime_active "$runtime_dir"; then
-            debug_log "Codex runtime left for manual review: $runtime_dir"
+            debug_log "Codex 运行时留待手动处理: $runtime_dir"
             continue
         fi
 
         if is_codex_runtime_stale "$runtime_dir"; then
             _codex_runtime_safe_clean_guarded "$runtime_dir" || return 0
         else
-            debug_log "Codex runtime left for manual review: $runtime_dir"
+            debug_log "Codex 运行时留待手动处理: $runtime_dir"
         fi
     done < <(command find "$runtime_root" -mindepth 1 -maxdepth 1 -type d -print0 2> /dev/null)
 }
@@ -4046,7 +4046,7 @@ clean_codex_cli() {
     local codex_root="$HOME/.codex"
     [[ -d "$codex_root" ]] || return 0
 
-    debug_log "Codex CLI state left intact by default: $codex_root"
+    debug_log "Codex CLI 状态默认保持不变: $codex_root"
 }
 
 _MOLE_CODEX_MARKETPLACE_STAGING_ROOT=""
@@ -4075,14 +4075,14 @@ _codex_marketplace_staging_entry_is_still_stale() {
 
 _codex_marketplace_staging_delete_guard_allows() {
     _codex_marketplace_staging_entry_is_still_stale || return 1
-    mole_clean_process_guard codex_runtime_process_state "Codex started" || return 1
+    mole_clean_process_guard codex_runtime_process_state "Codex 已启动" || return 1
     if codex_sparkle_staging_has_open_files "$_MOLE_CODEX_MARKETPLACE_STAGING_ROOT"; then
-        _MOLE_CLEAN_GUARD_REASON="open files"
+        _MOLE_CLEAN_GUARD_REASON="文件被打开"
         return 1
     else
         local open_file_state=$?
         if [[ "$open_file_state" -eq 2 ]]; then
-            _MOLE_CLEAN_GUARD_REASON="open-file check unavailable"
+            _MOLE_CLEAN_GUARD_REASON="无法检查打开的文件"
             return 1
         fi
     fi
@@ -4096,7 +4096,7 @@ _codex_marketplace_staging_safe_clean_guarded() {
     local display_name="$3"
     _MOLE_CODEX_MARKETPLACE_STAGING_ROOT="$staging_root"
     _MOLE_CODEX_MARKETPLACE_STAGING_ENTRY="$stale_entry"
-    local _MOLE_CLEAN_GUARD_REASON="staging entry changed"
+    local _MOLE_CLEAN_GUARD_REASON="暂存项已更改"
 
     # No engine-absent fallback here on purpose: a second, degraded copy of the
     # delete guard is a place the guarded and unguarded verdicts can disagree,
@@ -4132,7 +4132,7 @@ clean_codex_marketplace_staging() {
     for staging_root in "${staging_roots[@]}"; do
         [[ -d "$staging_root" ]] || continue
         if ! codex_staging_physical_path "$staging_root" "$staging_root" > /dev/null; then
-            debug_log "Codex marketplace staging skipped: unsafe root $staging_root"
+            debug_log "Codex 市场暂存已跳过:不安全的根目录 $staging_root"
             continue
         fi
         while IFS= read -r -d '' stale_entry; do
@@ -4165,9 +4165,9 @@ clean_codex_marketplace_staging() {
 
     if is_path_whitelisted "$tmp_root" || is_path_whitelisted "$HOME/.codex"; then
         if [[ "${DRY_RUN:-false}" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex marketplace staging · would skip (whitelist)"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Codex 市场暂存 · 将跳过(白名单)"
         else
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex marketplace staging · skipped (whitelist)"
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Codex 市场暂存 · 已跳过(白名单)"
         fi
         note_activity
         return 0
@@ -4177,7 +4177,7 @@ clean_codex_marketplace_staging() {
     codex_runtime_process_state || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex marketplace staging · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex 市场暂存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Codex"
@@ -4206,7 +4206,7 @@ clean_codex_marketplace_staging() {
             open_file_state=$?
         fi
         if [[ "$open_file_state" -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex marketplace staging · skipped (open-file check unavailable)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex 市场暂存 · 已跳过(无法检查打开的文件)"
             note_activity
             return 0
         fi
@@ -4217,12 +4217,12 @@ clean_codex_marketplace_staging() {
             "Codex marketplace staging" || guarded_rc=$?
         if [[ $guarded_rc -eq 75 ]]; then
             case "${_MOLE_CLEAN_GUARD_REASON:-}" in
-                "process state unknown" | "open-file check unavailable")
-                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex marketplace staging · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+                "进程状态未知" | "无法检查打开的文件")
+                    echo -e "  ${GRAY}${ICON_WARNING}${NC} Codex 市场暂存 · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
                     note_activity
                     ;;
-                "staging entry changed")
-                    debug_log "Codex marketplace staging entry changed before cleanup: $stale_entry"
+                "暂存项已更改")
+                    debug_log "清理前 Codex 市场暂存项已更改: $stale_entry"
                     ;;
                 *) mole_defer_cleanup_family "Codex" ;;
             esac
@@ -4241,24 +4241,24 @@ clean_chromium_default_caches() {
     [[ -d "$profile_root" ]] || return 0
 
     if [[ -z "$running_probe" ]]; then
-        safe_clean "$profile_root/Default/Cache"/* "$label browser cache"
-        safe_clean "$profile_root/Default/Code Cache"/* "$label code cache"
-        safe_clean "$profile_root/Default/GPUCache"/* "$label GPU cache"
-        safe_clean "$profile_root/Default/DawnGraphiteCache"/* "$label Dawn cache"
-        safe_clean "$profile_root/Default/DawnWebGPUCache"/* "$label WebGPU cache"
+        safe_clean "$profile_root/Default/Cache"/* "$label 浏览器缓存"
+        safe_clean "$profile_root/Default/Code Cache"/* "$label 代码缓存"
+        safe_clean "$profile_root/Default/GPUCache"/* "$label GPU 缓存"
+        safe_clean "$profile_root/Default/DawnGraphiteCache"/* "$label Dawn 缓存"
+        safe_clean "$profile_root/Default/DawnWebGPUCache"/* "$label WebGPU 缓存"
         return 0
     fi
 
-    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label browser cache" \
-        "$profile_root/Default/Cache"/* "$label browser cache" || return 1
-    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label code cache" \
-        "$profile_root/Default/Code Cache"/* "$label code cache" || return 1
-    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label GPU cache" \
-        "$profile_root/Default/GPUCache"/* "$label GPU cache" || return 1
-    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label Dawn cache" \
-        "$profile_root/Default/DawnGraphiteCache"/* "$label Dawn cache" || return 1
-    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label WebGPU cache" \
-        "$profile_root/Default/DawnWebGPUCache"/* "$label WebGPU cache" || return 1
+    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label 浏览器缓存" \
+        "$profile_root/Default/Cache"/* "$label 浏览器缓存" || return 1
+    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label 代码缓存" \
+        "$profile_root/Default/Code Cache"/* "$label 代码缓存" || return 1
+    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label GPU 缓存" \
+        "$profile_root/Default/GPUCache"/* "$label GPU 缓存" || return 1
+    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label Dawn 缓存" \
+        "$profile_root/Default/DawnGraphiteCache"/* "$label Dawn 缓存" || return 1
+    _dev_safe_clean_process_guarded "$running_probe" "$family" "$label WebGPU 缓存" \
+        "$profile_root/Default/DawnWebGPUCache"/* "$label WebGPU 缓存" || return 1
 }
 
 # Antigravity (Gemini) keeps a full Chromium profile under
@@ -4283,7 +4283,7 @@ clean_antigravity_caches() {
     antigravity_or_gemini_running || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Antigravity/Gemini caches · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Antigravity/Gemini 缓存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Antigravity/Gemini"
@@ -4297,11 +4297,11 @@ clean_antigravity_caches() {
         antigravity_or_gemini_running \
         "Antigravity/Gemini" || return 0
     _dev_safe_clean_process_guarded antigravity_or_gemini_running "Antigravity/Gemini" \
-        "Antigravity Graphite cache" "$ag_profile/GraphiteDawnCache"/* "Antigravity Graphite cache" || return 0
+        "Antigravity Graphite 缓存" "$ag_profile/GraphiteDawnCache"/* "Antigravity Graphite 缓存" || return 0
     _dev_safe_clean_process_guarded antigravity_or_gemini_running "Antigravity/Gemini" \
-        "Antigravity component cache" "$ag_profile/component_crx_cache"/* "Antigravity component cache" || return 0
+        "Antigravity 组件缓存" "$ag_profile/component_crx_cache"/* "Antigravity 组件缓存" || return 0
     _dev_safe_clean_process_guarded antigravity_or_gemini_running "Antigravity/Gemini" \
-        "Antigravity extension cache" "$ag_profile/extensions_crx_cache"/* "Antigravity extension cache" || return 0
+        "Antigravity 扩展缓存" "$ag_profile/extensions_crx_cache"/* "Antigravity 扩展缓存" || return 0
     _dev_clean_service_worker_process_guarded \
         antigravity_or_gemini_running \
         "Antigravity/Gemini" \
@@ -4334,7 +4334,7 @@ clean_chrome_devtools_mcp_caches() {
     chrome_devtools_mcp_running || process_state=$?
     if [[ $process_state -ne 1 ]]; then
         if [[ $process_state -eq 2 ]]; then
-            echo -e "  ${GRAY}${ICON_WARNING}${NC} Chrome DevTools MCP caches · skipped (process state unknown)"
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} Chrome DevTools MCP 缓存 · 已跳过(进程状态未知)"
             note_activity
         else
             mole_defer_cleanup_family "Chrome DevTools MCP"
@@ -4348,16 +4348,16 @@ clean_chrome_devtools_mcp_caches() {
         chrome_devtools_mcp_running \
         "Chrome DevTools MCP" || return 0
     _dev_safe_clean_process_guarded chrome_devtools_mcp_running "Chrome DevTools MCP" \
-        "Chrome DevTools MCP Dawn cache" "$mcp_profile/Default/DawnCache"/* "Chrome DevTools MCP Dawn cache" || return 0
+        "Chrome DevTools MCP Dawn 缓存" "$mcp_profile/Default/DawnCache"/* "Chrome DevTools MCP Dawn 缓存" || return 0
     _dev_safe_clean_process_guarded chrome_devtools_mcp_running "Chrome DevTools MCP" \
-        "Chrome DevTools MCP shader cache" "$mcp_profile/Default/GrShaderCache"/* "Chrome DevTools MCP shader cache" || return 0
+        "Chrome DevTools MCP 着色器缓存" "$mcp_profile/Default/GrShaderCache"/* "Chrome DevTools MCP 着色器缓存" || return 0
     _dev_safe_clean_process_guarded chrome_devtools_mcp_running "Chrome DevTools MCP" \
-        "Chrome DevTools MCP Graphite cache" "$mcp_profile/Default/GraphiteDawnCache"/* \
-        "$mcp_profile/GraphiteDawnCache"/* "Chrome DevTools MCP Graphite cache" || return 0
+        "Chrome DevTools MCP Graphite 缓存" "$mcp_profile/Default/GraphiteDawnCache"/* \
+        "$mcp_profile/GraphiteDawnCache"/* "Chrome DevTools MCP Graphite 缓存" || return 0
     _dev_safe_clean_process_guarded chrome_devtools_mcp_running "Chrome DevTools MCP" \
-        "Chrome DevTools MCP component cache" "$mcp_profile/component_crx_cache"/* "Chrome DevTools MCP component cache" || return 0
+        "Chrome DevTools MCP 组件缓存" "$mcp_profile/component_crx_cache"/* "Chrome DevTools MCP 组件缓存" || return 0
     _dev_safe_clean_process_guarded chrome_devtools_mcp_running "Chrome DevTools MCP" \
-        "Chrome DevTools MCP extension cache" "$mcp_profile/extensions_crx_cache"/* "Chrome DevTools MCP extension cache" || return 0
+        "Chrome DevTools MCP 扩展缓存" "$mcp_profile/extensions_crx_cache"/* "Chrome DevTools MCP 扩展缓存" || return 0
 
     if declare -f clean_service_worker_cache > /dev/null 2>&1; then
         _dev_clean_service_worker_process_guarded \
@@ -4371,54 +4371,54 @@ clean_chrome_devtools_mcp_caches() {
 
 # Misc dev tool caches.
 clean_dev_misc() {
-    safe_clean ~/Library/Caches/com.unity3d.*/* "Unity cache"
-    safe_clean ~/Library/Caches/com.mongodb.compass/* "MongoDB Compass cache"
-    safe_clean ~/Library/Caches/com.figma.Desktop/* "Figma cache"
-    safe_clean ~/Library/Caches/com.github.GitHubDesktop/* "GitHub Desktop cache"
-    safe_clean ~/Library/Caches/SentryCrash/* "Sentry crash reports"
-    safe_clean ~/Library/Caches/KSCrash/* "KSCrash reports"
-    safe_clean ~/Library/Caches/com.crashlytics.data/* "Crashlytics data"
+    safe_clean ~/Library/Caches/com.unity3d.*/* "Unity 缓存"
+    safe_clean ~/Library/Caches/com.mongodb.compass/* "MongoDB Compass 缓存"
+    safe_clean ~/Library/Caches/com.figma.Desktop/* "Figma 缓存"
+    safe_clean ~/Library/Caches/com.github.GitHubDesktop/* "GitHub Desktop 缓存"
+    safe_clean ~/Library/Caches/SentryCrash/* "Sentry 崩溃报告"
+    safe_clean ~/Library/Caches/KSCrash/* "KSCrash 报告"
+    safe_clean ~/Library/Caches/com.crashlytics.data/* "Crashlytics 数据"
     if [[ -d ~/Library/Application\ Support/Antigravity ]]; then
-        safe_clean ~/Library/Application\ Support/Antigravity/Cache/* "Antigravity cache"
-        safe_clean ~/Library/Application\ Support/Antigravity/Code\ Cache/* "Antigravity code cache"
-        safe_clean ~/Library/Application\ Support/Antigravity/GPUCache/* "Antigravity GPU cache"
-        safe_clean ~/Library/Application\ Support/Antigravity/DawnGraphiteCache/* "Antigravity Dawn cache"
-        safe_clean ~/Library/Application\ Support/Antigravity/DawnWebGPUCache/* "Antigravity WebGPU cache"
+        safe_clean ~/Library/Application\ Support/Antigravity/Cache/* "Antigravity 缓存"
+        safe_clean ~/Library/Application\ Support/Antigravity/Code\ Cache/* "Antigravity 代码缓存"
+        safe_clean ~/Library/Application\ Support/Antigravity/GPUCache/* "Antigravity GPU 缓存"
+        safe_clean ~/Library/Application\ Support/Antigravity/DawnGraphiteCache/* "Antigravity Dawn 缓存"
+        safe_clean ~/Library/Application\ Support/Antigravity/DawnWebGPUCache/* "Antigravity WebGPU 缓存"
     fi
     # Antigravity browser profile caches (~/.gemini)
     clean_antigravity_caches
     # Filo (Electron)
     if [[ -d ~/Library/Application\ Support/Filo ]]; then
-        safe_clean ~/Library/Application\ Support/Filo/production/Cache/* "Filo cache"
-        safe_clean ~/Library/Application\ Support/Filo/production/Code\ Cache/* "Filo code cache"
-        safe_clean ~/Library/Application\ Support/Filo/production/GPUCache/* "Filo GPU cache"
-        safe_clean ~/Library/Application\ Support/Filo/production/DawnGraphiteCache/* "Filo Dawn cache"
-        safe_clean ~/Library/Application\ Support/Filo/production/DawnWebGPUCache/* "Filo WebGPU cache"
+        safe_clean ~/Library/Application\ Support/Filo/production/Cache/* "Filo 缓存"
+        safe_clean ~/Library/Application\ Support/Filo/production/Code\ Cache/* "Filo 代码缓存"
+        safe_clean ~/Library/Application\ Support/Filo/production/GPUCache/* "Filo GPU 缓存"
+        safe_clean ~/Library/Application\ Support/Filo/production/DawnGraphiteCache/* "Filo Dawn 缓存"
+        safe_clean ~/Library/Application\ Support/Filo/production/DawnWebGPUCache/* "Filo WebGPU 缓存"
     fi
     # Claude (Electron)
     if [[ -d ~/Library/Application\ Support/Claude ]]; then
-        safe_clean ~/Library/Application\ Support/Claude/Cache/* "Claude cache"
-        safe_clean ~/Library/Application\ Support/Claude/Code\ Cache/* "Claude code cache"
-        safe_clean ~/Library/Application\ Support/Claude/GPUCache/* "Claude GPU cache"
-        safe_clean ~/Library/Application\ Support/Claude/DawnGraphiteCache/* "Claude Dawn cache"
-        safe_clean ~/Library/Application\ Support/Claude/DawnWebGPUCache/* "Claude WebGPU cache"
-        safe_clean ~/Library/Application\ Support/Claude/sentry/* "Claude sentry cache"
+        safe_clean ~/Library/Application\ Support/Claude/Cache/* "Claude 缓存"
+        safe_clean ~/Library/Application\ Support/Claude/Code\ Cache/* "Claude 代码缓存"
+        safe_clean ~/Library/Application\ Support/Claude/GPUCache/* "Claude GPU 缓存"
+        safe_clean ~/Library/Application\ Support/Claude/DawnGraphiteCache/* "Claude Dawn 缓存"
+        safe_clean ~/Library/Application\ Support/Claude/DawnWebGPUCache/* "Claude WebGPU 缓存"
+        safe_clean ~/Library/Application\ Support/Claude/sentry/* "Claude sentry 缓存"
     fi
     # Qoder (VS Code fork, Electron)
     if [[ -d ~/Library/Application\ Support/Qoder ]]; then
-        safe_clean ~/Library/Application\ Support/Qoder/Cache/* "Qoder cache"
-        safe_clean ~/Library/Application\ Support/Qoder/CachedData/* "Qoder cached data"
-        safe_clean ~/Library/Application\ Support/Qoder/CachedExtensionVSIXs/* "Qoder extension cache"
-        safe_clean ~/Library/Application\ Support/Qoder/Code\ Cache/* "Qoder code cache"
-        safe_clean ~/Library/Application\ Support/Qoder/GPUCache/* "Qoder GPU cache"
-        safe_clean ~/Library/Application\ Support/Qoder/DawnGraphiteCache/* "Qoder Dawn cache"
-        safe_clean ~/Library/Application\ Support/Qoder/DawnWebGPUCache/* "Qoder WebGPU cache"
-        safe_clean ~/Library/Application\ Support/Qoder/logs/* "Qoder logs"
+        safe_clean ~/Library/Application\ Support/Qoder/Cache/* "Qoder 缓存"
+        safe_clean ~/Library/Application\ Support/Qoder/CachedData/* "Qoder 缓存数据"
+        safe_clean ~/Library/Application\ Support/Qoder/CachedExtensionVSIXs/* "Qoder 扩展缓存"
+        safe_clean ~/Library/Application\ Support/Qoder/Code\ Cache/* "Qoder 代码缓存"
+        safe_clean ~/Library/Application\ Support/Qoder/GPUCache/* "Qoder GPU 缓存"
+        safe_clean ~/Library/Application\ Support/Qoder/DawnGraphiteCache/* "Qoder Dawn 缓存"
+        safe_clean ~/Library/Application\ Support/Qoder/DawnWebGPUCache/* "Qoder WebGPU 缓存"
+        safe_clean ~/Library/Application\ Support/Qoder/logs/* "Qoder 日志"
     fi
     # Prisma ORM engine binaries cache
-    safe_clean ~/.cache/prisma/* "Prisma cache"
+    safe_clean ~/.cache/prisma/* "Prisma 缓存"
     # OpenCode AI tool cache
-    safe_clean ~/.cache/opencode/* "OpenCode cache"
+    safe_clean ~/.cache/opencode/* "OpenCode 缓存"
     # OpenCode snapshots back restore/revert, while diagnostic JSONL logs can
     # contain prompts and transcript events. Neither is default-cleanable.
     # Codex Chromium runtime caches are separate from its protected Application
@@ -4444,38 +4444,38 @@ clean_dev_misc() {
     # plugin registry data, hooks, and session context. Do not clean it
     # automatically; users can remove specific paths manually if needed.
     # Wondershare orphan installer payload (bundle ID differs from live app)
-    safe_clean ~/Library/Application\ Support/com.wondershare.Installer/* "Wondershare installer payload"
+    safe_clean ~/Library/Application\ Support/com.wondershare.Installer/* "Wondershare 安装包残留"
 }
 # Shell and VCS leftovers.
 clean_dev_shell() {
-    safe_clean ~/.gitconfig.lock "Git config lock"
-    safe_clean ~/.gitconfig.bak* "Git config backup"
-    safe_clean ~/.oh-my-zsh/cache/* "Oh My Zsh cache"
-    safe_clean ~/.config/fish/fish_history.bak* "Fish shell backup"
-    safe_clean ~/.bash_history.bak* "Bash history backup"
-    safe_clean ~/.zsh_history.bak* "Zsh history backup"
-    safe_clean ~/.cache/pre-commit/* "pre-commit cache"
+    safe_clean ~/.gitconfig.lock "Git 配置锁文件"
+    safe_clean ~/.gitconfig.bak* "Git 配置备份"
+    safe_clean ~/.oh-my-zsh/cache/* "Oh My Zsh 缓存"
+    safe_clean ~/.config/fish/fish_history.bak* "Fish shell 备份"
+    safe_clean ~/.bash_history.bak* "Bash 历史备份"
+    safe_clean ~/.zsh_history.bak* "Zsh 历史备份"
+    safe_clean ~/.cache/pre-commit/* "pre-commit 缓存"
 }
 # Network tool caches.
 clean_dev_network() {
-    safe_clean ~/.cache/curl/* "curl cache"
-    safe_clean ~/.cache/wget/* "wget cache"
-    safe_clean ~/Library/Caches/curl/* "macOS curl cache"
-    safe_clean ~/Library/Caches/wget/* "macOS wget cache"
+    safe_clean ~/.cache/curl/* "curl 缓存"
+    safe_clean ~/.cache/wget/* "wget 缓存"
+    safe_clean ~/Library/Caches/curl/* "macOS curl 缓存"
+    safe_clean ~/Library/Caches/wget/* "macOS wget 缓存"
 }
 # Elixir/Erlang ecosystem.
 # Note: ~/.mix/archives contains installed Mix tools - excluded from cleanup
 clean_dev_elixir() {
-    safe_clean ~/.hex/cache/* "Hex cache"
+    safe_clean ~/.hex/cache/* "Hex 缓存"
 }
 # Haskell ecosystem.
 # Note: ~/.stack/programs contains Stack-installed GHC compilers - excluded from cleanup
 clean_dev_haskell() {
-    safe_clean ~/.cabal/packages/* "Cabal install cache"
+    safe_clean ~/.cabal/packages/* "Cabal 安装缓存"
 }
 # OCaml ecosystem.
 clean_dev_ocaml() {
-    safe_clean ~/.opam/download-cache/* "Opam cache"
+    safe_clean ~/.opam/download-cache/* "Opam 缓存"
 }
 
 _run_developer_cleanup_step() {
@@ -4547,7 +4547,7 @@ clean_developer_tools() {
     # network re-download) and bootsnap/ (recompiled Ruby) leaves brew silent
     # for ~94s before its first output on the next run.
     _run_developer_cleanup_step \
-        safe_clean ~/Library/Caches/Homebrew/downloads/* "Homebrew cache" || return $?
+        safe_clean ~/Library/Caches/Homebrew/downloads/* "Homebrew 缓存" || return $?
     local brew_lock_dirs=(
         "/opt/homebrew/var/homebrew/locks"
         "/usr/local/var/homebrew/locks"
@@ -4555,10 +4555,10 @@ clean_developer_tools() {
     for lock_dir in "${brew_lock_dirs[@]}"; do
         if [[ -d "$lock_dir" && -w "$lock_dir" ]]; then
             _run_developer_cleanup_step \
-                safe_clean "$lock_dir"/* "Homebrew lock files" || return $?
+                safe_clean "$lock_dir"/* "Homebrew 锁文件" || return $?
         elif [[ -d "$lock_dir" ]]; then
             if find "$lock_dir" -mindepth 1 -maxdepth 1 -print -quit 2> /dev/null | grep -q .; then
-                debug_log "Skipping read-only Homebrew locks in $lock_dir"
+                debug_log "跳过只读的 Homebrew 锁目录 $lock_dir"
             fi
         fi
     done

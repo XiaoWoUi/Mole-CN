@@ -60,7 +60,7 @@ uninstall_normalize_last_used_display() {
     local display
     display=$(format_last_used_summary "$last_used")
     if [[ -z "$display" || "$display" == "Never" ]]; then
-        echo "Unknown"
+        echo "未知"
         return 0
     fi
     echo "$display"
@@ -1163,7 +1163,7 @@ scan_applications() {
         [[ $cache_source_is_temp == true ]] && rm -f "$cache_source" 2> /dev/null || true
         restore_scan_int_trap
         printf "\r\033[K" >&2
-        echo "No applications found to uninstall." >&2
+        echo "没有找到要卸载的应用。" >&2
         return 1
     fi
     # Phase 5: parallel metadata resolution for cold rows.
@@ -1174,7 +1174,7 @@ scan_applications() {
 
     if [[ ! -s "$scan_raw_file" ]]; then
         stop_scan_spinner
-        echo "No applications found to uninstall" >&2
+        echo "没有找到要卸载的应用" >&2
         rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$discovered_file" "$cached_rows_file" "$uncached_rows_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
         [[ $cache_source_is_temp == true ]] && rm -f "$cache_source" 2> /dev/null || true
         restore_scan_int_trap
@@ -1191,7 +1191,7 @@ load_applications() {
     local apps_file="$1"
 
     if [[ ! -f "$apps_file" || ! -s "$apps_file" ]]; then
-        log_warning "No applications found for uninstallation"
+        log_warning "没有找到要卸载的应用"
         return 1
     fi
 
@@ -1206,7 +1206,7 @@ load_applications() {
     done < "$apps_file"
 
     if [[ ${#apps_data[@]} -eq 0 ]]; then
-        log_warning "No applications available for uninstallation"
+        log_warning "没有可用于卸载的应用"
         return 1
     fi
 
@@ -1238,7 +1238,7 @@ uninstall_abort() {
     local reason="$1"
     stop_uninstall_interactive_screen
     show_cursor
-    log_error "Uninstall aborted: $reason"
+    log_error "卸载已中止: $reason"
 }
 
 # Cleanup: restore cursor and kill keepalive.
@@ -1380,7 +1380,7 @@ match_apps_by_name() {
         fi
 
         if [[ "$found" == "false" ]]; then
-            echo -e "${YELLOW}Warning:${NC} No application found matching '$search_term'"
+            echo -e "${YELLOW}警告:${NC} 未找到匹配 '$search_term' 的应用"
         fi
     done
 }
@@ -1406,16 +1406,16 @@ uninstall_list_json_escape() {
 uninstall_list_apps() {
     local apps_file=""
     if ! apps_file=$(scan_applications); then
-        uninstall_abort "could not complete the application scan"
+        uninstall_abort "无法完成应用扫描"
         return 1
     fi
     if [[ ! -f "$apps_file" ]]; then
-        uninstall_abort "application scan produced no list"
+        uninstall_abort "应用扫描未产生任何列表"
         return 1
     fi
     if ! load_applications "$apps_file"; then
         rm -f "$apps_file"
-        uninstall_abort "no applications available for uninstallation"
+        uninstall_abort "没有可用于卸载的应用"
         return 1
     fi
     rm -f "$apps_file"
@@ -1437,7 +1437,7 @@ uninstall_list_apps() {
                 cask=$(get_brew_cask_name "$app_path" 2> /dev/null || true)
             fi
             local uninstall_name="${cask:-$app_name}"
-            local source_label="App"
+            local source_label="应用"
             [[ -n "$cask" ]] && source_label="Homebrew"
             local size_display
             size_display=$(uninstall_normalize_size_display "$size")
@@ -1464,12 +1464,12 @@ uninstall_list_apps() {
 
     local total=${#apps_data[@]}
     if [[ $total -eq 0 ]]; then
-        echo "No applications found."
+        echo "未找到应用。"
         return 0
     fi
 
     printf '\n'
-    printf '%-36s %-30s %-30s %8s\n' 'NAME' 'BUNDLE ID' 'UNINSTALL NAME' 'SIZE'
+    printf '%-36s %-30s %-30s %8s\n' '名称' '包 ID' '卸载名称' '大小'
     printf -- '-%.0s' $(seq 1 108)
     printf '\n'
 
@@ -1511,7 +1511,7 @@ uninstall_list_apps() {
             "$size_display"
     done
 
-    printf '\n%d application(s)  |  Remove with: mo uninstall <UNINSTALL NAME>\n\n' "$total"
+    printf '\n%d 个应用  |  使用 mo uninstall <卸载名称> 移除\n\n' "$total"
     return 0
 }
 
@@ -1546,14 +1546,14 @@ main() {
                 list_mode=1
                 ;;
             "--whitelist")
-                echo "Unknown uninstall option: $arg"
-                echo "Whitelist management is currently supported by: mo clean --whitelist / mo optimize --whitelist"
-                echo "Use 'mo uninstall --help' for supported options."
+                echo "未知的卸载选项: $arg"
+                echo "白名单管理目前由以下命令支持: mo clean --whitelist / mo optimize --whitelist"
+                echo "使用 'mo uninstall --help' 查看支持的选项。"
                 exit 1
                 ;;
             -*)
-                echo "Unknown uninstall option: $arg"
-                echo "Use 'mo uninstall --help' for supported options."
+                echo "未知的卸载选项: $arg"
+                echo "使用 'mo uninstall --help' 查看支持的选项。"
                 exit 1
                 ;;
             *)
@@ -1571,7 +1571,7 @@ main() {
 
     hide_cursor
     if [[ "${MOLE_DRY_RUN:-0}" == "1" ]]; then
-        echo -e "${YELLOW}${ICON_DRY_RUN} DRY RUN MODE${NC}, No app files or settings will be modified"
+        echo -e "${YELLOW}${ICON_DRY_RUN} 模拟运行模式${NC},不会修改任何应用文件或设置"
         printf '\n'
     fi
 
@@ -1579,16 +1579,16 @@ main() {
     if [[ ${#app_name_args[@]} -gt 0 ]]; then
         local apps_file=""
         if ! apps_file=$(scan_applications); then
-            uninstall_abort "could not complete the application scan"
+            uninstall_abort "无法完成应用扫描"
             return 1
         fi
         if [[ ! -f "$apps_file" ]]; then
-            uninstall_abort "application scan produced no list"
+            uninstall_abort "应用扫描未产生任何列表"
             return 1
         fi
         if ! load_applications "$apps_file"; then
             rm -f "$apps_file"
-            uninstall_abort "no applications available for uninstallation"
+            uninstall_abort "没有可用于卸载的应用"
             return 1
         fi
 
@@ -1597,14 +1597,14 @@ main() {
 
         if [[ ${#selected_apps[@]} -eq 0 ]]; then
             show_cursor
-            echo "No matching applications found."
+            echo "未找到匹配的应用。"
             return 1
         fi
 
         show_cursor
         clear_screen
         local selection_count=${#selected_apps[@]}
-        echo -e "${BLUE}${ICON_CONFIRM}${NC} Matched ${selection_count} app(s):"
+        echo -e "${BLUE}${ICON_CONFIRM}${NC} 匹配到 ${selection_count} 个应用:"
         local index=1
         for selected_app in "${selected_apps[@]}"; do
             IFS='|' read -r _ app_path app_name _ size last_used _ <<< "$selected_app"
@@ -1612,16 +1612,16 @@ main() {
             size_display=$(uninstall_normalize_size_display "$size")
             local last_display
             last_display=$(uninstall_normalize_last_used_display "$last_used")
-            printf "%d. %s  %s  |  Last: %s\n" "$index" "$app_name" "$size_display" "$last_display"
+            printf "%d. %s  %s  |  上次使用: %s\n" "$index" "$app_name" "$size_display" "$last_display"
             ((index++))
         done
 
         printf '\n'
-        printf "Proceed with uninstallation? [y/N] "
+        printf "继续卸载? [y/N] "
         local confirm
         read -r confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-            echo "Aborted."
+            echo "已中止。"
             return 0
         fi
 
@@ -1643,7 +1643,7 @@ main() {
         start_uninstall_interactive_screen
 
         if [[ $first_scan == false ]]; then
-            echo -e "${GRAY}Checking application list...${NC}" >&2
+            echo -e "${GRAY}正在检查应用列表...${NC}" >&2
         fi
         first_scan=false
 
@@ -1666,9 +1666,9 @@ main() {
 
             local scan_abort_reason=""
             if ! apps_file=$(scan_applications); then
-                scan_abort_reason="could not complete the application scan"
+                scan_abort_reason="无法完成应用扫描"
             elif [[ ! -f "$apps_file" ]]; then
-                scan_abort_reason="application scan produced no list"
+                scan_abort_reason="应用扫描未产生任何列表"
             fi
             if [[ -n "$scan_abort_reason" ]]; then
                 uninstall_abort "$scan_abort_reason"
@@ -1684,7 +1684,7 @@ main() {
         if ! load_applications "$apps_file"; then
             rm -f "$apps_file"
             [[ "$apps_file" == "$cached_apps_file" ]] && cached_apps_file=""
-            uninstall_abort "no applications available for uninstallation"
+            uninstall_abort "没有可用于卸载的应用"
             return 1
         fi
 
@@ -1709,7 +1709,7 @@ main() {
                 show_cursor
                 return 0
             fi
-            uninstall_abort "application selection did not complete"
+            uninstall_abort "应用选择未完成"
             return 1
         fi
 
@@ -1719,10 +1719,10 @@ main() {
         printf '\033[2J\033[H' >&2
         local selection_count=${#selected_apps[@]}
         if [[ $selection_count -eq 0 ]]; then
-            echo "No apps selected"
+            echo "未选择任何应用"
             continue
         fi
-        echo -e "${BLUE}${ICON_CONFIRM}${NC} Selected ${selection_count} apps:"
+        echo -e "${BLUE}${ICON_CONFIRM}${NC} 已选择 ${selection_count} 个应用:"
         local -a summary_rows=()
         local max_name_display_width=0
         local max_size_width=0
@@ -1801,7 +1801,7 @@ main() {
             local padding_needed=$((max_name_display_width - name_display_width))
             local printf_name_width=$((name_byte_count + padding_needed))
 
-            printf "%d. %-*s  %*s  |  Last: %s\n" "$index" "$printf_name_width" "$name_cell" "$max_size_width" "$size_cell" "$last_cell"
+            printf "%d. %-*s  %*s  |  上次使用: %s\n" "$index" "$printf_name_width" "$name_cell" "$max_size_width" "$size_cell" "$last_cell"
             ((index++))
         done
 
@@ -1820,7 +1820,7 @@ main() {
         local _key=""
         local _pressed=false
         while [[ $_countdown -gt 0 ]]; do
-            printf "\r${GRAY}Press Enter to return to the app list, press q to exit (%d)${NC} " "$_countdown"
+            printf "\r${GRAY}按 Enter 返回应用列表,按 q 退出 (%d)${NC} " "$_countdown"
             if IFS= read -r -s -n1 -t 1 _key; then
                 _pressed=true
                 break

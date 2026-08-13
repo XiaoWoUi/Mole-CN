@@ -59,7 +59,7 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"pnpm cache|/tmp/pnpm-store"* ]] || return 1
+    [[ "$output" == *"pnpm 缓存|/tmp/pnpm-store"* ]] || return 1
     [[ "$output" != *"Orphaned pnpm store"* ]] || return 1
 }
 
@@ -129,8 +129,8 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"CACHE:pnpm cache|$HOME/Library/pnpm/store/v11"* ]] || return 1
-    [[ "$output" == *"CACHE:pnpm cache|$HOME/.local/share/pnpm/store/v10"* ]] || return 1
+    [[ "$output" == *"CACHE:pnpm 缓存|$HOME/Library/pnpm/store/v11"* ]] || return 1
+    [[ "$output" == *"CACHE:pnpm 缓存|$HOME/.local/share/pnpm/store/v10"* ]] || return 1
     [[ "$output" == *"PRUNE_V11"* ]] || return 1
     [[ "$output" == *"PRUNE_V10"* ]] || return 1
 }
@@ -154,7 +154,7 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"skipping store prune"* ]] || return 1
+    [[ "$output" == *"跳过存储清理"* ]] || return 1
     [[ "$output" != *"UNEXPECTED"* ]] || return 1
 }
 
@@ -211,10 +211,10 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"npm cache directory|$HOME/.npm/_cacache/*"* ]] || return 1
-    [[ "$output" == *"npm npx cache|$HOME/.npm/_npx/*"* ]] || return 1
-    [[ "$output" == *"npm logs|$HOME/.npm/_logs/*"* ]] || return 1
-    [[ "$output" == *"npm prebuilds|$HOME/.npm/_prebuilds/*"* ]]
+    [[ "$output" == *"npm 缓存目录|$HOME/.npm/_cacache/*"* ]] || return 1
+    [[ "$output" == *"npm npx 缓存|$HOME/.npm/_npx/*"* ]] || return 1
+    [[ "$output" == *"npm 日志|$HOME/.npm/_logs/*"* ]] || return 1
+    [[ "$output" == *"npm 预构建文件|$HOME/.npm/_prebuilds/*"* ]]
 }
 
 @test "clean_dev_jvm never enters daemon cleanup while Gradle is running" {
@@ -231,8 +231,8 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" != *"SAFE_CLEAN:Gradle daemon"* ]] || return 1
-    [[ "$output" != *"SAFE_CLEAN:Gradle workers"* ]]
+    [[ "$output" != *"SAFE_CLEAN:Gradle 守护进程"* ]] || return 1
+    [[ "$output" != *"SAFE_CLEAN:Gradle 工作进程"* ]]
 }
 
 @test "clean_dev_jvm fails closed for every Gradle target when the process probe errors" {
@@ -253,7 +253,7 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"Gradle targets · skipped (process state unknown)"* ]] || return 1
+    [[ "$output" == *"Gradle 目标 · 已跳过(进程状态未知)"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:Gradle"* ]] || return 1
 }
 
@@ -298,8 +298,8 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"SAFE_CLEAN:Gradle build cache|"* ]] || return 1
-    [[ "$output" == *"SAFE_CLEAN:Gradle notifications cache|"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:Gradle 构建缓存|"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:Gradle 通知缓存|"* ]] || return 1
     [[ "$output" == *"SAFE_CLEAN:"*".gradle/daemon/8.14"* ]] || return 1
     [[ "$output" == *"SAFE_CLEAN:"*".gradle/workers/worker-1"* ]] || return 1
     rm -rf "$HOME/.gradle"
@@ -348,8 +348,8 @@ EOF
         return 1
     }
     [[ "$output" != *"UNEXPECTED_DEFER"* ]] || return 1
-    [[ "$output" != *"UNEXPECTED_CLEAN:Gradle daemon"* ]] || return 1
-    [[ "$output" != *"UNEXPECTED_CLEAN:Gradle workers"* ]] || return 1
+    [[ "$output" != *"UNEXPECTED_CLEAN:Gradle 守护进程"* ]] || return 1
+    [[ "$output" != *"UNEXPECTED_CLEAN:Gradle 工作进程"* ]] || return 1
     [[ "$output" != *"process state unknown"* ]]
 }
 
@@ -416,7 +416,7 @@ clean_conda_metadata_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"conda index/tarball/log caches · skipped (whitelist)"* ]] || return 1
+    [[ "$output" == *"conda 索引/tarball/日志缓存 · 已跳过(白名单)"* ]] || return 1
     [[ "$output" != *"conda called"* ]]
 }
 
@@ -442,11 +442,11 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"npm cache directory|$HOME/.npm/_cacache/*"* ]] || return 1
-    [[ "$output" == *"npm cache directory (custom path)|/tmp/mole-custom-npm-cache/_cacache/*"* ]] || return 1
-    [[ "$output" == *"npm npx cache (custom path)|/tmp/mole-custom-npm-cache/_npx/*"* ]] || return 1
-    [[ "$output" == *"npm logs (custom path)|/tmp/mole-custom-npm-cache/_logs/*"* ]] || return 1
-    [[ "$output" == *"npm prebuilds (custom path)|/tmp/mole-custom-npm-cache/_prebuilds/*"* ]]
+    [[ "$output" == *"npm 缓存目录|$HOME/.npm/_cacache/*"* ]] || return 1
+    [[ "$output" == *"npm 缓存目录 (自定义路径)|/tmp/mole-custom-npm-cache/_cacache/*"* ]] || return 1
+    [[ "$output" == *"npm npx 缓存 (自定义路径)|/tmp/mole-custom-npm-cache/_npx/*"* ]] || return 1
+    [[ "$output" == *"npm 日志 (自定义路径)|/tmp/mole-custom-npm-cache/_logs/*"* ]] || return 1
+    [[ "$output" == *"npm 预构建文件 (自定义路径)|/tmp/mole-custom-npm-cache/_prebuilds/*"* ]]
 }
 
 @test "clean_dev_npm falls back to default cache when npm path is invalid" {
@@ -471,7 +471,7 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"npm cache directory|$HOME/.npm/_cacache/*"* ]] || return 1
+    [[ "$output" == *"npm 缓存目录|$HOME/.npm/_cacache/*"* ]] || return 1
     [[ "$output" != *"(custom path)"* ]]
 }
 
@@ -497,7 +497,7 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"npm cache directory|$HOME/.npm/_cacache/*"* ]] || return 1
+    [[ "$output" == *"npm 缓存目录|$HOME/.npm/_cacache/*"* ]] || return 1
     [[ "$output" != *"(custom path)"* ]]
 }
 
@@ -519,9 +519,9 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Bun cache|$HOME/.bun/install/cache/*"* ]] || return 1
-    [[ "$output" != *"bun cache|bun cache bun pm cache rm"* ]] || return 1
-    [[ "$output" != *"Orphaned bun cache"* ]]
+    [[ "$output" == *"Bun 缓存|$HOME/.bun/install/cache/*"* ]] || return 1
+    [[ "$output" != *"bun 缓存|bun 缓存 bun pm cache rm"* ]] || return 1
+    [[ "$output" != *"残留的 bun 缓存"* ]]
 }
 
 @test "clean_dev_npm uses bun cache command for default bun cache path" {
@@ -555,9 +555,9 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"bun cache"* ]] || return 1
-    [[ "$output" != *"Bun cache|$HOME/.bun/install/cache/*"* ]] || return 1
-    [[ "$output" != *"Orphaned bun cache"* ]]
+    [[ "$output" == *"bun 缓存"* ]] || return 1
+    [[ "$output" != *"Bun 缓存|$HOME/.bun/install/cache/*"* ]] || return 1
+    [[ "$output" != *"残留的 bun 缓存"* ]]
 }
 
 @test "clean_dev_npm cleans orphaned default bun cache when custom path is configured" {
@@ -591,8 +591,8 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"bun cache"* ]] || return 1
-    [[ "$output" == *"Orphaned bun cache|$HOME/.bun/install/cache/*"* ]]
+    [[ "$output" == *"bun 缓存"* ]] || return 1
+    [[ "$output" == *"残留的 bun 缓存|$HOME/.bun/install/cache/*"* ]]
 }
 
 @test "clean_dev_npm treats default bun cache path with trailing slash as same path" {
@@ -626,8 +626,8 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"bun cache"* ]] || return 1
-    [[ "$output" != *"Orphaned bun cache"* ]]
+    [[ "$output" == *"bun 缓存"* ]] || return 1
+    [[ "$output" != *"残留的 bun 缓存"* ]]
 }
 
 @test "clean_dev_npm falls back to filesystem cleanup when bun cache command fails" {
@@ -661,8 +661,8 @@ clean_dev_npm
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Bun cache|/tmp/mole-bun-cache/*"* ]] || return 1
-    [[ "$output" == *"Orphaned bun cache|$HOME/.bun/install/cache/*"* ]]
+    [[ "$output" == *"Bun 缓存|/tmp/mole-bun-cache/*"* ]] || return 1
+    [[ "$output" == *"残留的 bun 缓存|$HOME/.bun/install/cache/*"* ]]
 }
 
 @test "clean_dev_docker skips daemon-managed cleanup by default" {
@@ -680,8 +680,8 @@ clean_dev_docker
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Docker unused data · review with docker system df"* ]] || return 1
-    [[ "$output" == *"Docker BuildX cache"* ]] || return 1
+    [[ "$output" == *"Docker 未使用数据 · 使用 docker system df 审查"* ]] || return 1
+    [[ "$output" == *"Docker BuildX 缓存"* ]] || return 1
     [[ "$output" != *"docker called"* ]]
 }
 
@@ -700,7 +700,7 @@ clean_dev_docker
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Docker BuildX cache|$HOME/.docker/buildx/cache/*"* ]]
+    [[ "$output" == *"Docker BuildX 缓存|$HOME/.docker/buildx/cache/*"* ]]
 }
 
 @test "clean_dev_docker reports OrbStack data without deleting disk images" {
@@ -721,8 +721,8 @@ clean_dev_docker
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OrbStack container data · 4M · review with docker system df"* ]] || return 1
-    [[ "$output" == *"Docker BuildX cache|$HOME/.docker/buildx/cache/*"* ]] || return 1
+    [[ "$output" == *"OrbStack 容器数据 · 4M · 使用 docker system df 审查"* ]] || return 1
+    [[ "$output" == *"Docker BuildX 缓存|$HOME/.docker/buildx/cache/*"* ]] || return 1
     [[ "$output" != *"data.img.raw"* ]] || return 1
     [[ "$output" != *"swap.img"* ]]
 }
@@ -775,7 +775,7 @@ clean_dev_docker
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Docker unused data · review with docker system df"* ]] || return 1
+    [[ "$output" == *"Docker 未使用数据 · 使用 docker system df 审查"* ]] || return 1
     [[ "$output" != *"whitelisted"* ]] || return 1
     [[ "$output" != *"mo clean --whitelist"* ]] || return 1
     [[ "$output" != *"docker called"* ]]
@@ -855,8 +855,8 @@ clean_codex_desktop_staging
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" != *"Codex runtimes · skipped"* ]] || return 1
-    [[ "$output" != *"Codex Desktop update staging · skipped"* ]] || return 1
+    [[ "$output" != *"Codex 运行时 · 已跳过"* ]] || return 1
+    [[ "$output" != *"Codex Desktop 更新暂存 · 已跳过"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:"* ]] || return 1
 }
 
@@ -879,7 +879,7 @@ clean_codex_runtimes
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Codex runtimes · manual review (1M)"* ]] || return 1
+    [[ "$output" == *"Codex 运行时 · 需手动检查(1M)"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:Codex CLI runtimes|$HOME/.cache/codex-runtimes/codex-primary-runtime"* ]]
 }
 
@@ -927,7 +927,7 @@ clean_codex_runtimes
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" != *"Codex runtimes · skipped"* ]] || return 1
+    [[ "$output" != *"Codex 运行时 · 已跳过"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:"* ]]
 }
 
@@ -994,7 +994,7 @@ clean_codex_runtimes
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Codex runtimes · skipped (whitelist)"* ]] || return 1
+    [[ "$output" == *"Codex 运行时 · 已跳过(白名单)"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:"* ]]
 }
 
@@ -1015,8 +1015,8 @@ clean_codex_runtimes
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Codex runtimes · manual review"* ]] || return 1
-    [[ "$output" == *"Codex runtimes · skipped (whitelist)"* ]] || return 1
+    [[ "$output" == *"Codex 运行时 · 需手动检查"* ]] || return 1
+    [[ "$output" == *"Codex 运行时 · 已跳过(白名单)"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:"* ]]
 }
 
@@ -1070,7 +1070,7 @@ clean_codex_desktop_staging
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SAFE_CLEAN:Codex Desktop stale update staging|$staging_root/stale"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:Codex Desktop 过期更新暂存|$staging_root/stale"* ]] || return 1
     [[ "$output" != *"$staging_root/fresh"* ]] || return 1
     [[ "$output" != *"$HOME/.codex"* ]] || return 1
     [[ "$output" != *"$HOME/Library/Application Support/Codex"* ]] || return 1
@@ -1237,7 +1237,7 @@ clean_codex_desktop_staging
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"skipped (open-file check unavailable)"* ]] || return 1
+    [[ "$output" == *"已跳过(无法检查打开的文件)"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:"* ]] || return 1
 
     run env HOME="$HOME" PROJECT_ROOT="$PROJECT_ROOT" DRY_RUN=true /bin/bash --noprofile --norc << 'EOF'
@@ -1251,7 +1251,7 @@ clean_codex_desktop_staging
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"would skip (whitelist)"* ]] || return 1
+    [[ "$output" == *"将跳过(白名单)"* ]] || return 1
     [[ "$output" != *"SAFE_CLEAN:"* ]] || return 1
 }
 
@@ -1282,7 +1282,7 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"open-file check unavailable"* ]] || return 1
+    [[ "$output" == *"无法检查打开的文件"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_SAFE_CLEAN"* ]]
 }
 
@@ -1392,7 +1392,7 @@ clean_codex_desktop_staging
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SAFE_CLEAN:true|Codex Desktop stale update staging|$staging_root/stale"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:true|Codex Desktop 过期更新暂存|$staging_root/stale"* ]] || return 1
 }
 
 @test "clean_dev_mise respects MISE_CACHE_DIR and only targets cache" {
@@ -1408,7 +1408,7 @@ clean_dev_mise
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"mise cache|/tmp/mise-cache/*"* ]] || return 1
+    [[ "$output" == *"mise 缓存|/tmp/mise-cache/*"* ]] || return 1
     [[ "$output" != *".local/share/mise"* ]]
 }
 
@@ -1422,8 +1422,8 @@ clean_dev_other_langs
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PHP Composer cache (legacy)|"* ]] || return 1
-    [[ "$output" == *"PHP Composer cache|"* ]]
+    [[ "$output" == *"PHP Composer 缓存(旧版)|"* ]] || return 1
+    [[ "$output" == *"PHP Composer 缓存|"* ]]
 }
 
 @test "clean_dev_rust honors CARGO_HOME and RUSTUP_HOME when absolute" {
@@ -1448,10 +1448,10 @@ clean_dev_rust
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Rust cargo cache|$HOME/.local/share/mise/cargo/registry/cache/*"* ]] || return 1
-    [[ "$output" == *"Rust crate sources|$HOME/.local/share/mise/cargo/registry/src/*"* ]] || return 1
-    [[ "$output" == *"Cargo git cache|$HOME/.local/share/mise/cargo/git/*"* ]] || return 1
-    [[ "$output" == *"Rustup downloads cache|$HOME/.local/share/mise/rustup/downloads/*"* ]] || return 1
+    [[ "$output" == *"Rust cargo 缓存|$HOME/.local/share/mise/cargo/registry/cache/*"* ]] || return 1
+    [[ "$output" == *"Rust crate 源文件|$HOME/.local/share/mise/cargo/registry/src/*"* ]] || return 1
+    [[ "$output" == *"Cargo git 缓存|$HOME/.local/share/mise/cargo/git/*"* ]] || return 1
+    [[ "$output" == *"Rustup 下载缓存|$HOME/.local/share/mise/rustup/downloads/*"* ]] || return 1
     [[ "$output" != *"/registry/index/"* ]] || return 1
     [[ "$output" != *"/.cargo/"* ]] || return 1
     [[ "$output" != *"/.rustup/"* ]] || return 1
@@ -1476,8 +1476,8 @@ clean_dev_rust
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Rust crate sources · stopped (cache path leaves CARGO_HOME)"* ]] || return 1
-    [[ "$output" != *"DELETE=Rust crate sources"* ]] || return 1
+    [[ "$output" == *"Rust crate 源文件 · 已停止(缓存路径超出 CARGO_HOME)"* ]] || return 1
+    [[ "$output" != *"DELETE=Rust crate 源文件"* ]] || return 1
     [[ -d "$outside_root/crate-data" ]]
 }
 
@@ -1504,10 +1504,10 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"Rust cargo cache|$HOME/.cargo/registry/cache/*"* ]] || return 1
-    [[ "$output" == *"Rust crate sources|$HOME/.cargo/registry/src/*"* ]] || return 1
-    [[ "$output" == *"Cargo git cache|$HOME/.cargo/git/*"* ]] || return 1
-    [[ "$output" == *"Rustup downloads cache|$HOME/.rustup/downloads/*"* ]] || return 1
+    [[ "$output" == *"Rust cargo 缓存|$HOME/.cargo/registry/cache/*"* ]] || return 1
+    [[ "$output" == *"Rust crate 源文件|$HOME/.cargo/registry/src/*"* ]] || return 1
+    [[ "$output" == *"Cargo git 缓存|$HOME/.cargo/git/*"* ]] || return 1
+    [[ "$output" == *"Rustup 下载缓存|$HOME/.rustup/downloads/*"* ]] || return 1
     [[ "$output" != *"/registry/index/"* ]] || return 1
 }
 
@@ -1525,10 +1525,10 @@ EOF
 
     [ "$status" -eq 0 ] || return 1
     [[ "$output" == *"DEFER=Rust"* ]] || return 1
-    [[ "$output" != *"DELETE=Rust cargo cache"* ]] || return 1
-    [[ "$output" != *"DELETE=Rust crate sources"* ]] || return 1
-    [[ "$output" != *"DELETE=Cargo git cache"* ]] || return 1
-    [[ "$output" == *"DELETE=Rustup downloads cache"* ]]
+    [[ "$output" != *"DELETE=Rust cargo 缓存"* ]] || return 1
+    [[ "$output" != *"DELETE=Rust crate 源文件"* ]] || return 1
+    [[ "$output" != *"DELETE=Cargo git 缓存"* ]] || return 1
+    [[ "$output" == *"DELETE=Rustup 下载缓存"* ]]
 }
 
 @test "clean_dev_rust fails closed when process state is unknown" {
@@ -1544,11 +1544,11 @@ clean_dev_rust
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Rust dependency cache · stopped (process state unknown)"* ]] || return 1
-    [[ "$output" != *"DELETE=Rust cargo cache"* ]] || return 1
-    [[ "$output" != *"DELETE=Rust crate sources"* ]] || return 1
-    [[ "$output" != *"DELETE=Cargo git cache"* ]] || return 1
-    [[ "$output" == *"DELETE=Rustup downloads cache"* ]]
+    [[ "$output" == *"Rust 依赖缓存 · 已停止(进程状态未知)"* ]] || return 1
+    [[ "$output" != *"DELETE=Rust cargo 缓存"* ]] || return 1
+    [[ "$output" != *"DELETE=Rust crate 源文件"* ]] || return 1
+    [[ "$output" != *"DELETE=Cargo git 缓存"* ]] || return 1
+    [[ "$output" == *"DELETE=Rustup 下载缓存"* ]]
 }
 
 @test "clean_dev_rust rechecks cargo at the deletion boundary" {
@@ -1609,11 +1609,11 @@ clean_dev_rust
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Rust crate sources · stopped (process or cache path state unknown)"* ]] || {
+    [[ "$output" == *"Rust crate 源文件 · 已停止(进程或缓存路径状态未知)"* ]] || {
         echo "$output"
         return 1
     }
-    [[ "$output" != *"DELETE=Rust crate sources"* ]] || return 1
+    [[ "$output" != *"DELETE=Rust crate 源文件"* ]] || return 1
     [[ -d "$outside_root/private-data" ]]
 }
 
@@ -1753,10 +1753,10 @@ clean_dev_ruby
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"rbenv download cache|"* ]] || return 1
-    [[ "$output" == *"gem spec cache|"* ]] || return 1
-    [[ "$output" == *"gem package cache|"* ]] || return 1
-    [[ "$output" == *"Ruby Bundler cache|"* ]]
+    [[ "$output" == *"rbenv 下载缓存|"* ]] || return 1
+    [[ "$output" == *"gem spec 缓存|"* ]] || return 1
+    [[ "$output" == *"gem 包缓存|"* ]] || return 1
+    [[ "$output" == *"Ruby Bundler 缓存|"* ]]
 }
 
 @test "clean_dev_perl cleans CPAN build and source caches" {
@@ -1769,8 +1769,8 @@ clean_dev_perl
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"CPAN build artifacts|"* ]] || return 1
-    [[ "$output" == *"CPAN source cache|"* ]]
+    [[ "$output" == *"CPAN 构建产物|"* ]] || return 1
+    [[ "$output" == *"CPAN 源码缓存|"* ]]
 }
 
 @test "clean_dev_other_langs no longer includes Ruby Bundler cache" {
@@ -1804,8 +1804,8 @@ clean_project_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Flutter build cache (.dart_tool)"* ]] || return 1
-    [[ "$output" == *"Flutter build cache (build/)"* ]]
+    [[ "$output" == *"Flutter 构建缓存(.dart_tool)"* ]] || return 1
+    [[ "$output" == *"Flutter 构建缓存(build/)"* ]]
 }
 
 @test "project cache processing stops after a Python size timeout" {
@@ -1861,8 +1861,8 @@ clean_dev_misc
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Chrome DevTools MCP browser cache"* ]] || return 1
-    [[ "$output" != *"Chrome DevTools MCP cache"* ]]
+    [[ "$output" == *"Chrome DevTools MCP 浏览器缓存"* ]] || return 1
+    [[ "$output" != *"Chrome DevTools MCP 缓存"* ]]
 }
 
 @test "clean_dev_misc skips Chrome DevTools MCP cache when server is running" {
@@ -1884,8 +1884,8 @@ clean_dev_misc
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" != *"Chrome DevTools MCP caches · skipped"* ]] || return 1
-    [[ "$output" != *"Chrome DevTools MCP browser cache"* ]]
+    [[ "$output" != *"Chrome DevTools MCP 缓存 · 已跳过"* ]] || return 1
+    [[ "$output" != *"Chrome DevTools MCP 浏览器缓存"* ]]
 }
 
 @test "clean_chrome_devtools_mcp_caches preserves profile state" {
@@ -1910,9 +1910,9 @@ clean_chrome_devtools_mcp_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP browser cache|$profile/Default/Cache/"* ]] || return 1
-    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP code cache|$profile/Default/Code Cache/"* ]] || return 1
-    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP GPU cache|$profile/Default/GPUCache/"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP 浏览器缓存|$profile/Default/Cache/"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP 代码缓存|$profile/Default/Code Cache/"* ]] || return 1
+    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP GPU 缓存|$profile/Default/GPUCache/"* ]] || return 1
     [[ "$output" == *"SWC:Chrome DevTools MCP|$profile/Default/Service Worker/CacheStorage"* ]] || return 1
     [[ "$output" != *"Cookies"* ]] || return 1
     [[ "$output" != *"Local Storage"* ]] || return 1
@@ -1965,7 +1965,7 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP extension cache|$profile/extensions_crx_cache/candidate"* ]]
+    [[ "$output" == *"SAFE_CLEAN:Chrome DevTools MCP 扩展缓存|$profile/extensions_crx_cache/candidate"* ]]
 }
 
 @test "report_agent_worktree_candidates reports large worktree containers as review only" {
@@ -1983,7 +1983,7 @@ report_agent_worktree_candidates
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AI agent worktrees"* ]] || return 1
+    [[ "$output" == *"AI 代理工作树"* ]] || return 1
     [[ "$output" == *"GB"* ]] || return 1
     [[ "$output" == *".claude/worktrees"* ]] || return 1
     # Report only: the worktree must still exist afterwards.
@@ -2045,7 +2045,7 @@ EOF
 		echo "$output"
 		return 1
 	}
-	[[ "$output" == *"SAFE_CLEAN:Codex Desktop stale update staging|"*"/superseded"* ]] || return 1
+	[[ "$output" == *"SAFE_CLEAN:Codex Desktop 过期更新暂存|"*"/superseded"* ]] || return 1
 	[[ "$output" != *"/pending"* ]] || return 1
 }
 

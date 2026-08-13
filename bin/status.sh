@@ -11,5 +11,5 @@ if [[ -x "$GO_BIN" ]]; then
     exec "$GO_BIN" "$@"
 fi
 
-echo "Bundled status binary not found. Please reinstall Mole or run mo update to restore it." >&2
+echo "未找到内置的状态程序,请重新安装 Mole 或运行 mo update 恢复它。" >&2
 exit 1

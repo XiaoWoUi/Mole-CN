@@ -50,14 +50,14 @@ setup() {
 	run "$PROJECT_ROOT/bin/installer.sh" --unknown-option
 
 	[ "$status" -eq 1 ]
-	[[ "$output" == *"Unknown option"* ]]
+	[[ "$output" == *"未知选项"* ]]
 }
 
 @test "installer.sh accepts --dry-run option" {
 	run env HOME="$HOME" TERM="xterm-256color" "$PROJECT_ROOT/bin/installer.sh" --dry-run
 
 	[[ "$status" -eq 0 || "$status" -eq 2 ]]
-	[[ "$output" == *"DRY RUN MODE"* ]]
+	[[ "$output" == *"模拟运行模式"* ]]
 }
 
 # Test scan_installers_in_path function directly
@@ -311,7 +311,7 @@ setup() {
 
 	[ "$status" -eq 0 ]
 	[[ "$output" == *"rc=3 deleted=1 failed=1"* ]] || return 1
-	[[ "$output" == *"failure=/System (delete failed)"* ]]
+	[[ "$output" == *"failure=/System (删除失败)"* ]]
 }
 
 @test "execute_installer_delete_plan refuses replaced files" {
@@ -344,7 +344,7 @@ setup() {
 
 	[ "$status" -eq 0 ]
 	[[ "$output" == *"rc=3 deleted=0 failed=1"* ]] || return 1
-	[[ "$output" == *"Replaced.dmg (changed since scan)"* ]]
+	[[ "$output" == *"Replaced.dmg (扫描后已变更)"* ]]
 }
 
 @test "execute_installer_delete_plan refuses size drift" {
@@ -373,7 +373,7 @@ setup() {
 
 	[ "$status" -eq 0 ]
 	[[ "$output" == *"rc=3 deleted=0 failed=1"* ]] || return 1
-	[[ "$output" == *"Grew.dmg (changed since scan)"* ]]
+	[[ "$output" == *"Grew.dmg (扫描后已变更)"* ]]
 }
 
 @test "show_summary reports installer delete failures" {
@@ -391,13 +391,13 @@ setup() {
     ' bash "$PROJECT_ROOT/bin/installer.sh"
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"Installer cleanup incomplete"* ]] || return 1
-	[[ "$output" == *"Failed to remove"* ]] || return 1
+	[[ "$output" == *"安装包清理未完成"* ]] || return 1
+	[[ "$output" == *"无法移除"* ]] || return 1
 	[[ "$output" == *"Blocked.dmg"* ]] || return 1
 	[[ "$output" == *"protected path"* ]] || return 1
 	[[ "$output" == *"Stale.pkg"* ]] || return 1
 	[[ "$output" == *"still exists"* ]] || return 1
-	[[ "$output" != *"Your Mac is cleaner now!"* ]]
+	[[ "$output" != *"你的 Mac 现在更干净了!"* ]]
 }
 
 @test "main exits nonzero after real incomplete installer cleanup" {
@@ -434,7 +434,7 @@ setup() {
     ' bash "$PROJECT_ROOT/bin/installer.sh" "$removable"
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"Installer cleanup incomplete"* ]] || return 1
+	[[ "$output" == *"安装包清理未完成"* ]] || return 1
 	[[ "$output" == *"rc=1"* ]] || return 1
 	[[ "$output" == *"removed=yes"* ]]
 }
@@ -472,7 +472,7 @@ setup() {
     ' bash "$PROJECT_ROOT/bin/installer.sh" "$removable"
 
 	[ "$status" -eq 1 ]
-	[[ "$output" == *"Installer cleanup incomplete"* ]] || return 1
-	[[ "$output" == *"Failed to remove"* ]] || return 1
+	[[ "$output" == *"安装包清理未完成"* ]] || return 1
+	[[ "$output" == *"无法移除"* ]] || return 1
 	[[ ! -e "$removable" ]]
 }

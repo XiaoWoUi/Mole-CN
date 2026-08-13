@@ -47,10 +47,10 @@ save_whitelist_patterns() {
 
     if [[ "$mode" == "optimize" ]]; then
         config_file="$WHITELIST_CONFIG_OPTIMIZE"
-        header_text="# Mole Optimization Whitelist - These checks will be skipped during optimization"
+        header_text="# Mole 优化白名单 - 优化过程中将跳过这些检查"
     else
         config_file="$WHITELIST_CONFIG_CLEAN"
-        header_text="# Mole Whitelist - Protected paths won't be deleted\n# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata\n# Add one pattern per line to keep items safe."
+        header_text="# Mole 白名单 - 受保护路径不会被删除\n# 默认保护: Playwright 浏览器、HuggingFace 模型、Maven 仓库、Ollama 模型、Surge Mac、R renv、Finder 元数据\n# 每行添加一个模式以保护项目安全。"
     fi
 
     ensure_user_file "$config_file"
@@ -91,88 +91,88 @@ save_whitelist_patterns() {
 get_all_cache_items() {
     # Format: "display_name|pattern|category"
     cat << 'EOF'
-Apple Mail cache|$HOME/Library/Caches/com.apple.mail/*|system_cache
-Gradle build cache (Android Studio, Gradle projects)|$HOME/.gradle/caches/build-cache-*/*|ide_cache
-Gradle daemon processes cache|$HOME/.gradle/daemon/*|ide_cache
-Gradle worker cache|$HOME/.gradle/workers/*|ide_cache
-Xcode DerivedData (build outputs, indexes)|$HOME/Library/Developer/Xcode/DerivedData/*|ide_cache
-Xcode internal cache files|$HOME/Library/Caches/com.apple.dt.Xcode/*|ide_cache
-Xcode iOS device support symbols|$HOME/Library/Developer/Xcode/iOS DeviceSupport/*/Symbols/System/Library/Caches/*|ide_cache
-Maven local repository (Java dependencies)|$HOME/.m2/repository/*|ide_cache
-JetBrains IDEs data (IntelliJ, PyCharm, WebStorm, GoLand)|$HOME/Library/Application Support/JetBrains/*|ide_cache
-JetBrains IDEs cache|$HOME/Library/Caches/JetBrains/*|ide_cache
-Android Studio cache and indexes|$HOME/Library/Caches/Google/AndroidStudio*/*|ide_cache
-Android build cache|$HOME/.android/build-cache/*|ide_cache
-VS Code runtime cache|$HOME/Library/Application Support/Code/Cache/*|ide_cache
-VS Code extension and update cache|$HOME/Library/Application Support/Code/CachedData/*|ide_cache
-VS Code system cache (Cursor, VSCodium)|$HOME/Library/Caches/com.microsoft.VSCode/*|ide_cache
-Cursor editor cache|$HOME/Library/Caches/com.todesktop.230313mzl4w4u92/*|ide_cache
-LM Studio app cache|$HOME/Library/Caches/com.lmstudio.lmstudio/*|ai_ml_cache
-Codex Desktop update staging|$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle/Installation|ai_ml_cache
-Chrome on-device AI models|$HOME/Library/Application Support/Google/Chrome/OptGuideOnDevice*/*|ai_ml_cache
-Chrome optimization guide models|$HOME/Library/Application Support/Google/Chrome/optimization_guide_model_store/*|ai_ml_cache
-Bazel build cache|$HOME/.cache/bazel/*|compiler_cache
-Go build cache|$HOME/Library/Caches/go-build/*|compiler_cache
-Go module cache|$HOME/go/pkg/mod/*|compiler_cache
-Rust Cargo registry cache|$HOME/.cargo/registry/cache/*|compiler_cache
-Rust Cargo extracted sources|$HOME/.cargo/registry/src/*|compiler_cache
-Rust documentation cache|$HOME/.rustup/toolchains/*/share/doc/*|compiler_cache
-Rustup toolchain downloads|$HOME/.rustup/downloads/*|compiler_cache
-ccache compiler cache|$HOME/.ccache/*|compiler_cache
-sccache distributed compiler cache|$HOME/.cache/sccache/*|compiler_cache
-SBT Scala build cache|$HOME/.sbt/*|compiler_cache
-Ivy dependency cache|$HOME/.ivy2/cache/*|compiler_cache
-Turbo monorepo build cache|$HOME/.turbo/*|compiler_cache
-Next.js build cache|$HOME/.next/*|compiler_cache
-Vite build cache|$HOME/.vite/*|compiler_cache
-Parcel bundler cache|$HOME/.parcel-cache/*|compiler_cache
-pre-commit hooks cache|$HOME/.cache/pre-commit/*|compiler_cache
-Ruff Python linter cache|$HOME/.cache/ruff/*|compiler_cache
-MyPy type checker cache|$HOME/.cache/mypy/*|compiler_cache
-Pytest test cache|$HOME/.pytest_cache/*|compiler_cache
-Flutter SDK cache|$HOME/.cache/flutter/*|compiler_cache
-Swift Package Manager cache|$HOME/.cache/swift-package-manager/*|compiler_cache
-Zig compiler cache|$HOME/.cache/zig/*|compiler_cache
-Deno cache|$HOME/Library/Caches/deno/*|compiler_cache
-CocoaPods cache (iOS dependencies)|$HOME/Library/Caches/CocoaPods/*|package_manager
-npm package cache|$HOME/.npm/_cacache/*|package_manager
-pip Python package cache|$HOME/.cache/pip/*|package_manager
-uv Python package cache|$HOME/.cache/uv/*|package_manager
-R renv global cache (virtual environments)|$HOME/Library/Caches/org.R-project.R/R/renv/*|package_manager
-tealdeer tldr pages cache|$HOME/Library/Caches/tealdeer/tldr-pages|package_manager
-Homebrew downloaded packages|$HOME/Library/Caches/Homebrew/*|package_manager
-Yarn package manager cache|$HOME/.cache/yarn/*|package_manager
-pnpm package store|$HOME/Library/pnpm/store/*|package_manager
-Composer PHP dependencies cache (legacy)|$HOME/.composer/cache/*|package_manager
-Composer PHP dependencies cache|$HOME/Library/Caches/composer/*|package_manager
-RubyGems cache|$HOME/.gem/cache/*|package_manager
-Conda package metadata/tarball cache|$HOME/.conda/pkgs|package_manager
-Anaconda package metadata/tarball cache|$HOME/anaconda3/pkgs|package_manager
-PyTorch model cache|$HOME/.cache/torch/*|ai_ml_cache
-TensorFlow model and dataset cache|$HOME/.cache/tensorflow/*|ai_ml_cache
-HuggingFace models and datasets|$HOME/.cache/huggingface/*|ai_ml_cache
-Playwright browser binaries|$HOME/Library/Caches/ms-playwright*|ai_ml_cache
-Selenium WebDriver binaries|$HOME/.cache/selenium/*|ai_ml_cache
-Ollama local AI models|$HOME/.ollama/models/*|ai_ml_cache
-Weights & Biases ML experiments cache|$HOME/.cache/wandb/*|ai_ml_cache
-Safari web browser cache|$HOME/Library/Caches/com.apple.Safari/*|browser_cache
-Chrome browser cache|$HOME/Library/Caches/Google/Chrome/*|browser_cache
-Firefox browser cache|$HOME/Library/Caches/Firefox/*|browser_cache
-Brave browser cache|$HOME/Library/Caches/BraveSoftware/Brave-Browser/*|browser_cache
-Surge proxy cache|$HOME/Library/Caches/com.nssurge.surge-mac/*|network_tools
-Surge configuration and data|$HOME/Library/Application Support/com.nssurge.surge-mac/*|network_tools
-Docker BuildX cache|$HOME/.docker/buildx/cache/*|container_cache
-Podman container cache|$HOME/.local/share/containers/cache/*|container_cache
-Tart OCI/IPSW cache|$HOME/.tart/cache|container_cache
-Font cache|$HOME/Library/Caches/com.apple.FontRegistry/*|system_cache
-Spotlight metadata cache|$HOME/Library/Caches/com.apple.spotlight/*|system_cache
-CloudKit cache|$HOME/Library/Caches/CloudKit/*|system_cache
-Trash|$HOME/.Trash|system_cache
-iOS/iPadOS device firmware (.ipsw) from iTunes/Finder|$HOME/Library/iTunes/*Software Updates/*.ipsw|system_cache
-Apple Configurator 2 device firmware (.ipsw)|$HOME/Library/Group Containers/*.group.com.apple.configurator/**/*.ipsw|system_cache
+Apple Mail 缓存|$HOME/Library/Caches/com.apple.mail/*|system_cache
+Gradle 构建缓存(Android Studio、Gradle 项目)|$HOME/.gradle/caches/build-cache-*/*|ide_cache
+Gradle 守护进程缓存|$HOME/.gradle/daemon/*|ide_cache
+Gradle worker 缓存|$HOME/.gradle/workers/*|ide_cache
+Xcode DerivedData(构建产物、索引)|$HOME/Library/Developer/Xcode/DerivedData/*|ide_cache
+Xcode 内部缓存文件|$HOME/Library/Caches/com.apple.dt.Xcode/*|ide_cache
+Xcode iOS 设备支持符号|$HOME/Library/Developer/Xcode/iOS DeviceSupport/*/Symbols/System/Library/Caches/*|ide_cache
+Maven 本地仓库(Java 依赖)|$HOME/.m2/repository/*|ide_cache
+JetBrains IDE 数据(IntelliJ、PyCharm、WebStorm、GoLand)|$HOME/Library/Application Support/JetBrains/*|ide_cache
+JetBrains IDE 缓存|$HOME/Library/Caches/JetBrains/*|ide_cache
+Android Studio 缓存与索引|$HOME/Library/Caches/Google/AndroidStudio*/*|ide_cache
+Android 构建缓存|$HOME/.android/build-cache/*|ide_cache
+VS Code 运行时缓存|$HOME/Library/Application Support/Code/Cache/*|ide_cache
+VS Code 扩展与更新缓存|$HOME/Library/Application Support/Code/CachedData/*|ide_cache
+VS Code 系统缓存(Cursor、VSCodium)|$HOME/Library/Caches/com.microsoft.VSCode/*|ide_cache
+Cursor 编辑器缓存|$HOME/Library/Caches/com.todesktop.230313mzl4w4u92/*|ide_cache
+LM Studio 应用缓存|$HOME/Library/Caches/com.lmstudio.lmstudio/*|ai_ml_cache
+Codex Desktop 更新暂存|$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle/Installation|ai_ml_cache
+Chrome 设备端 AI 模型|$HOME/Library/Application Support/Google/Chrome/OptGuideOnDevice*/*|ai_ml_cache
+Chrome 优化指南模型|$HOME/Library/Application Support/Google/Chrome/optimization_guide_model_store/*|ai_ml_cache
+Bazel 构建缓存|$HOME/.cache/bazel/*|compiler_cache
+Go 构建缓存|$HOME/Library/Caches/go-build/*|compiler_cache
+Go 模块缓存|$HOME/go/pkg/mod/*|compiler_cache
+Rust Cargo 注册表缓存|$HOME/.cargo/registry/cache/*|compiler_cache
+Rust Cargo 解压源码|$HOME/.cargo/registry/src/*|compiler_cache
+Rust 文档缓存|$HOME/.rustup/toolchains/*/share/doc/*|compiler_cache
+Rustup 工具链下载|$HOME/.rustup/downloads/*|compiler_cache
+ccache 编译器缓存|$HOME/.ccache/*|compiler_cache
+sccache 分布式编译器缓存|$HOME/.cache/sccache/*|compiler_cache
+SBT Scala 构建缓存|$HOME/.sbt/*|compiler_cache
+Ivy 依赖缓存|$HOME/.ivy2/cache/*|compiler_cache
+Turbo monorepo 构建缓存|$HOME/.turbo/*|compiler_cache
+Next.js 构建缓存|$HOME/.next/*|compiler_cache
+Vite 构建缓存|$HOME/.vite/*|compiler_cache
+Parcel 打包器缓存|$HOME/.parcel-cache/*|compiler_cache
+pre-commit 钩子缓存|$HOME/.cache/pre-commit/*|compiler_cache
+Ruff Python 检查器缓存|$HOME/.cache/ruff/*|compiler_cache
+MyPy 类型检查器缓存|$HOME/.cache/mypy/*|compiler_cache
+Pytest 测试缓存|$HOME/.pytest_cache/*|compiler_cache
+Flutter SDK 缓存|$HOME/.cache/flutter/*|compiler_cache
+Swift Package Manager 缓存|$HOME/.cache/swift-package-manager/*|compiler_cache
+Zig 编译器缓存|$HOME/.cache/zig/*|compiler_cache
+Deno 缓存|$HOME/Library/Caches/deno/*|compiler_cache
+CocoaPods 缓存(iOS 依赖)|$HOME/Library/Caches/CocoaPods/*|package_manager
+npm 包缓存|$HOME/.npm/_cacache/*|package_manager
+pip Python 包缓存|$HOME/.cache/pip/*|package_manager
+uv Python 包缓存|$HOME/.cache/uv/*|package_manager
+R renv 全局缓存(虚拟环境)|$HOME/Library/Caches/org.R-project.R/R/renv/*|package_manager
+tealdeer tldr 手册缓存|$HOME/Library/Caches/tealdeer/tldr-pages|package_manager
+Homebrew 下载的软件包|$HOME/Library/Caches/Homebrew/*|package_manager
+Yarn 包管理器缓存|$HOME/.cache/yarn/*|package_manager
+pnpm 包存储|$HOME/Library/pnpm/store/*|package_manager
+Composer PHP 依赖缓存(旧版)|$HOME/.composer/cache/*|package_manager
+Composer PHP 依赖缓存|$HOME/Library/Caches/composer/*|package_manager
+RubyGems 缓存|$HOME/.gem/cache/*|package_manager
+Conda 包元数据/压缩包缓存|$HOME/.conda/pkgs|package_manager
+Anaconda 包元数据/压缩包缓存|$HOME/anaconda3/pkgs|package_manager
+PyTorch 模型缓存|$HOME/.cache/torch/*|ai_ml_cache
+TensorFlow 模型与数据集缓存|$HOME/.cache/tensorflow/*|ai_ml_cache
+HuggingFace 模型与数据集|$HOME/.cache/huggingface/*|ai_ml_cache
+Playwright 浏览器二进制|$HOME/Library/Caches/ms-playwright*|ai_ml_cache
+Selenium WebDriver 二进制|$HOME/.cache/selenium/*|ai_ml_cache
+Ollama 本地 AI 模型|$HOME/.ollama/models/*|ai_ml_cache
+Weights & Biases 机器学习实验缓存|$HOME/.cache/wandb/*|ai_ml_cache
+Safari 浏览器缓存|$HOME/Library/Caches/com.apple.Safari/*|browser_cache
+Chrome 浏览器缓存|$HOME/Library/Caches/Google/Chrome/*|browser_cache
+Firefox 浏览器缓存|$HOME/Library/Caches/Firefox/*|browser_cache
+Brave 浏览器缓存|$HOME/Library/Caches/BraveSoftware/Brave-Browser/*|browser_cache
+Surge 代理缓存|$HOME/Library/Caches/com.nssurge.surge-mac/*|network_tools
+Surge 配置与数据|$HOME/Library/Application Support/com.nssurge.surge-mac/*|network_tools
+Docker BuildX 缓存|$HOME/.docker/buildx/cache/*|container_cache
+Podman 容器缓存|$HOME/.local/share/containers/cache/*|container_cache
+Tart OCI/IPSW 缓存|$HOME/.tart/cache|container_cache
+字体缓存|$HOME/Library/Caches/com.apple.FontRegistry/*|system_cache
+Spotlight 元数据缓存|$HOME/Library/Caches/com.apple.spotlight/*|system_cache
+CloudKit 缓存|$HOME/Library/Caches/CloudKit/*|system_cache
+废纸篓|$HOME/.Trash|system_cache
+来自 iTunes/Finder 的 iOS/iPadOS 设备固件 (.ipsw)|$HOME/Library/iTunes/*Software Updates/*.ipsw|system_cache
+Apple Configurator 2 设备固件 (.ipsw)|$HOME/Library/Group Containers/*.group.com.apple.configurator/**/*.ipsw|system_cache
 EOF
     # Add FINDER_METADATA with constant reference
-    echo "Finder metadata, .DS_Store|$FINDER_METADATA_SENTINEL|system_cache"
+    echo "Finder 元数据, .DS_Store|$FINDER_METADATA_SENTINEL|system_cache"
 }
 
 # Get all optimize items with their patterns
@@ -330,14 +330,14 @@ manage_whitelist_categories() {
         items_source=$(get_optimize_whitelist_items)
         active_config_file="$WHITELIST_CONFIG_OPTIMIZE"
         local display_config="${active_config_file/#$HOME/~}"
-        menu_title="Whitelist Manager, Select optimize tasks to ignore
-${GRAY}Edit: ${display_config}${NC}"
+        menu_title="白名单管理器,选择要忽略的优化任务
+${GRAY}编辑: ${display_config}${NC}"
     else
         items_source=$(get_all_cache_items)
         active_config_file="$WHITELIST_CONFIG_CLEAN"
         local display_config="${active_config_file/#$HOME/~}"
-        menu_title="Whitelist Manager, Select caches to protect
-${GRAY}Edit: ${display_config}${NC}"
+        menu_title="白名单管理器,选择要保护的缓存
+${GRAY}编辑: ${display_config}${NC}"
     fi
 
     while IFS='|' read -r display_name pattern _; do
@@ -419,7 +419,7 @@ ${GRAY}Edit: ${display_config}${NC}"
     unset MOLE_PRESELECTED_INDICES
 
     if [[ $exit_code -ne 0 ]]; then
-        echo -e "${GRAY}Cancelled, no changes saved${NC}"
+        echo -e "${GRAY}已取消,未保存更改${NC}"
         return 0
     fi
 
@@ -458,14 +458,14 @@ ${GRAY}Edit: ${display_config}${NC}"
 
     local total_protected=$((${#selected_patterns[@]} + ${#custom_patterns[@]}))
     local -a summary_lines=()
-    summary_lines+=("Whitelist Updated")
+    summary_lines+=("白名单已更新")
     if [[ ${#custom_patterns[@]} -gt 0 ]]; then
-        summary_lines+=("Protected ${#selected_patterns[@]} predefined + ${#custom_patterns[@]} custom patterns")
+        summary_lines+=("已保护 ${#selected_patterns[@]} 个预定义 + ${#custom_patterns[@]} 个自定义模式")
     else
-        summary_lines+=("Protected ${total_protected} caches")
+        summary_lines+=("已保护 ${total_protected} 项缓存")
     fi
     local display_config="${active_config_file/#$HOME/~}"
-    summary_lines+=("Config: ${GRAY}${display_config}${NC}")
+    summary_lines+=("配置: ${GRAY}${display_config}${NC}")
 
     print_summary_block "${summary_lines[@]}"
     printf '\n'

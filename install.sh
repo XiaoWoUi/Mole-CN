@@ -113,7 +113,7 @@ safe_rm() {
     local tmp_root
 
     if [[ -z "$target" ]]; then
-        log_error "safe_rm: empty path"
+        log_error "safe_rm: 路径为空"
         return 1
     fi
     if [[ ! -e "$target" ]]; then
@@ -126,12 +126,12 @@ safe_rm() {
     done
     case "$target" in
         "$tmp_root" | /tmp)
-            log_error "safe_rm: refusing to remove temp root: $target"
+            log_error "safe_rm: 拒绝移除临时根目录: $target"
             return 1
             ;;
         "$tmp_root"/* | /tmp/*) ;;
         *)
-            log_error "safe_rm: refusing to remove non-temp path: $target"
+            log_error "safe_rm: 拒绝移除非临时路径: $target"
             return 1
             ;;
     esac
@@ -181,7 +181,7 @@ needs_sudo() {
 
 ensure_sudo_ready() {
     if [[ "${MOLE_TEST_MODE:-0}" == "1" || "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
-        log_error "Admin access required, blocked in test mode"
+        log_error "测试模式下需要管理员权限,已阻止"
         return 1
     fi
 
@@ -196,7 +196,7 @@ ensure_sudo_ready() {
 maybe_sudo() {
     if needs_sudo; then
         if [[ "${MOLE_TEST_MODE:-0}" == "1" || "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
-            log_error "Admin access required, blocked in test mode"
+            log_error "测试模式下需要管理员权限,已阻止"
             return 1
         fi
         if [[ "${MOLE_ASSUME_SUDO_AUTH:-0}" == "1" ]]; then
@@ -565,56 +565,56 @@ report_install_lock_failure() {
     local install_lock_dir
     case "$INSTALL_LOCK_FAILURE" in
         no_admin)
-            log_error "Admin access to $INSTALL_DIR is required but not available"
-            log_error "Cache credentials first, then retry: sudo -v && mo update"
+            log_error "需要 $INSTALL_DIR 的管理员权限,但当前不可用"
+            log_error "请先缓存凭据再重试: sudo -v && mo update"
             ;;
         unsafe_ancestor)
             install_lock_dir="${INSTALL_LOCK_UNSAFE_ANCESTOR:-<dir>}"
             case "$INSTALL_LOCK_UNSAFE_ANCESTOR_REASON" in
                 symlink)
-                    log_error "$install_lock_dir is a symlink, so a privileged write through it cannot be trusted"
-                    log_error "See where it points, install under a real directory, then retry: ls -ld $install_lock_dir"
+                    log_error "$install_lock_dir 是符号链接,通过它进行特权写入不可信"
+                    log_error "请查看它指向何处,在真实目录下安装,然后重试: ls -ld $install_lock_dir"
                     ;;
                 not_root_owned)
-                    log_error "$install_lock_dir is not owned by root, so a privileged write there cannot be trusted"
-                    log_error "Restore ownership, then retry: sudo chown root:wheel $install_lock_dir"
+                    log_error "$install_lock_dir 不属于 root,在那里进行特权写入不可信"
+                    log_error "请恢复所有权,然后重试: sudo chown root:wheel $install_lock_dir"
                     ;;
                 foreign_owner)
-                    log_error "$install_lock_dir is owned by neither root nor you"
-                    log_error "Take ownership, then retry: sudo chown $(id -un) $install_lock_dir"
+                    log_error "$install_lock_dir 既不属于 root 也不属于你"
+                    log_error "请取得所有权,然后重试: sudo chown $(id -un) $install_lock_dir"
                     ;;
                 acl)
-                    log_error "$install_lock_dir carries an ACL that grants access beyond its mode"
-                    log_error "Clear it, then retry: sudo chmod -N $install_lock_dir"
+                    log_error "$install_lock_dir 带有超出其权限位的 ACL 访问规则"
+                    log_error "请清除它,然后重试: sudo chmod -N $install_lock_dir"
                     ;;
                 unreadable)
-                    log_error "$install_lock_dir could not be inspected, so it cannot be cleared for a privileged write"
-                    log_error "Look at it, then retry: sudo ls -lde $install_lock_dir"
+                    log_error "$install_lock_dir 无法检查,因此无法为特权写入清空它"
+                    log_error "请查看它,然后重试: sudo ls -lde $install_lock_dir"
                     ;;
                 writable)
-                    log_error "$install_lock_dir is writable by someone other than root"
-                    log_error "Close it, then retry: sudo chmod go-w $install_lock_dir"
+                    log_error "$install_lock_dir 可被 root 以外的用户写入"
+                    log_error "请关闭写入权限,然后重试: sudo chmod go-w $install_lock_dir"
                     ;;
                 *)
-                    log_error "$install_lock_dir cannot be trusted for a privileged write"
-                    log_error "Inspect it, then retry: sudo ls -lde $install_lock_dir"
+                    log_error "$install_lock_dir 无法信任用于特权写入"
+                    log_error "请检查它,然后重试: sudo ls -lde $install_lock_dir"
                     ;;
             esac
             ;;
         lock_dir)
-            log_error "$INSTALL_DIR/.mole-update.lock is not a usable lock directory"
-            log_error "Inspect it, then retry: sudo ls -lde $INSTALL_DIR/.mole-update.lock"
+            log_error "$INSTALL_DIR/.mole-update.lock 不是可用的锁目录"
+            log_error "请检查它,然后重试: sudo ls -lde $INSTALL_DIR/.mole-update.lock"
             ;;
         lock_path)
-            log_error "$INSTALL_DIR/.mole-update.lock/kernel.lock is not a regular file"
-            log_error "Remove it, then retry: sudo rm -f $INSTALL_DIR/.mole-update.lock/kernel.lock"
+            log_error "$INSTALL_DIR/.mole-update.lock/kernel.lock 不是普通文件"
+            log_error "请移除它,然后重试: sudo rm -f $INSTALL_DIR/.mole-update.lock/kernel.lock"
             ;;
         no_mutex)
-            log_error "Neither /usr/bin/lockf nor /bin/mkdir is usable, so concurrent installs cannot be kept apart"
-            log_error "Check that /bin and /usr/bin are intact, then retry: ls -l /bin/mkdir /usr/bin/lockf"
+            log_error "/usr/bin/lockf 和 /bin/mkdir 均不可用,无法防止并发安装冲突"
+            log_error "请检查 /bin 和 /usr/bin 是否完好,然后重试: ls -l /bin/mkdir /usr/bin/lockf"
             ;;
         *)
-            log_error "Another install or update is running, wait for it to finish and retry"
+            log_error "另一个安装或更新正在进行,请等待其完成后重试"
             ;;
     esac
 }
@@ -650,7 +650,7 @@ get_remote_main_commit_hash() {
     local response=""
     local commit_hash=""
     response=$(curl -fsSL --connect-timeout 3 --max-time 5 \
-        "https://api.github.com/repos/tw93/mole/commits/main" 2> /dev/null || true)
+        "https://api.github.com/repos/XiaoWoUi/Mole-CN/commits/main" 2> /dev/null || true)
     commit_hash=$(printf '%s\n' "$response" |
         sed -n 's/.*"sha"[[:space:]]*:[[:space:]]*"\([a-f0-9]\{40\}\)".*/\1/p' | head -1)
     [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] || return 1
@@ -662,11 +662,11 @@ source_archive_url() {
     local source_commit="${2:-}"
 
     if [[ "$branch" == "main" && "$source_commit" =~ ^[0-9a-f]{40}$ ]]; then
-        printf 'https://github.com/tw93/mole/archive/%s.tar.gz\n' "$source_commit"
+        printf 'https://github.com/XiaoWoUi/Mole-CN/archive/%s.tar.gz\n' "$source_commit"
     elif [[ "$branch" == "main" || "$branch" == "dev" ]]; then
-        printf 'https://github.com/tw93/mole/archive/refs/heads/%s.tar.gz\n' "$branch"
+        printf 'https://github.com/XiaoWoUi/Mole-CN/archive/refs/heads/%s.tar.gz\n' "$branch"
     else
-        printf 'https://github.com/tw93/mole/archive/refs/tags/%s.tar.gz\n' "$branch"
+        printf 'https://github.com/XiaoWoUi/Mole-CN/archive/refs/tags/%s.tar.gz\n' "$branch"
     fi
 }
 
@@ -709,7 +709,7 @@ resolve_source_dir() {
         # Both release-tag lookups failed (typically GitHub API rate limits
         # while codeload still works). Keep the install usable, but say
         # loudly that this is now a nightly source install, not a release.
-        log_warning "Could not resolve the latest release tag; installing from main (nightly source)"
+        log_warning "无法解析最新发布标签;将从 main 分支安装(夜间版源码)"
         branch="main"
     fi
     if [[ "$branch" != "main" && "$branch" != "dev" ]]; then
@@ -719,7 +719,7 @@ resolve_source_dir() {
     if [[ "$branch" == "main" ]]; then
         source_commit="${MOLE_INSTALL_COMMIT:-}"
         if [[ -n "$source_commit" && ! "$source_commit" =~ ^[0-9a-f]{40}$ ]]; then
-            log_error "Invalid pinned source commit"
+            log_error "无效的固定源码提交"
             exit 1
         fi
         if [[ -z "$source_commit" ]]; then
@@ -732,7 +732,7 @@ resolve_source_dir() {
     local url
     url=$(source_archive_url "$branch" "$source_commit")
 
-    start_line_spinner "Fetching Mole source, ${branch}..."
+    start_line_spinner "正在获取 Mole 源码,分支 ${branch}..."
     if command -v curl > /dev/null 2>&1; then
         if curl_download_with_retry "$url" "$tmp/mole.tar.gz" 2> /dev/null; then
             if tar -xzf "$tmp/mole.tar.gz" -C "$tmp" 2> /dev/null; then
@@ -750,19 +750,19 @@ resolve_source_dir() {
             stop_line_spinner
             # Only exit early for version tags (not for main/dev branches)
             if [[ "$branch" != "main" && "$branch" != "dev" ]]; then
-                log_error "Failed to fetch version ${branch}. Check if tag exists."
+                log_error "获取版本 ${branch} 失败,请检查标签是否存在。"
                 exit 1
             fi
         fi
     fi
     stop_line_spinner
 
-    start_line_spinner "Cloning Mole source..."
+    start_line_spinner "正在克隆 Mole 源码..."
     if command -v git > /dev/null 2>&1; then
         local clone_succeeded=false
         if [[ -n "$source_commit" ]]; then
             if git init -q "$tmp/mole" > /dev/null 2>&1 &&
-                git -C "$tmp/mole" remote add origin https://github.com/tw93/mole.git > /dev/null 2>&1 &&
+                git -C "$tmp/mole" remote add origin https://github.com/XiaoWoUi/Mole-CN.git > /dev/null 2>&1 &&
                 git -C "$tmp/mole" fetch -q --depth=1 origin "$source_commit" > /dev/null 2>&1 &&
                 git -C "$tmp/mole" checkout -q --detach FETCH_HEAD > /dev/null 2>&1; then
                 clone_succeeded=true
@@ -772,7 +772,7 @@ resolve_source_dir() {
             if [[ "$branch" != "main" ]]; then
                 git_args+=("--branch" "$branch")
             fi
-            if git clone "${git_args[@]}" https://github.com/tw93/mole.git "$tmp/mole" > /dev/null 2>&1; then
+            if git clone "${git_args[@]}" https://github.com/XiaoWoUi/Mole-CN.git "$tmp/mole" > /dev/null 2>&1; then
                 clone_succeeded=true
             fi
         fi
@@ -786,7 +786,7 @@ resolve_source_dir() {
     fi
     stop_line_spinner
 
-    log_error "Failed to fetch source files. Ensure curl or git is available."
+    log_error "获取源码文件失败,请确保 curl 或 git 可用。"
     exit 1
 }
 
@@ -816,7 +816,7 @@ get_latest_release_tag() {
         return 1
     fi
     tag=$(curl -fsSL --connect-timeout 2 --max-time 3 \
-        "https://api.github.com/repos/tw93/mole/releases/latest" 2> /dev/null |
+        "https://api.github.com/repos/XiaoWoUi/Mole-CN/releases/latest" 2> /dev/null |
         sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
     if [[ -z "$tag" ]]; then
         return 1
@@ -828,7 +828,7 @@ get_latest_release_tag_from_git() {
     if ! command -v git > /dev/null 2>&1; then
         return 1
     fi
-    git ls-remote --tags --refs https://github.com/tw93/mole.git 2> /dev/null |
+    git ls-remote --tags --refs https://github.com/XiaoWoUi/Mole-CN.git 2> /dev/null |
         awk -F/ '{print $NF}' |
         grep -E '^V[0-9]' |
         sort -V |
@@ -848,7 +848,7 @@ normalize_release_tag() {
 
 release_checksums_url() {
     local tag="$1"
-    printf 'https://github.com/tw93/mole/releases/download/%s/SHA256SUMS\n' "$tag"
+    printf 'https://github.com/XiaoWoUi/Mole-CN/releases/download/%s/SHA256SUMS\n' "$tag"
 }
 
 download_release_checksums() {
@@ -885,7 +885,7 @@ verify_release_attestation() {
     # produced by self-hosted runners, which a repo compromise could otherwise
     # introduce as a sidechannel.
     if gh attestation verify "$file" \
-        --owner tw93 \
+        --owner XiaoWoUi \
         --deny-self-hosted-runners \
         > /dev/null 2>&1; then
         return 0
@@ -931,7 +931,7 @@ verify_release_asset_checksum() {
     # trips that can take several seconds each. With nothing on screen this is
     # the longest silent stretch of an install and reads as a hang, so keep a
     # spinner up until the first real line prints.
-    start_line_spinner "Verifying ${asset_name}..."
+    start_line_spinner "正在校验 ${asset_name}..."
 
     if download_release_checksums "$tag" "$checksums_file" > /dev/null 2>&1; then
         # Anchor the SHA256SUMS file to its GitHub Actions build-provenance
@@ -943,14 +943,14 @@ verify_release_asset_checksum() {
 
         if [[ "$attestation_status" -eq 1 ]]; then
             stop_line_spinner
-            log_error "Release attestation verification failed for ${asset_name}"
+            log_error "${asset_name} 的发布证明校验失败"
             rm -f "$checksums_file"
             return 1
         fi
 
         if [[ "$attestation_status" -eq 2 && "${MOLE_REQUIRE_ATTESTATION:-0}" == "1" ]]; then
             stop_line_spinner
-            log_error "MOLE_REQUIRE_ATTESTATION=1 set but gh CLI unavailable or unauthenticated"
+            log_error "已设置 MOLE_REQUIRE_ATTESTATION=1,但 gh CLI 不可用或未登录"
             rm -f "$checksums_file"
             return 1
         fi
@@ -961,7 +961,7 @@ verify_release_asset_checksum() {
             result=0
             if [[ "$attestation_status" -eq 0 ]]; then
                 stop_line_spinner
-                log_success "Verified ${asset_name} · sha256 + attestation"
+                log_success "已验证 ${asset_name} · sha256 + 证明"
             fi
         fi
     fi
@@ -976,7 +976,7 @@ get_installed_version() {
     if [[ -x "$binary" ]]; then
         local version
         version=$(run_install_probe_with_timeout 5 "$binary" --version 2> /dev/null |
-            awk '/Mole version/ {print $NF; exit}' || true)
+            awk '/Mole (版本|version)/ {print $NF; exit}' || true)
         if [[ -n "$version" ]]; then
             echo "$version"
         else
@@ -1062,7 +1062,7 @@ parse_args() {
             continue
         fi
         if [[ -n "$version_token" ]]; then
-            log_error "Unexpected argument: $token"
+            log_error "意外的参数: $token"
             exit 1
         fi
         case "$token" in
@@ -1084,7 +1084,7 @@ parse_args() {
                 unset 'args[$i]'
                 ;;
             *)
-                log_error "Unknown option: $token"
+                log_error "未知选项: $token"
                 exit 1
                 ;;
         esac
@@ -1099,7 +1099,7 @@ parse_args() {
         case $1 in
             --prefix)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "Missing value for --prefix"
+                    log_error "--prefix 缺少值"
                     exit 1
                 fi
                 INSTALL_DIR="$2"
@@ -1107,7 +1107,7 @@ parse_args() {
                 ;;
             --config)
                 if [[ -z "${2:-}" ]]; then
-                    log_error "Missing value for --config"
+                    log_error "--config 缺少值"
                     exit 1
                 fi
                 CONFIG_DIR="$2"
@@ -1122,11 +1122,11 @@ parse_args() {
                 shift 1
                 ;;
             --help | -h)
-                log_error "Unknown option: $1"
+                log_error "未知选项: $1"
                 exit 1
                 ;;
             *)
-                log_error "Unknown option: $1"
+                log_error "未知选项: $1"
                 exit 1
                 ;;
         esac
@@ -1146,7 +1146,7 @@ normalize_install_dir() {
 # Environment checks and directory setup
 check_requirements() {
     if [[ "$OSTYPE" != "darwin"* ]]; then
-        log_error "This tool is designed for macOS only"
+        log_error "此工具仅适用于 macOS"
         exit 1
     fi
 
@@ -1166,21 +1166,21 @@ check_requirements() {
                 return 0
             fi
 
-            echo -e "${YELLOW}Mole is installed via Homebrew${NC}"
+            echo -e "${YELLOW}Mole 已通过 Homebrew 安装${NC}"
             echo ""
-            echo "Choose one:"
-            echo -e "  1. Update via Homebrew: ${GREEN}brew upgrade mole${NC}"
-            echo -e "  2. Switch to manual: ${GREEN}brew uninstall --force mole${NC} then re-run this"
+            echo "请选择:"
+            echo -e "  1. 通过 Homebrew 更新: ${GREEN}brew upgrade mole${NC}"
+            echo -e "  2. 切换到手动安装: ${GREEN}brew uninstall --force mole${NC} 然后重新运行本脚本"
             echo ""
             exit 1
         else
-            log_warning "Cleaning up stale Homebrew installation..."
+            log_warning "正在清理过期的 Homebrew 安装..."
             brew uninstall --force mole > /dev/null 2>&1 || true
         fi
     fi
 
     if [[ ! -d "$(dirname "$INSTALL_DIR")" ]]; then
-        log_error "Parent directory $(dirname "$INSTALL_DIR") does not exist"
+        log_error "父目录 $(dirname "$INSTALL_DIR") 不存在"
         exit 1
     fi
 }
@@ -1191,7 +1191,7 @@ create_directories() {
     fi
 
     if ! mkdir -p "$CONFIG_DIR" "$CONFIG_DIR/bin" "$CONFIG_DIR/lib"; then
-        log_error "Failed to create config directory: $CONFIG_DIR"
+        log_error "创建配置目录失败: $CONFIG_DIR"
         exit 1
     fi
 
@@ -1223,17 +1223,17 @@ build_binary_from_source() {
         return 1
     fi
 
-    start_line_spinner "Building ${binary_name} from source..."
+    start_line_spinner "正在从源码构建 ${binary_name}..."
 
     if (cd "$SOURCE_DIR" && go build -ldflags="-s -w" -o "$target_path" "./$cmd_dir" > /dev/null 2>&1); then
         if [[ -t 1 ]]; then stop_line_spinner; fi
         chmod +x "$target_path"
-        log_success "Built ${binary_name} from source"
+        log_success "已从源码构建 ${binary_name}"
         return 0
     fi
 
     if [[ -t 1 ]]; then stop_line_spinner; fi
-    log_warning "Failed to build ${binary_name} from source"
+    log_warning "从源码构建 ${binary_name} 失败"
     return 1
 }
 
@@ -1264,7 +1264,7 @@ download_binary() {
             rm -f "$staged_path"
             return 1
         fi
-        log_success "Installed local ${binary_name} binary"
+        log_success "已安装本地 ${binary_name} 程序"
         return 0
     elif [[ -f "$SOURCE_DIR/bin/${binary_name}-darwin-${arch_suffix}" ]]; then
         if ! cp "$SOURCE_DIR/bin/${binary_name}-darwin-${arch_suffix}" "$staged_path" ||
@@ -1272,7 +1272,7 @@ download_binary() {
             rm -f "$staged_path"
             return 1
         fi
-        log_success "Installed local ${binary_name} binary"
+        log_success "已安装本地 ${binary_name} 程序"
         return 0
     fi
 
@@ -1287,7 +1287,7 @@ download_binary() {
     local version
     version=$(get_source_version)
     if [[ -z "$version" ]]; then
-        log_warning "Could not determine version for ${binary_name}, trying local build"
+        log_warning "无法确定 ${binary_name} 的版本,尝试本地构建"
         if build_binary_from_source "$binary_name" "$staged_path" &&
             install_staged_binary "$staged_path" "$target_path"; then
             return 0
@@ -1298,11 +1298,11 @@ download_binary() {
     local release_tag
     release_tag="$(normalize_release_tag "$version")"
     local asset_name="${binary_name}-darwin-${arch_suffix}"
-    local url="https://github.com/tw93/mole/releases/download/${release_tag}/${asset_name}"
+    local url="https://github.com/XiaoWoUi/Mole-CN/releases/download/${release_tag}/${asset_name}"
 
     # Skip preflight network checks to avoid false negatives.
 
-    start_line_spinner "Downloading ${binary_name}..."
+    start_line_spinner "正在下载 ${binary_name}..."
 
     # Both download attempts are followed by another route, so a failure here
     # is a step in the flow rather than the end of it. Surfacing curl's raw
@@ -1312,7 +1312,7 @@ download_binary() {
         if [[ -t 1 ]]; then stop_line_spinner; fi
         if verify_release_asset_checksum "$release_tag" "$asset_name" "$staged_path" &&
             install_staged_binary "$staged_path" "$target_path"; then
-            log_success "Installed ${binary_name}"
+            log_success "已安装 ${binary_name}"
             return 0
         fi
         rm -f "$staged_path"
@@ -1322,8 +1322,8 @@ download_binary() {
         # onto an unverified source build (classic verification-stripping
         # downgrade). Explicit source builds remain available via
         # MOLE_VERSION=main / MOLE_EDGE_INSTALL=true.
-        log_error "Verification failed for ${binary_name}; aborting instead of falling back to an unverified build"
-        log_error "Retry later, or opt into a source build explicitly: MOLE_VERSION=main ./install.sh (piping from curl: | bash -s latest)"
+        log_error "${binary_name} 校验失败;已中止,而不是回退到未经验证的构建"
+        log_error "请稍后重试,或明确选择源码构建: MOLE_VERSION=main ./install.sh"
         return 1
     fi
     rm -f "$staged_path"
@@ -1332,13 +1332,13 @@ download_binary() {
     local fallback_tag
     fallback_tag=$(get_latest_release_tag 2> /dev/null || true)
     if [[ -n "$fallback_tag" && "$fallback_tag" != "$release_tag" ]]; then
-        local fallback_url="https://github.com/tw93/mole/releases/download/${fallback_tag}/${asset_name}"
-        start_line_spinner "Retrying ${binary_name} from ${fallback_tag}..."
+        local fallback_url="https://github.com/XiaoWoUi/Mole-CN/releases/download/${fallback_tag}/${asset_name}"
+        start_line_spinner "正在从 ${fallback_tag} 重试 ${binary_name}..."
         if curl_download_with_retry "$fallback_url" "$staged_path" 2> /dev/null; then
             if [[ -t 1 ]]; then stop_line_spinner; fi
             if verify_release_asset_checksum "$fallback_tag" "$asset_name" "$staged_path" &&
                 install_staged_binary "$staged_path" "$target_path"; then
-                log_success "Installed ${binary_name} from ${fallback_tag} · v${version} not yet published"
+                log_success "已从 ${fallback_tag} 安装 ${binary_name} · v${version} 尚未发布"
                 return 0
             fi
             rm -f "$staged_path"
@@ -1347,21 +1347,21 @@ download_binary() {
             # asset arrived but did not verify, which is evidence of tampering
             # or a corrupted checksums file, not of unavailability. Only a
             # plain download failure may continue into the source build.
-            log_error "Verification failed for ${binary_name} from ${fallback_tag}; aborting instead of falling back to an unverified build"
-            log_error "Retry later, or opt into a source build explicitly: MOLE_VERSION=main ./install.sh (piping from curl: | bash -s latest)"
+            log_error "${binary_name} 从 ${fallback_tag} 的校验失败;已中止,而不是回退到未经验证的构建"
+            log_error "请稍后重试,或明确选择源码构建: MOLE_VERSION=main ./install.sh"
             return 1
         fi
         rm -f "$staged_path"
         if [[ -t 1 ]]; then stop_line_spinner; fi
     fi
 
-    log_warning "Could not download ${binary_name} binary, v${version}, trying local build"
+    log_warning "无法下载 ${binary_name} 程序 v${version},尝试本地构建"
     if build_binary_from_source "$binary_name" "$staged_path" &&
         install_staged_binary "$staged_path" "$target_path"; then
         return 0
     fi
     rm -f "$staged_path"
-    log_error "Failed to install ${binary_name} binary"
+    log_error "安装 ${binary_name} 程序失败"
     return 1
 }
 
@@ -1380,9 +1380,9 @@ install_files() {
     if [[ -f "$SOURCE_DIR/mole" ]]; then
         if [[ "$source_dir_abs" != "$install_dir_abs" ]]; then
             if needs_sudo; then
-                log_admin "Admin access required for /usr/local/bin"
+                log_admin "需要 /usr/local/bin 的管理员权限"
                 if [[ "${MOLE_TEST_MODE:-0}" == "1" || "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
-                    log_error "Admin access required, blocked in test mode"
+                    log_error "测试模式下需要管理员权限,已阻止"
                     return 1
                 fi
                 # Explicit failure checks throughout this function: callers run
@@ -1392,8 +1392,8 @@ install_files() {
                 # the old entry script in place (the 1.45.0 -> 1.47.0 fake
                 # "Updated to latest version" incident).
                 if ! ensure_sudo_ready; then
-                    log_error "Admin access to $INSTALL_DIR is required but not available"
-                    log_error "Cache credentials first, then retry: sudo -v && mo update"
+                    log_error "需要 $INSTALL_DIR 的管理员权限,但当前不可用"
+                    log_error "请先缓存凭据再重试: sudo -v && mo update"
                     return 1
                 fi
             fi
@@ -1402,8 +1402,8 @@ install_files() {
             if ! maybe_sudo cp "$SOURCE_DIR/mole" "$INSTALL_DIR/mole.new" ||
                 ! maybe_sudo chmod +x "$INSTALL_DIR/mole.new" ||
                 ! maybe_sudo mv -f "$INSTALL_DIR/mole.new" "$INSTALL_DIR/mole"; then
-                log_error "Failed to install mole to $INSTALL_DIR (admin access missing or denied)"
-                log_error "Cache credentials first, then retry: sudo -v && mo update"
+                log_error "安装 mole 到 $INSTALL_DIR 失败(缺少或拒绝管理员权限)"
+                log_error "请先缓存凭据再重试: sudo -v && mo update"
                 return 1
             fi
 
@@ -1417,7 +1417,7 @@ install_files() {
         if ! maybe_sudo cp "$SOURCE_DIR/mo" "$INSTALL_DIR/mo.new" ||
             ! maybe_sudo chmod +x "$INSTALL_DIR/mo.new" ||
             ! maybe_sudo mv -f "$INSTALL_DIR/mo.new" "$INSTALL_DIR/mo"; then
-            log_error "Failed to install mo alias to $INSTALL_DIR (admin access missing or denied)"
+            log_error "安装 mo 别名到 $INSTALL_DIR 失败(缺少或拒绝管理员权限)"
             return 1
         fi
     fi
@@ -1463,7 +1463,7 @@ install_files() {
         # Use absolute /usr/bin/sed (always BSD on macOS) so PATH-shadowed
         # GNU sed from Homebrew gnu-sed does not break the -i '' syntax.
         if ! maybe_sudo /usr/bin/sed -i '' "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$CONFIG_DIR\"|" "$INSTALL_DIR/mole"; then
-            log_error "Failed to point $INSTALL_DIR/mole at $CONFIG_DIR"
+            log_error "无法将 $INSTALL_DIR/mole 指向 $CONFIG_DIR"
             return 1
         fi
     fi
@@ -1472,7 +1472,7 @@ install_files() {
     # alias, the modules and the libraries separately described the layout
     # rather than the outcome, and every one of them is a hard failure that
     # returns above if it goes wrong.
-    log_success "Installed to $INSTALL_DIR"
+    log_success "已安装到 $INSTALL_DIR"
 
     local helper_install_marker="$CONFIG_DIR/.helper_install_incomplete"
     : > "$helper_install_marker"
@@ -1498,19 +1498,19 @@ verify_installation() {
         expected_version="$(get_source_version 2> /dev/null || true)"
         installed_version="$(get_installed_version 2> /dev/null || true)"
         if [[ -n "$expected_version" && -n "$installed_version" && "$expected_version" != "$installed_version" ]]; then
-            log_error "Installed mole reports $installed_version but $expected_version was expected"
-            log_error "The entry script at $INSTALL_DIR/mole was not replaced; retry with: sudo -v && mo update"
+            log_error "已安装的 mole 报告版本为 $installed_version,但预期是 $expected_version"
+            log_error "位于 $INSTALL_DIR/mole 的入口脚本未被替换;请重试: sudo -v && mo update"
             exit 1
         fi
 
         if run_install_probe_with_timeout 5 "$INSTALL_DIR/mole" --help > /dev/null 2>&1; then
             return 0
         else
-            log_error "Installed Mole did not answer the bounded help probe"
+            log_error "安装的 Mole 未响应超时帮助探测"
             return 1
         fi
     else
-        log_error "Installation verification failed"
+        log_error "安装验证失败"
         exit 1
     fi
 }
@@ -1521,12 +1521,12 @@ setup_path() {
     fi
 
     if [[ "$INSTALL_DIR" != "/usr/local/bin" ]]; then
-        log_warning "$INSTALL_DIR is not in your PATH"
+        log_warning "$INSTALL_DIR 不在你的 PATH 中"
         echo ""
-        echo "To use mole from anywhere, add this line to your shell profile:"
+        echo "要随处使用 mole,请在 shell 配置文件中添加此行:"
         echo "export PATH=\"$INSTALL_DIR:\$PATH\""
         echo ""
-        echo "For example, add it to ~/.zshrc or ~/.bash_profile"
+        echo "例如,将其添加到 ~/.zshrc 或 ~/.bash_profile"
     fi
 }
 
@@ -1548,38 +1548,41 @@ print_usage_summary() {
 
     echo ""
 
-    local message="Mole ${action} successfully"
+    local message="Mole 安装成功"
+    if [[ "$action" == "updated" ]]; then
+        message="Mole 更新成功"
+    fi
 
     if [[ "$action" == "updated" && -n "$previous_version" && -n "$new_version" && "$previous_version" != "$new_version" ]]; then
-        message+=", ${previous_version} -> ${new_version}"
+        message+=",${previous_version} → ${new_version}"
     elif [[ -n "$new_version" ]]; then
-        message+=", version ${new_version}"
+        message+=",版本 ${new_version}"
     fi
 
     log_confirm "$message"
 
     echo ""
-    echo "Usage:"
+    echo "用法:"
     if [[ ":$PATH:" == *":$INSTALL_DIR:"* ]]; then
-        echo "  mo                           # Interactive menu"
-        echo "  mo clean                     # Deep cleanup"
-        echo "  mo uninstall                 # Remove apps + leftovers"
-        echo "  mo optimize                  # Check and maintain system"
-        echo "  mo analyze                   # Explore disk usage"
-        echo "  mo status                    # Monitor system health"
-        echo "  mo touchid                   # Configure Touch ID for sudo"
-        echo "  mo update                    # Update to latest version"
-        echo "  mo --help                    # Show all commands"
+        echo "  mo                           # 交互式菜单"
+        echo "  mo clean                     # 深度清理"
+        echo "  mo uninstall                 # 移除应用与残留"
+        echo "  mo optimize                  # 检查并维护系统"
+        echo "  mo analyze                   # 探索磁盘占用"
+        echo "  mo status                    # 监控系统健康"
+        echo "  mo touchid                   # 为 sudo 配置 Touch ID"
+        echo "  mo update                    # 更新到最新版本"
+        echo "  mo --help                    # 显示所有命令"
     else
-        echo "  $INSTALL_DIR/mo                           # Interactive menu"
-        echo "  $INSTALL_DIR/mo clean                     # Deep cleanup"
-        echo "  $INSTALL_DIR/mo uninstall                 # Remove apps + leftovers"
-        echo "  $INSTALL_DIR/mo optimize                  # Check and maintain system"
-        echo "  $INSTALL_DIR/mo analyze                   # Explore disk usage"
-        echo "  $INSTALL_DIR/mo status                    # Monitor system health"
-        echo "  $INSTALL_DIR/mo touchid                   # Configure Touch ID for sudo"
-        echo "  $INSTALL_DIR/mo update                    # Update to latest version"
-        echo "  $INSTALL_DIR/mo --help                    # Show all commands"
+        echo "  $INSTALL_DIR/mo                           # 交互式菜单"
+        echo "  $INSTALL_DIR/mo clean                     # 深度清理"
+        echo "  $INSTALL_DIR/mo uninstall                 # 移除应用与残留"
+        echo "  $INSTALL_DIR/mo optimize                  # 检查并维护系统"
+        echo "  $INSTALL_DIR/mo analyze                   # 探索磁盘占用"
+        echo "  $INSTALL_DIR/mo status                    # 监控系统健康"
+        echo "  $INSTALL_DIR/mo touchid                   # 为 sudo 配置 Touch ID"
+        echo "  $INSTALL_DIR/mo update                    # 更新到最新版本"
+        echo "  $INSTALL_DIR/mo --help                    # 显示所有命令"
     fi
     echo ""
 }
@@ -1636,7 +1639,7 @@ perform_install() {
         commit_hash=$(get_source_commit_hash || true)
     fi
     if ! write_install_channel_metadata "$install_channel" "$commit_hash" "${MOLE_INSTALL_RECEIPT:-}"; then
-        log_warning "Could not write install channel metadata"
+        log_warning "无法写入安装渠道元数据"
     fi
 
     # Edge installs get a suffix to make the version explicit.
@@ -1644,8 +1647,8 @@ perform_install() {
         installed_version="${installed_version}-edge"
         echo ""
         local branch_name="${MOLE_VERSION:-main}"
-        log_warning "Edge version installed on ${branch_name} branch"
-        log_info "This is a testing version; use 'mo update' to switch to stable"
+        log_warning "已在 ${branch_name} 分支安装边缘版本"
+        log_info "这是测试版本;使用 'mo update' 切换到稳定版"
     fi
 
     print_usage_summary "installed" "$installed_version"
@@ -1657,15 +1660,15 @@ perform_update() {
     if homebrew_owns_mole; then
         resolve_source_dir 2> /dev/null || true
         local current_version
-        current_version=$(get_installed_version || echo "unknown")
+        current_version=$(get_installed_version || echo "未知")
         if [[ -f "$SOURCE_DIR/lib/core/common.sh" ]]; then
             # shellcheck disable=SC1090,SC1091
             source "$SOURCE_DIR/lib/core/common.sh"
             update_via_homebrew "$current_version"
         else
-            log_error "Cannot update Homebrew-managed Mole without full installation"
+            log_error "没有完整安装,无法更新由 Homebrew 管理的 Mole"
             echo ""
-            echo "Please update via Homebrew:"
+            echo "请通过 Homebrew 更新:"
             echo -e "  ${GREEN}brew upgrade mole${NC}"
             exit 1
         fi
@@ -1676,7 +1679,7 @@ perform_update() {
     installed_version="$(get_installed_version || true)"
 
     if [[ -z "$installed_version" ]]; then
-        log_warning "Mole is not currently installed in $INSTALL_DIR. Running fresh installation."
+        log_warning "Mole 当前未安装在 $INSTALL_DIR,正在执行全新安装。"
         perform_install
         return
     fi
@@ -1686,12 +1689,12 @@ perform_update() {
     target_version="$(get_source_version || true)"
 
     if [[ -z "$target_version" ]]; then
-        log_error "Unable to determine the latest Mole version."
+        log_error "无法确定最新的 Mole 版本。"
         exit 1
     fi
 
     if [[ "$installed_version" == "$target_version" ]]; then
-        echo -e "${GREEN}${ICON_SUCCESS}${NC} Already on latest version, $installed_version"
+        echo -e "${GREEN}${ICON_SUCCESS}${NC} 已是最新版本,$installed_version"
         exit 0
     fi
 
@@ -1699,7 +1702,7 @@ perform_update() {
     VERBOSE=0
     create_directories || {
         VERBOSE=$old_verbose
-        log_error "Failed to create directories"
+        log_error "创建目录失败"
         exit 1
     }
     acquire_install_lock || {
@@ -1709,12 +1712,12 @@ perform_update() {
     }
     install_files || {
         VERBOSE=$old_verbose
-        log_error "Failed to install files"
+        log_error "安装文件失败"
         exit 1
     }
     verify_installation || {
         VERBOSE=$old_verbose
-        log_error "Failed to verify installation"
+        log_error "验证安装失败"
         exit 1
     }
     setup_path
@@ -1733,15 +1736,15 @@ perform_update() {
         commit_hash=$(get_source_commit_hash || true)
     fi
     if ! write_install_channel_metadata "$install_channel" "$commit_hash" "${MOLE_INSTALL_RECEIPT:-}"; then
-        log_warning "Could not write install channel metadata"
+        log_warning "无法写入安装渠道元数据"
     fi
 
-    echo -e "${GREEN}${ICON_SUCCESS}${NC} Updated to latest version, $updated_version"
+    echo -e "${GREEN}${ICON_SUCCESS}${NC} 已更新到最新版本,$updated_version"
 }
 
 parse_args "$@"
 normalize_install_dir || {
-    log_error "Could not resolve the installation directory: $INSTALL_DIR"
+    log_error "无法解析安装目录: $INSTALL_DIR"
     exit 1
 }
 

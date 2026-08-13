@@ -294,7 +294,7 @@ func parseDiskMetadata(out string) (diskMetadata, error) {
 		metadata.External = locationValue
 	}
 	if !externalFound {
-		return metadata, errors.New("diskutil info missing Internal field")
+		return metadata, errors.New("diskutil info 缺少 Internal 字段")
 	}
 	return metadata, nil
 }
@@ -422,13 +422,13 @@ func getFinderStartupDiskFreeBytes() (free, total uint64, err error) {
 	// Output format: "3.2489E+11, 4.9438E+11" or "324892202048, 494384795648"
 	parts := strings.SplitN(strings.TrimSpace(out), ",", 2)
 	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("unexpected osascript output: %q", out)
+		return 0, 0, fmt.Errorf("意外的 osascript 输出: %q", out)
 	}
 
 	freeF, err1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
 	totalF, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
 	if err1 != nil || err2 != nil || freeF <= 0 || totalF <= 0 {
-		return 0, 0, fmt.Errorf("failed to parse osascript output: %q", out)
+		return 0, 0, fmt.Errorf("解析 osascript 输出失败: %q", out)
 	}
 
 	finderDiskFree = uint64(freeF)
@@ -457,7 +457,7 @@ func extractPlistUint(plist string, keys ...string) (uint64, error) {
 
 		parsed, err := strconv.ParseUint(strings.TrimSpace(value), 10, 64)
 		if err != nil {
-			return 0, fmt.Errorf("failed to parse %s: %v", key, err)
+			return 0, fmt.Errorf("解析 %s 失败: %v", key, err)
 		}
 		return parsed, nil
 	}

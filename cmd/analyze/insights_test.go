@@ -45,14 +45,14 @@ func TestCreateInsightEntriesIncludesOrbStackData(t *testing.T) {
 
 	entries := createInsightEntries()
 	for _, entry := range entries {
-		if entry.Name == "OrbStack Data" {
+		if entry.Name == "OrbStack 数据" {
 			if entry.Path != orbstackData {
 				t.Fatalf("OrbStack path = %q, want %q", entry.Path, orbstackData)
 			}
 			return
 		}
 	}
-	t.Fatal("OrbStack Data insight not found")
+	t.Fatal("未找到 OrbStack 数据洞察")
 }
 
 func TestMeasureOldDownloads(t *testing.T) {

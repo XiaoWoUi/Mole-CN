@@ -51,11 +51,11 @@ EOF
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Mole History"* ]] || return 1
+    [[ "$output" == *"Mole 历史"* ]] || return 1
     [[ "$output" == *"purge"* ]] || return 1
-    [[ "$output" == *"1 items, 10KB"* ]] || return 1
+    [[ "$output" == *"1 个项目, 10KB"* ]] || return 1
     [[ "$output" == *"clean"* ]] || return 1
-    [[ "$output" == *"removed 1, trashed 1, skipped 1, failed 1"* ]] || return 1
+    [[ "$output" == *"已移除 1, 已移入废纸篓 1, 已跳过 1, 失败 1"* ]] || return 1
     [[ "$output" == *"/tmp/Old App.app"* ]]
 }
 
@@ -91,7 +91,7 @@ EOF
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history
     [[ "$status" -eq 0 ]] || { echo "$output"; return 1; }
-    [[ "$output" == *"2 optimize tasks failed"* ]] || return 1
+    [[ "$output" == *"2 个优化任务失败"* ]] || return 1
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history --json
     [[ "$status" -eq 0 ]] || { echo "$output"; return 1; }
@@ -162,8 +162,8 @@ assert data["deletions"][0]["path"] == "/tmp/unicode-\u96ea-quote\"slash\\tab\tb
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history
     [ "$status" -eq 0 ]
-    [[ "$output" == *"No operation history yet"* ]] || return 1
-    [[ "$output" == *"No deletion audit entries yet"* ]]
+    [[ "$output" == *"暂无操作历史。"* ]] || return 1
+    [[ "$output" == *"暂无删除审计记录。"* ]]
 }
 
 @test "mo history tolerates malformed session summaries" {
@@ -175,8 +175,8 @@ EOF
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history
     [ "$status" -eq 0 ]
-    [[ "$output" == *"clean      2026-05-24 10:00:00, 0 items, 0B"* ]] || return 1
-    [[ "$output" == *"removed 1, ended malformed summary"* ]] || return 1
+    [[ "$output" == *"clean      2026-05-24 10:00:00, 0 个项目, 0B"* ]] || return 1
+    [[ "$output" == *"已移除 1, 结束 malformed summary"* ]] || return 1
     [[ "$output" != *"malformed summary items"* ]]
 }
 
@@ -185,7 +185,7 @@ EOF
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history
     [ "$status" -eq 0 ]
-    [[ "$output" == *"No operation history yet"* ]] || return 1
+    [[ "$output" == *"暂无操作历史。"* ]] || return 1
     [ ! -e "$HOME/Library/Logs/mole/operations.log" ]
     [ ! -e "$HOME/Library/Logs/mole/mole.log" ]
 }
@@ -208,32 +208,32 @@ echo sourced
 @test "mo history early dispatch keeps global debug flag behavior" {
     run env HOME="$HOME" "$PROJECT_ROOT/mole" --debug history --limit 0001
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Mole History"* ]] || return 1
-    [[ "$output" != *"Unknown option"* ]] || return 1
+    [[ "$output" == *"Mole 历史"* ]] || return 1
+    [[ "$output" != *"未知选项"* ]] || return 1
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history --debug --limit 0001
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Mole History"* ]] || return 1
-    [[ "$output" != *"Unknown option"* ]]
+    [[ "$output" == *"Mole 历史"* ]] || return 1
+    [[ "$output" != *"未知选项"* ]]
 }
 
 @test "mo history rejects unknown options" {
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history --bad-option
     [ "$status" -eq 1 ]
-    [[ "$output" == *"Unknown option for mo history"* ]]
+    [[ "$output" == *"mo history 的未知选项"* ]]
 }
 
 @test "mo history rejects invalid limit values" {
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history --limit nope
     [ "$status" -eq 1 ]
-    [[ "$output" == *"Invalid value for --limit"* ]] || return 1
+    [[ "$output" == *"--limit 的值无效"* ]] || return 1
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history --limit 500
     [ "$status" -eq 1 ]
-    [[ "$output" == *"Invalid value for --limit"* ]] || return 1
+    [[ "$output" == *"--limit 的值无效"* ]] || return 1
 
     run env HOME="$HOME" "$PROJECT_ROOT/mole" history --limit 999999999999999999999999
     [ "$status" -eq 1 ]
-    [[ "$output" == *"Invalid value for --limit"* ]] || return 1
+    [[ "$output" == *"--limit 的值无效"* ]] || return 1
     [[ "$output" != *"value too great for base"* ]]
 }

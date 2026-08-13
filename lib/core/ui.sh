@@ -345,9 +345,24 @@ format_spinner_message() {
         available=20
     fi
 
-    if [[ ${#message} -gt $available ]]; then
-        if [[ $available -gt 3 ]]; then
-            message="${message:0:$((available - 3))}..."
+    # 中文等全角字符按 2 列显示,按字符数截断会切半或溢出;按显示宽度截断。
+    local msg_width=0
+    msg_width=$(get_display_width "$message")
+    if [[ $msg_width -gt $available ]]; then
+        if [[ $available -gt 4 ]]; then
+            local truncated="" w=0 i=0 ch chw
+            local limit=$((available - 4))
+            while [[ $i -lt ${#message} ]]; do
+                ch="${message:$i:1}"
+                chw=$(get_display_width "$ch")
+                if ((w + chw > limit)); then
+                    break
+                fi
+                truncated+="$ch"
+                w=$((w + chw))
+                i=$((i + 1))
+            done
+            message="${truncated}..."
         else
             message="${message:0:$available}"
         fi
@@ -498,33 +513,53 @@ format_last_used_summary() {
 
     case "$value" in
         "" | "Unknown")
-            echo "Unknown"
+            echo "未知"
             return 0
             ;;
-        "Never" | "Recent" | "Today" | "Yesterday" | "This year" | "Old")
-            echo "$value"
+        "Never")
+            echo "从未使用"
+            return 0
+            ;;
+        "Recent")
+            echo "最近"
+            return 0
+            ;;
+        "Today")
+            echo "今天"
+            return 0
+            ;;
+        "Yesterday")
+            echo "昨天"
+            return 0
+            ;;
+        "This year")
+            echo "今年"
+            return 0
+            ;;
+        "Old")
+            echo "较早"
             return 0
             ;;
     esac
 
     if [[ $value =~ ^([0-9]+)[[:space:]]+days?\ ago$ ]]; then
-        echo "${BASH_REMATCH[1]}d ago"
+        echo "${BASH_REMATCH[1]}天前"
         return 0
     fi
     if [[ $value =~ ^([0-9]+)[[:space:]]+weeks?\ ago$ ]]; then
-        echo "${BASH_REMATCH[1]}w ago"
+        echo "${BASH_REMATCH[1]}周前"
         return 0
     fi
     if [[ $value =~ ^([0-9]+)[[:space:]]+months?\ ago$ ]]; then
-        echo "${BASH_REMATCH[1]}m ago"
+        echo "${BASH_REMATCH[1]}个月前"
         return 0
     fi
     if [[ $value =~ ^([0-9]+)[[:space:]]+month\(s\)\ ago$ ]]; then
-        echo "${BASH_REMATCH[1]}m ago"
+        echo "${BASH_REMATCH[1]}个月前"
         return 0
     fi
     if [[ $value =~ ^([0-9]+)[[:space:]]+years?\ ago$ ]]; then
-        echo "${BASH_REMATCH[1]}y ago"
+        echo "${BASH_REMATCH[1]}年前"
         return 0
     fi
     echo "$value"

@@ -50,21 +50,21 @@ decode_file_list() {
     # macOS uses -D, GNU uses -d. Always return 0 for set -e safety.
     if ! decoded=$(printf '%s' "$encoded" | base64 -D 2> /dev/null); then
         if ! decoded=$(printf '%s' "$encoded" | base64 -d 2> /dev/null); then
-            log_error "Failed to decode file list for $app_name" >&2
+            log_error "无法解码 $app_name 的文件列表" >&2
             echo ""
             return 0 # Return success with empty string
         fi
     fi
 
     if [[ "$decoded" =~ $'\0' ]]; then
-        log_warning "File list for $app_name contains null bytes, rejecting" >&2
+        log_warning "$app_name 的文件列表包含空字节,已拒绝" >&2
         echo ""
         return 0 # Return success with empty string
     fi
 
     while IFS= read -r line; do
         if [[ -n "$line" && ! "$line" =~ ^/ ]]; then
-            log_warning "Invalid path in file list for $app_name: $line" >&2
+            log_warning "$app_name 的文件列表中存在无效路径: $line" >&2
             echo ""
             return 0 # Return success with empty string
         fi
@@ -88,14 +88,14 @@ decode_bundle_id_list() {
     # macOS uses -D, GNU uses -d. Always return 0 for set -e safety.
     if ! decoded=$(printf '%s' "$encoded" | base64 -D 2> /dev/null); then
         if ! decoded=$(printf '%s' "$encoded" | base64 -d 2> /dev/null); then
-            log_error "Failed to decode helper id list for $app_name" >&2
+            log_error "无法解码 $app_name 的辅助程序 ID 列表" >&2
             echo ""
             return 0
         fi
     fi
 
     if [[ "$decoded" =~ $'\0' ]]; then
-        log_warning "Helper id list for $app_name contains null bytes, rejecting" >&2
+        log_warning "$app_name 的辅助程序 ID 列表包含空字节,已拒绝" >&2
         echo ""
         return 0
     fi
@@ -273,7 +273,7 @@ bootout_login_item_helpers() {
     local helper_ids="$1"
     [[ -n "$helper_ids" ]] || return 0
     if is_uninstall_dry_run || [[ "${MOLE_TEST_MODE:-0}" == "1" || "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
-        debug_log "[DRY RUN] Would bootout login item helpers"
+        debug_log "[模拟运行] 将注销登录项辅助程序"
         return 0
     fi
 
@@ -396,7 +396,7 @@ stop_launch_services() {
     local app_path="${3:-}"
 
     if is_uninstall_dry_run; then
-        debug_log "[DRY RUN] Would unload launch services for bundle: $bundle_id"
+        debug_log "[模拟运行] 将为 bundle $bundle_id 卸载启动服务"
         return 0
     fi
 
@@ -412,7 +412,7 @@ stop_launch_services() {
         # Validate bundle_id format: must be reverse-DNS style (e.g.,
         # com.example.app). This prevents glob injection attacks if bundle_id
         # contains special characters.
-        debug_log "Invalid bundle_id format for LaunchAgent search: $bundle_id"
+        debug_log "用于启动代理搜索的 bundle_id 格式无效: $bundle_id"
         bundle_id_usable=false
     fi
 
@@ -495,7 +495,7 @@ refresh_launch_services_after_uninstall() {
     success=$?
     # 124 = timeout exit code (from run_with_timeout or timeout command)
     if [[ $success -eq 124 ]]; then
-        debug_log "LaunchServices rebuild timed out, trying lighter version"
+        debug_log "LaunchServices 重建超时,正在尝试轻量版本"
         run_with_timeout "$MOLE_TIMEOUT_PKG_LIST_SEC" "$lsregister" -r -f -domain local -domain user > /dev/null 2>&1
         success=$?
     elif [[ $success -ne 0 ]]; then
@@ -513,7 +513,7 @@ remove_login_item() {
     local bundle_id="$2"
 
     if is_uninstall_dry_run; then
-        debug_log "[DRY RUN] Would remove login item: ${app_name:-$bundle_id}"
+        debug_log "[模拟运行] 将移除登录项: ${app_name:-$bundle_id}"
         return 0
     fi
 
@@ -581,7 +581,7 @@ remove_file_list() {
         fi
 
         if [[ "$use_sudo" == "true" ]] && is_uninstall_dry_run; then
-            debug_log "[DRY RUN] Would sudo remove: $file"
+            debug_log "[模拟运行] 将使用 sudo 移除: $file"
             ((++count))
             continue
         fi
@@ -599,7 +599,7 @@ remove_file_list() {
                 _MOLE_TRASH_BATCH_SNAPSHOT_PARENT_IDS+=("$_MOLE_PATH_SNAPSHOT_PARENT_ID")
                 _MOLE_TRASH_BATCH_SNAPSHOT_TARGET_IDS+=("$_MOLE_PATH_SNAPSHOT_TARGET_ID")
             else
-                debug_log "Skipped Trash batch path with unstable identity: $file"
+                debug_log "已跳过身份不稳定的废纸篓批处理路径: $file"
                 log_operation "${MOLE_CURRENT_COMMAND:-uninstall}" "SKIPPED" "$file" "path identity unavailable"
             fi
         else
@@ -627,7 +627,7 @@ remove_file_list() {
         if [[ $batch_rc -ne 0 ]]; then
             # Do not hand paths whose identity changed to a second lexical sink.
             # A failed direct move leaves that item in place for manual review.
-            debug_log "Trash batch stopped; unmoved paths were preserved"
+            debug_log "废纸篓批处理已停止;未移动的路径已保留"
         fi
         [[ $batch_rc -eq 124 || $batch_rc -ge 128 ]] && return "$batch_rc"
     fi
@@ -1320,7 +1320,7 @@ _batch_scan_app_details() {
     # Cache current user outside loop
     local current_user=$(whoami)
 
-    if [[ -t 1 ]]; then start_inline_spinner "Scanning files..."; fi
+    if [[ -t 1 ]]; then start_inline_spinner "正在扫描文件..."; fi
     # shellcheck disable=SC2154 # selected_apps is provided by batch_uninstall_applications via dynamic scope.
     for selected_app in "${selected_apps[@]}"; do
         [[ -z "$selected_app" ]] && continue
@@ -1395,15 +1395,15 @@ _batch_scan_app_details() {
             # 1 with a debug-only line for apps whose scan touched anything TCC
             # protects (#1339, #1340).
             live_sibling_present=true
-            log_warning "$(printf "%s: some paths could not be read, so shared leftovers are left in place" "$app_name")"
+            log_warning "$(printf "%s: 部分路径无法读取,共享残留将保留在原处" "$app_name")"
         elif [[ $live_sibling_rc -ge 128 ]]; then
             return "$live_sibling_rc"
         else
             # This refusal ends the whole batch, so it must say so on the
             # normal screen: the debug-only line left users with a silent
             # exit and no way to report the cause (#1340).
-            log_error "Could not verify whether other installs share ${app_name}'s bundle id; nothing was removed"
-            debug_log "Could not complete the live same-bundle scan for $app_name"
+            log_error "无法确认其他安装是否与 ${app_name} 共用包 ID;未移除任何内容"
+            debug_log "无法完成 $app_name 的同包实时扫描"
             return 1
         fi
         local preview_live_sibling_fingerprint="$_MOLE_UNINSTALL_LIVE_SIBLING_FINGERPRINT"
@@ -1414,7 +1414,7 @@ _batch_scan_app_details() {
         # starve leftover matching and hard-abort the batch with 124.
         local remnant_floor=$((SECONDS + MOLE_TIMEOUT_HINT_SCAN_SEC))
         if ((_MOLE_UNINSTALL_DISCOVERY_DEADLINE < remnant_floor)); then
-            debug_log "Extending uninstall discovery deadline by ${MOLE_TIMEOUT_HINT_SCAN_SEC}s for remnant scan of $app_name"
+            debug_log "为 $app_name 的残留扫描将卸载发现截止时间延长 ${MOLE_TIMEOUT_HINT_SCAN_SEC} 秒"
             _MOLE_UNINSTALL_DISCOVERY_DEADLINE=$remnant_floor
         fi
 
@@ -1422,7 +1422,7 @@ _batch_scan_app_details() {
         if [[ "$live_sibling_present" == true ]]; then
             sibling_guard="guard_login"
             discovery_app_name=""
-            debug_log "Bundle id $bundle_id is shared with a live sibling; removing only the selected app bundle for $app_name"
+            debug_log "包 ID $bundle_id 与现有同包安装共享;仅移除 $app_name 的所选应用包"
             bundle_id="unknown"
         elif uninstall_bundle_id_has_surviving_sibling "$bundle_id" "$app_path"; then
             sibling_guard="guard"
@@ -1463,9 +1463,9 @@ _batch_scan_app_details() {
             [[ "$login_name_collides" == true ]] && sibling_guard="guard_login"
 
             if [[ -n "$discovery_app_name" ]]; then
-                debug_log "Bundle id $bundle_id shared with a surviving install; restricting $app_name leftovers to name/path matches for '$discovery_app_name'"
+                debug_log "包 ID $bundle_id 与存续安装共享;将 $app_name 的残留限制为与 '$discovery_app_name' 名称/路径匹配"
             else
-                debug_log "Bundle id $bundle_id shared with a surviving install and names collide; removing only the app bundle for $app_name"
+                debug_log "包 ID $bundle_id 与存续安装共享且名称冲突;仅移除 $app_name 的应用包"
             fi
             bundle_id="unknown"
         fi
@@ -1556,7 +1556,7 @@ _batch_scan_app_details() {
                 # the selected app removable and leave leftovers alone rather
                 # than aborting the whole batch with "nothing was removed".
                 related_files=""
-                log_warning "$(printf "%s: leftover scan timed out; only the app bundle will be removed" "$app_name")"
+                log_warning "$(printf "%s: 残留扫描超时;仅移除应用包" "$app_name")"
             elif [[ $discovery_rc -ne 0 ]]; then
                 return "$discovery_rc"
             fi
@@ -1574,7 +1574,7 @@ _batch_scan_app_details() {
                     "$HOME/Library/Logs/DiagnosticReports") || diag_rc=$?
                 if [[ $diag_rc -eq 124 ]]; then
                     diag_user=""
-                    debug_log "Diagnostic report scan timed out for $app_name"
+                    debug_log "$app_name 的诊断报告扫描超时"
                 elif [[ $diag_rc -ne 0 ]]; then
                     return "$diag_rc"
                 fi
@@ -1587,7 +1587,7 @@ _batch_scan_app_details() {
                     "$discovery_app_name" "/Library/Logs/DiagnosticReports") || diag_rc=$?
                 if [[ $diag_rc -eq 124 ]]; then
                     diag_system=""
-                    debug_log "System diagnostic report scan timed out for $app_name"
+                    debug_log "$app_name 的系统诊断报告扫描超时"
                 elif [[ $diag_rc -ne 0 ]]; then
                     return "$diag_rc"
                 fi
@@ -1598,7 +1598,7 @@ _batch_scan_app_details() {
                     "$bundle_id" "$discovery_app_name") || system_rc=$?
                 if [[ $system_rc -eq 124 ]]; then
                     system_files=""
-                    debug_log "System leftover scan timed out for $app_name"
+                    debug_log "$app_name 的系统残留扫描超时"
                 elif [[ $system_rc -ne 0 ]]; then
                     return "$system_rc"
                 fi
@@ -1610,7 +1610,7 @@ _batch_scan_app_details() {
         if [[ $related_size_rc -eq 124 ]]; then
             # Size is display-only here; keep the leftover plan and under-report.
             related_size_kb=0
-            debug_log "Related-file size probe timed out for $app_name"
+            debug_log "$app_name 的相关文件大小探测超时"
         elif [[ $related_size_rc -ge 128 ]]; then
             return "$related_size_rc"
         fi
@@ -1657,7 +1657,7 @@ _batch_scan_app_details() {
             "$app_path") || login_helpers_rc=$?
         if [[ $login_helpers_rc -eq 124 ]]; then
             login_item_helpers=""
-            debug_log "Login-item helper discovery timed out for $app_name"
+            debug_log "$app_name 的登录项辅助程序发现超时"
         elif [[ $login_helpers_rc -ne 0 ]]; then
             return "$login_helpers_rc"
         fi
@@ -1673,15 +1673,15 @@ _batch_scan_app_details() {
         local blocked_detail blocked_name blocked_vendor
         for blocked_detail in "${blocked_apps[@]}"; do
             IFS='|' read -r blocked_name blocked_vendor <<< "$blocked_detail"
-            log_warning "$blocked_name requires the official $blocked_vendor uninstaller"
+            log_warning "$blocked_name 需要使用官方 $blocked_vendor 卸载器"
         done
     fi
 
     if [[ ${#manual_removal_apps[@]} -gt 0 ]]; then
         local manual_name
         for manual_name in "${manual_removal_apps[@]}"; do
-            log_warning "$manual_name cannot be removed safely by Mole from this location"
-            log_info "Move it to Trash in Finder; Mole left protected containers and app data untouched"
+            log_warning "Mole 无法安全地从此位置移除 $manual_name"
+            log_info "请在 Finder 中将其移至废纸篓;Mole 未改动受保护的容器和应用数据"
         done
     fi
 }
@@ -1697,7 +1697,7 @@ _batch_scan_app_details() {
 _batch_preview_and_confirm() {
     local size_display=$(bytes_to_human "$((total_estimated_size * 1024))")
 
-    echo -e "\n${PURPLE_BOLD}Files to be removed:${NC}"
+    echo -e "\n${PURPLE_BOLD}将要删除的文件:${NC}"
 
     # Warn if brew cask apps are present. The --zap wording only applies to
     # casks that will actually zap; sibling-guarded casks run a plain
@@ -1713,7 +1713,7 @@ _batch_preview_and_confirm() {
     done
 
     if [[ "$has_zap_cask" == "true" ]]; then
-        echo -e "${GRAY}${ICON_WARNING} Homebrew apps will be fully cleaned, --zap removes configs and data${NC}"
+        echo -e "${GRAY}${ICON_WARNING} Homebrew 应用将被完整清理,--zap 会移除配置和数据${NC}"
     fi
 
     echo ""
@@ -1754,30 +1754,30 @@ _batch_preview_and_confirm() {
         while IFS= read -r file; do
             if [[ -n "$file" && -e "$file" ]]; then
                 preview_path=$(format_uninstall_preview_path "$file") || return $?
-                echo -e "  ${BLUE}${ICON_WARNING}${NC} System: $preview_path"
+                echo -e "  ${BLUE}${ICON_WARNING}${NC} 系统: $preview_path"
             fi
         done <<< "$system_files"
 
         while IFS= read -r file; do
             if [[ -n "$file" && -e "$file" ]]; then
                 preview_path=$(format_uninstall_preview_path "$file") || return $?
-                echo -e "  ${YELLOW}${ICON_WARNING}${NC} Review only: $preview_path"
+                echo -e "  ${YELLOW}${ICON_WARNING}${NC} 仅查看: $preview_path"
             fi
         done <<< "$review_system_display"
     done
 
     # Confirmation before requesting sudo.
     local app_total=${#app_details[@]}
-    local app_text="app"
-    [[ $app_total -gt 1 ]] && app_text="apps"
+    local app_text="个应用"
+    [[ $app_total -gt 1 ]] && app_text="个应用"
 
     echo ""
-    local removal_note="Remove ${app_total} ${app_text}"
+    local removal_note="移除 ${app_total} ${app_text}"
     [[ -n "$size_display" ]] && removal_note+=", ${size_display}"
     if [[ ${#running_apps[@]} -gt 0 ]]; then
-        removal_note+=" ${YELLOW}[Running]${NC}"
+        removal_note+=" ${YELLOW}[运行中]${NC}"
     fi
-    echo -ne "${PURPLE}${ICON_ARROW}${NC} ${removal_note}  ${GREEN}Enter${NC} confirm, ${GRAY}ESC${NC} cancel: "
+    echo -ne "${PURPLE}${ICON_ARROW}${NC} ${removal_note}  ${GREEN}Enter${NC} 确认, ${GRAY}ESC${NC} 取消: "
 
     drain_pending_input # Clean up any pending input before confirmation
     IFS= read -r -s -n1 key || key=""
@@ -1807,16 +1807,16 @@ _batch_preview_and_confirm() {
     # does not work reliably under Mole's timed non-interactive execution path.
     if [[ "${MOLE_DRY_RUN:-0}" != "1" ]] &&
         { [[ ${#sudo_apps[@]} -gt 0 ]] || [[ ${#brew_cask_apps[@]} -gt 0 ]]; }; then
-        local admin_prompt="Admin required to uninstall selected apps"
+        local admin_prompt="卸载所选应用需要管理员权限"
         if [[ ${#sudo_apps[@]} -gt 0 && ${#brew_cask_apps[@]} -eq 0 ]]; then
-            admin_prompt="Admin required for system apps: ${sudo_apps[*]}"
+            admin_prompt="系统应用需要管理员权限: ${sudo_apps[*]}"
         elif [[ ${#brew_cask_apps[@]} -gt 0 && ${#sudo_apps[@]} -eq 0 ]]; then
-            admin_prompt="Admin required for Homebrew casks: ${brew_cask_apps[*]}"
+            admin_prompt="Homebrew casks 需要管理员权限: ${brew_cask_apps[*]}"
         fi
 
         if ! ensure_sudo_session "$admin_prompt"; then
             echo ""
-            log_error "Admin access denied"
+            log_error "管理员权限被拒绝"
             return 1
         fi
     fi
@@ -1859,9 +1859,9 @@ _batch_execute_removals() {
         [[ "$is_brew_cask" == "true" ]] && brew_tag=" ${CYAN}[Brew]${NC}"
         if [[ -t 1 ]]; then
             if [[ ${#app_details[@]} -gt 1 ]]; then
-                start_inline_spinner "[$current_index/${#app_details[@]}] Uninstalling ${app_name}${brew_tag}..."
+                start_inline_spinner "[$current_index/${#app_details[@]}] 正在卸载 ${app_name}${brew_tag}..."
             else
-                start_inline_spinner "Uninstalling ${app_name}${brew_tag}..."
+                start_inline_spinner "正在卸载 ${app_name}${brew_tag}..."
             fi
         fi
 
@@ -1871,8 +1871,8 @@ _batch_execute_removals() {
         if [[ $app_plan_rc -eq 124 || $app_plan_rc -ge 128 ]]; then
             return "$app_plan_rc"
         elif [[ $app_plan_rc -ne 0 ]]; then
-            reason="selected app changed after preview"
-            suggestion="Select the app again and review the new removal plan"
+            reason="所选应用在预览后发生变化"
+            suggestion="请重新选择应用并查看新的移除方案"
         fi
 
         # Rebuild the exact same-bundle installation snapshot immediately
@@ -1887,14 +1887,14 @@ _batch_execute_removals() {
                 _uninstall_decode_live_sibling_fingerprint \
                     "${encoded_live_sibling_fingerprint:-}"
             ); then
-                reason="unable to verify the reviewed app installation set"
-                suggestion="Select the app again and review the new removal plan"
+                reason="无法验证已查看的应用安装集合"
+                suggestion="请重新选择应用并查看新的移除方案"
             elif ! preview_live_sibling_fingerprint=$(
                 _uninstall_live_fingerprint_without_successful_paths \
                     "$preview_live_sibling_fingerprint"
             ); then
-                reason="unable to verify the reviewed app installation set"
-                suggestion="Select the app again and review the new removal plan"
+                reason="无法验证已查看的应用安装集合"
+                suggestion="请重新选择应用并查看新的移除方案"
             fi
 
             local live_sibling_rc=0
@@ -1902,8 +1902,8 @@ _batch_execute_removals() {
                 "$original_bundle_id" "$app_path" || live_sibling_rc=$?
             if [[ $live_sibling_rc -eq 0 || $live_sibling_rc -eq 1 ]]; then
                 if [[ "$preview_live_sibling_fingerprint" != "$_MOLE_UNINSTALL_LIVE_SIBLING_FINGERPRINT" ]]; then
-                    reason="the app installation set changed after preview"
-                    suggestion="Select the app again and review the new removal plan"
+                    reason="应用安装集合在预览后发生变化"
+                    suggestion="请重新选择应用并查看新的移除方案"
                 fi
             elif [[ $live_sibling_rc -eq $MOLE_UNINSTALL_SCAN_PARTIAL &&
                 "$sibling_guard" == "guard_login" &&
@@ -1922,8 +1922,8 @@ _batch_execute_removals() {
             elif [[ $live_sibling_rc -ge 128 ]]; then
                 return "$live_sibling_rc"
             else
-                reason="unable to verify other apps with the same bundle id"
-                suggestion="Check mounted volumes and application folders, then try again"
+                reason="无法验证具有相同包 ID 的其他应用"
+                suggestion="请检查已挂载的卷和应用文件夹,然后重试"
             fi
         fi
 
@@ -1962,7 +1962,7 @@ _batch_execute_removals() {
             remove_login_item "$app_name" "$bundle_id" || login_remove_rc=$?
             [[ $login_remove_rc -eq 124 || $login_remove_rc -ge 128 ]] && return "$login_remove_rc"
         elif [[ -z "$reason" ]]; then
-            debug_log "Skipping login item removal for $app_name: name is shared with a surviving install"
+            debug_log "跳过 $app_name 的登录项移除:名称与存续安装共享"
         fi
 
         # Best-effort termination. macOS allows removing a running app bundle
@@ -1982,7 +1982,7 @@ _batch_execute_removals() {
                 running_at_uninstall_apps+=("$app_name")
             fi
         elif [[ -z "$reason" ]]; then
-            debug_log "Skipping process termination for $app_name: identifiers are shared with a surviving install"
+            debug_log "跳过 $app_name 的进程终止:标识符与存续安装共享"
         fi
 
         # Keep the spinner alive through the heavy work. For large apps the
@@ -1997,7 +1997,7 @@ _batch_execute_removals() {
             if [[ ${#app_details[@]} -gt 1 ]]; then
                 _phase_prefix="[$current_index/${#app_details[@]}] "
             fi
-            start_inline_spinner "${_phase_prefix}Removing ${app_name} (${_phase_size})..."
+            start_inline_spinner "${_phase_prefix}正在移除 ${app_name} (${_phase_size})..."
         fi
 
         local used_brew_successfully=false
@@ -2062,20 +2062,20 @@ _batch_execute_removals() {
                                     diagnosis=$(diagnose_removal_failure "$removal_rc" "$app_name")
                                     IFS='|' read -r reason suggestion <<< "$diagnosis"
                                 else
-                                    reason="brew cleanup incomplete, manual removal failed"
+                                    reason="brew 清理不完整,手动移除失败"
                                 fi
                             fi
                         fi
                     elif [[ $cask_state -eq 0 ]]; then
-                        reason="brew uninstall failed, package still installed"
+                        reason="brew 卸载失败,软件包仍处于安装状态"
                         if [[ "$cask_zap_mode" == "nozap" ]]; then
-                            suggestion="Run brew uninstall --cask $cask_name"
+                            suggestion="运行 brew uninstall --cask $cask_name"
                         else
-                            suggestion="Run brew uninstall --cask --zap $cask_name"
+                            suggestion="运行 brew uninstall --cask --zap $cask_name"
                         fi
                     else
-                        reason="brew uninstall failed, package state unknown"
-                        suggestion="Run brew uninstall --cask --zap $cask_name"
+                        reason="brew 卸载失败,软件包状态未知"
+                        suggestion="运行 brew uninstall --cask --zap $cask_name"
                     fi
                 fi
             elif [[ "$needs_sudo" == true ]]; then
@@ -2091,7 +2091,7 @@ _batch_execute_removals() {
                         fi
                         case "$resolved_target" in
                             /System/* | /usr/bin/* | /usr/lib/* | /bin/* | /sbin/* | /private/etc/*)
-                                reason="protected system symlink, cannot remove"
+                                reason="受保护的系统符号链接,无法移除"
                                 ;;
                             *)
                                 local removal_rc=0
@@ -2099,7 +2099,7 @@ _batch_execute_removals() {
                                     "$expected_app_identity" || removal_rc=$?
                                 [[ $removal_rc -eq 124 || $removal_rc -ge 128 ]] && return "$removal_rc"
                                 if [[ $removal_rc -ne 0 ]]; then
-                                    reason="failed to remove symlink"
+                                    reason="移除符号链接失败"
                                 fi
                                 ;;
                         esac
@@ -2119,7 +2119,7 @@ _batch_execute_removals() {
                             "$expected_app_identity" || removal_rc=$?
                         [[ $removal_rc -eq 124 || $removal_rc -ge 128 ]] && return "$removal_rc"
                         if [[ $removal_rc -ne 0 ]]; then
-                            reason="dry-run path validation failed"
+                            reason="模拟运行路径验证失败"
                         fi
                     else
                         local ret=0
@@ -2140,9 +2140,9 @@ _batch_execute_removals() {
                 [[ $removal_rc -eq 124 || $removal_rc -ge 128 ]] && return "$removal_rc"
                 if [[ $removal_rc -ne 0 ]]; then
                     if [[ ! -w "$(dirname "$app_path")" ]]; then
-                        reason="parent directory not writable"
+                        reason="父目录不可写"
                     else
-                        reason="remove failed, check permissions"
+                        reason="移除失败,请检查权限"
                     fi
                 fi
             fi
@@ -2155,7 +2155,7 @@ _batch_execute_removals() {
                 if [[ ${#app_details[@]} -gt 1 ]]; then
                     _phase_prefix="[$current_index/${#app_details[@]}] "
                 fi
-                start_inline_spinner "${_phase_prefix}Cleaning files for ${app_name}..."
+                start_inline_spinner "${_phase_prefix}正在清理 ${app_name} 的文件..."
             fi
             local related_remove_rc=0
             remove_file_list "$related_files" "false" > /dev/null || related_remove_rc=$?
@@ -2193,7 +2193,7 @@ _batch_execute_removals() {
             fi
 
             if [[ -t 1 ]]; then
-                start_inline_spinner "${_phase_prefix}Cleaning system files for ${app_name}..."
+                start_inline_spinner "${_phase_prefix}正在清理 ${app_name} 的系统文件..."
             fi
             if [[ "$used_brew_successfully" == "true" ]]; then
                 local system_remove_rc=0
@@ -2215,7 +2215,7 @@ _batch_execute_removals() {
             # Defaults writes are side effects that should never run in dry-run mode.
             if mole_is_reverse_dns_bundle_id "$bundle_id"; then
                 if is_uninstall_dry_run; then
-                    debug_log "[DRY RUN] Would clear defaults domain: $bundle_id"
+                    debug_log "[模拟运行] 将清除 defaults 域: $bundle_id"
                 else
                     if defaults read "$bundle_id" &> /dev/null; then
                         defaults delete "$bundle_id" 2> /dev/null || true
@@ -2262,7 +2262,7 @@ _batch_execute_removals() {
                 bootout_login_item_helpers "$login_item_helpers" || bootout_rc=$?
                 [[ $bootout_rc -eq 124 || $bootout_rc -ge 128 ]] && return "$bootout_rc"
             else
-                debug_log "Skipping login item helper bootout for $app_name: helper ids are shared with a surviving install"
+                debug_log "跳过 $app_name 的登录项辅助程序注销:辅助程序 ID 与存续安装共享"
             fi
 
             # All per-app side effects done; tear the spinner down before
@@ -2280,7 +2280,7 @@ _batch_execute_removals() {
             # Warn about files that could not be removed and exclude them from freed total.
             if [[ ${#leftover_paths[@]} -gt 0 ]]; then
                 for _lpath in "${leftover_paths[@]}"; do
-                    echo -e "  ${YELLOW}${ICON_WARNING}${NC} Could not remove: ${_lpath/#$HOME/$tilde_display}"
+                    echo -e "  ${YELLOW}${ICON_WARNING}${NC} 无法移除: ${_lpath/#$HOME/$tilde_display}"
                 done
                 total_kb=$((total_kb - leftover_kb))
                 ((total_kb < 0)) && total_kb=0
@@ -2331,7 +2331,7 @@ _batch_execute_removals() {
                 if [[ ${#app_details[@]} -gt 1 ]]; then
                     echo -e "${ICON_ERROR} [$current_index/${#app_details[@]}] ${app_name} ${GRAY}, $reason${NC}"
                 else
-                    echo -e "${ICON_ERROR} ${app_name} failed: $reason"
+                    echo -e "${ICON_ERROR} ${app_name} 失败: $reason"
                 fi
                 if [[ -n "${suggestion:-}" ]]; then
                     echo -e "${GRAY}   ${ICON_REVIEW} ${suggestion}${NC}"
@@ -2360,17 +2360,17 @@ _batch_render_summary() {
     local -a summary_details=()
 
     if [[ $success_count -gt 0 ]]; then
-        local success_text="app"
-        [[ $success_count -gt 1 ]] && success_text="apps"
-        local success_line="Removed ${success_count} ${success_text}"
+        local success_text="个应用"
+        [[ $success_count -gt 1 ]] && success_text="个应用"
+        local success_line="已移除 ${success_count} ${success_text}"
         if is_uninstall_dry_run; then
-            success_line="Would remove ${success_count} ${success_text}"
+            success_line="将移除 ${success_count} ${success_text}"
         fi
         if [[ -n "$freed_display" ]]; then
             if is_uninstall_dry_run; then
-                success_line+=", would free ${GREEN}${freed_display}${NC}"
+                success_line+=",将释放 ${GREEN}${freed_display}${NC}"
             else
-                success_line+=", freed ${GREEN}${freed_display}${NC}"
+                success_line+=",已释放 ${GREEN}${freed_display}${NC}"
             fi
         fi
 
@@ -2418,7 +2418,7 @@ _batch_render_summary() {
         done
         local failed_list="${failed_names[*]}"
 
-        local reason_summary="could not be removed"
+        local reason_summary="无法移除"
         local suggestion_text=""
         if [[ $failed_count -eq 1 ]]; then
             # Extract reason and suggestion from format: app:reason:suggestion
@@ -2434,14 +2434,14 @@ _batch_render_summary() {
             fi
 
             case "$first_reason" in
-                still*running*) reason_summary="is still running" ;;
-                remove*failed*) reason_summary="could not be removed" ;;
-                permission*denied*) reason_summary="permission denied" ;;
-                owned*by*) reason_summary="$first_reason, try with sudo" ;;
+                still*running*) reason_summary="仍在运行" ;;
+                remove*failed*) reason_summary="无法移除" ;;
+                permission*denied*) reason_summary="权限被拒绝" ;;
+                owned*by*) reason_summary="$first_reason,请尝试使用 sudo" ;;
                 *) reason_summary="$first_reason" ;;
             esac
         fi
-        summary_details+=("${ICON_LIST} Failed: ${RED}${failed_list}${NC} ${reason_summary}")
+        summary_details+=("${ICON_LIST} 失败: ${RED}${failed_list}${NC} ${reason_summary}")
         if [[ -n "$suggestion_text" ]]; then
             summary_details+=("$suggestion_text")
         fi
@@ -2449,7 +2449,7 @@ _batch_render_summary() {
 
     if [[ $success_count -eq 0 && $failed_count -eq 0 ]]; then
         summary_status="info"
-        summary_details+=("No applications were uninstalled.")
+        summary_details+=("没有卸载任何应用。")
     fi
 
     if [[ ${#review_only_system_leftovers[@]} -gt 0 ]]; then
@@ -2461,9 +2461,9 @@ _batch_render_summary() {
         # repeating them plus a generic "review these" line only added noise to
         # the block the user reads last, with no action attached to it.
         local kept_count=${#review_only_system_leftovers[@]}
-        local kept_label="paths"
-        [[ $kept_count -eq 1 ]] && kept_label="path"
-        summary_details+=("${ICON_REVIEW} Kept ${kept_count} system-level ${kept_label}, which Mole never removes")
+        local kept_label="路径"
+        [[ $kept_count -eq 1 ]] && kept_label="路径"
+        summary_details+=("${ICON_REVIEW} 保留了 ${kept_count} 个系统级${kept_label},Mole 不会移除它们")
     fi
 
     if [[ ${#system_extension_warning_apps[@]} -gt 0 ]]; then
@@ -2474,8 +2474,8 @@ _batch_render_summary() {
             ext_list+="${system_extension_warning_apps[idx]}"
         done
 
-        summary_details+=("${ICON_REVIEW} System extensions may remain after removal: ${YELLOW}${ext_list}${NC}")
-        summary_details+=("${GRAY}${ICON_SUBLIST}${NC} Check ${GRAY}System Settings > General > Login Items & Extensions${NC} to remove leftover extensions")
+        summary_details+=("${ICON_REVIEW} 移除后可能残留系统扩展: ${YELLOW}${ext_list}${NC}")
+        summary_details+=("${GRAY}${ICON_SUBLIST}${NC} 请在 ${GRAY}系统设置 > 通用 > 登录项与扩展${NC} 中检查以移除残留扩展")
     fi
 
     if [[ ${#background_items_warning_apps[@]} -gt 0 ]]; then
@@ -2486,7 +2486,7 @@ _batch_render_summary() {
             bg_list+="${background_items_warning_apps[idx]}"
         done
 
-        summary_details+=("${ICON_REVIEW} Background item still running for ${YELLOW}${bg_list}${NC}, turn it off in ${GRAY}System Settings > Login Items & Extensions${NC}")
+        summary_details+=("${ICON_REVIEW} ${YELLOW}${bg_list}${NC} 的后台项目仍在运行,请在 ${GRAY}系统设置 > 登录项与扩展${NC} 中将其关闭")
     fi
 
     if [[ ${#running_at_uninstall_apps[@]} -gt 0 ]]; then
@@ -2497,16 +2497,16 @@ _batch_render_summary() {
             running_list+="${running_at_uninstall_apps[idx]}"
         done
 
-        summary_details+=("${ICON_REVIEW} Still running during uninstall, files removed but process kept alive: ${YELLOW}${running_list}${NC}")
-        summary_details+=("${GRAY}${ICON_SUBLIST}${NC} Quit the app to free its in-memory copy; reinstalling before quitting may behave oddly")
+        summary_details+=("${ICON_REVIEW} 卸载期间仍在运行,文件已移除但进程仍存活: ${YELLOW}${running_list}${NC}")
+        summary_details+=("${GRAY}${ICON_SUBLIST}${NC} 请退出应用以释放其内存副本;未退出前重新安装可能出现异常")
     fi
 
-    local title="Uninstall complete"
+    local title="卸载完成"
     if [[ "$summary_status" == "warn" ]]; then
-        title="Uninstall incomplete"
+        title="卸载未完成"
     fi
     if is_uninstall_dry_run; then
-        title="Uninstall dry run complete"
+        title="卸载模拟运行完成"
     fi
 
     # No blank line here: print_summary_block already opens with one.
@@ -2523,7 +2523,7 @@ batch_uninstall_applications() {
 
     # shellcheck disable=SC2154
     if [[ ${#selected_apps[@]} -eq 0 ]]; then
-        log_warning "No applications selected for uninstallation"
+        log_warning "未选择要卸载的应用"
         return 0
     fi
 
@@ -2589,7 +2589,7 @@ batch_uninstall_applications() {
         # A signal already echoed through the INT/TERM trap; a timeout has
         # said nothing yet, and a silent exit is unreportable (#1340).
         if [[ $_scan_rc -eq 124 ]]; then
-            log_error "The uninstall scan timed out before finishing; nothing was removed"
+            log_error "卸载扫描在完成前超时;未移除任何内容"
         fi
         return "$_scan_rc"
     elif [[ $_scan_rc -ne 0 ]]; then
@@ -2684,7 +2684,7 @@ batch_uninstall_applications() {
     # Clean up Dock entries for uninstalled apps.
     if [[ $success_count -gt 0 && ${#success_dock_targets[@]} -gt 0 ]]; then
         if is_uninstall_dry_run; then
-            log_info "[DRY RUN] Would refresh LaunchServices and update Dock entries"
+            log_info "[模拟运行] 将刷新 LaunchServices 并更新 Dock 条目"
         else
             # LaunchServices refresh uses run_with_timeout. It is best-effort
             # background work, so it must never own the tty.

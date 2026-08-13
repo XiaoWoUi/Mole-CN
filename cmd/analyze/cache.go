@@ -137,7 +137,7 @@ func getOverviewSizeStorePath() (string, error) {
 
 func loadStoredOverviewSize(path string) (int64, error) {
 	if path == "" {
-		return 0, fmt.Errorf("empty path")
+		return 0, fmt.Errorf("路径为空")
 	}
 	overviewSnapshotMu.Lock()
 	defer overviewSnapshotMu.Unlock()
@@ -145,20 +145,20 @@ func loadStoredOverviewSize(path string) (int64, error) {
 		return 0, err
 	}
 	if overviewSnapshotCache == nil {
-		return 0, fmt.Errorf("snapshot cache unavailable")
+		return 0, fmt.Errorf("快照缓存不可用")
 	}
 	if snapshot, ok := overviewSnapshotCache[path]; ok && snapshot.Size > 0 {
 		if time.Since(snapshot.Updated) < overviewCacheTTL {
 			return snapshot.Size, nil
 		}
-		return 0, fmt.Errorf("snapshot expired")
+		return 0, fmt.Errorf("快照已过期")
 	}
-	return 0, fmt.Errorf("snapshot not found")
+	return 0, fmt.Errorf("未找到快照")
 }
 
 func storeOverviewSize(path string, size int64) error {
 	if path == "" || size <= 0 {
-		return fmt.Errorf("invalid overview size")
+		return fmt.Errorf("无效的总览大小")
 	}
 	overviewSnapshotMu.Lock()
 	defer overviewSnapshotMu.Unlock()
@@ -250,7 +250,7 @@ func persistOverviewSnapshotLocked() error {
 
 func loadOverviewCachedSize(path string) (int64, error) {
 	if path == "" {
-		return 0, fmt.Errorf("empty path")
+		return 0, fmt.Errorf("路径为空")
 	}
 	if snapshot, err := loadStoredOverviewSize(path); err == nil {
 		return snapshot, nil

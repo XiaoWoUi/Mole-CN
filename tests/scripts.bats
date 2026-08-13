@@ -159,8 +159,8 @@ EOF
     run env HOME="$HOME" TERM="dumb" PATH="$fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
         "$PROJECT_ROOT/scripts/setup-quick-launchers.sh"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Raycast: Mole Clean | Alfred keyword: clean"* ]] || return 1
-    [[ "$output" == *"Raycast: Mole Status | Alfred keyword: status"* ]] || return 1
+    [[ "$output" == *"Raycast: Mole 清理 | Alfred 关键词: clean"* ]] || return 1
+    [[ "$output" == *"Raycast: Mole 状态 | Alfred 关键词: status"* ]] || return 1
 
     local raycast_dir="$HOME/Library/Application Support/Raycast/script-commands"
     [ -d "$raycast_dir" ]
@@ -177,26 +177,26 @@ EOF
     [ -x "$analyze_script" ]
     [ -x "$status_script" ]
 
-    run grep -q '^# @raycast.title Mole Clean$' "$clean_script"
+    run grep -q '^# @raycast.title Mole 清理$' "$clean_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.title Mole Uninstall$' "$uninstall_script"
+    run grep -q '^# @raycast.title Mole 卸载$' "$uninstall_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.title Mole Optimize$' "$optimize_script"
+    run grep -q '^# @raycast.title Mole 优化$' "$optimize_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.title Mole Analyze$' "$analyze_script"
+    run grep -q '^# @raycast.title Mole 分析$' "$analyze_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.title Mole Status$' "$status_script"
+    run grep -q '^# @raycast.title Mole 状态$' "$status_script"
     [ "$status" -eq 0 ]
 
-    run grep -q '^# @raycast.description Deep system cleanup with Mole$' "$clean_script"
+    run grep -q '^# @raycast.description 使用 Mole 深度系统清理$' "$clean_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.description Uninstall applications with Mole$' "$uninstall_script"
+    run grep -q '^# @raycast.description 使用 Mole 卸载应用$' "$uninstall_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.description System health checks and optimization$' "$optimize_script"
+    run grep -q '^# @raycast.description 系统健康检查与优化$' "$optimize_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.description Disk space analysis with Mole$' "$analyze_script"
+    run grep -q '^# @raycast.description 使用 Mole 进行磁盘空间分析$' "$analyze_script"
     [ "$status" -eq 0 ]
-    run grep -q '^# @raycast.description Live system status dashboard$' "$status_script"
+    run grep -q '^# @raycast.description 实时系统状态仪表盘$' "$status_script"
     [ "$status" -eq 0 ]
 }
 

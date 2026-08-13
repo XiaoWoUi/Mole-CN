@@ -133,7 +133,7 @@ func writePrefsAtomically(path string, data []byte) error {
 		return err
 	}
 	if err := os.Rename(tempPath, path); err != nil {
-		return fmt.Errorf("replace preferences: %w", err)
+		return fmt.Errorf("替换偏好设置: %w", err)
 	}
 	return nil
 }

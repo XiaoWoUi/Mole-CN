@@ -84,7 +84,7 @@ update_via_homebrew() {
     if [[ -t 1 ]]; then
         start_inline_spinner "Updating Homebrew..."
     else
-        echo "Updating Homebrew..."
+        echo "正在更新 Homebrew..."
     fi
 
     local brew_update_timeout="${MOLE_HOMEBREW_UPDATE_TIMEOUT:-120}"
@@ -99,7 +99,7 @@ update_via_homebrew() {
     if [[ -t 1 ]]; then
         start_inline_spinner "Upgrading Mole..."
     else
-        echo "Upgrading Mole..."
+        echo "正在升级 Mole..."
     fi
 
     local brew_upgrade_timeout="${MOLE_HOMEBREW_UPGRADE_TIMEOUT:-120}"
@@ -122,7 +122,7 @@ update_via_homebrew() {
     safe_remove "$temp_upgrade" true
 
     if [[ "$upgrade_status" -ne 0 ]]; then
-        log_error "Homebrew upgrade failed"
+        log_error "Homebrew 升级失败"
         if [[ -n "$upgrade_output" ]]; then
             printf '%s\n' "$upgrade_output" >&2
         else

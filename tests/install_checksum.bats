@@ -89,7 +89,7 @@ test -x "$CONFIG_DIR/bin/analyze-go"
 EOF
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"SUCCESS:Installed analyze"* ]]
+	[[ "$output" == *"SUCCESS:已安装 analyze"* ]]
 }
 
 @test "download_binary retries transient asset and checksum failures" {
@@ -155,7 +155,7 @@ grep -qx "$content" "$CONFIG_DIR/bin/analyze-go"
 EOF
 
 	[ "$status" -eq 0 ] || return 1
-	[[ "$output" == *"SUCCESS:Installed analyze"* ]]
+	[[ "$output" == *"SUCCESS:已安装 analyze"* ]]
 }
 
 @test "download_binary aborts on checksum mismatch without downgrading to a source build" {
@@ -223,7 +223,7 @@ EOF
 	[[ "$output" != *"UNEXPECTED_SUCCESS"* ]] || return 1
 	[[ "$output" != *"TAMPERED_INSTALLED"* ]] || return 1
 	[[ "$output" != *"SOURCE_INSTALLED"* ]] || return 1
-	[[ "$output" == *"aborting instead of falling back"* ]]
+	[[ "$output" == *"已中止,而不是回退到未经验证的构建"* ]]
 }
 
 @test "download_binary preserves the installed helper when verification and rebuild fail (#1193)" {
@@ -339,7 +339,7 @@ EOF
 	[ "$status" -eq 0 ]
 	[[ "$output" != *"SOURCE_BUILD_INVOKED"* ]] || return 1
 	[[ "$output" != *"UNEXPECTED_SUCCESS"* ]] || return 1
-	[[ "$output" == *"aborting instead of falling back"* ]]
+	[[ "$output" == *"已中止,而不是回退到未经验证的构建"* ]]
 }
 
 @test "download_binary aborts when SHA256SUMS cannot be downloaded" {
@@ -397,7 +397,7 @@ EOF
 	[ "$status" -eq 0 ]
 	[[ "$output" != *"SOURCE_BUILD_INVOKED"* ]] || return 1
 	[[ "$output" != *"UNEXPECTED_SUCCESS"* ]] || return 1
-	[[ "$output" == *"aborting instead of falling back"* ]]
+	[[ "$output" == *"已中止,而不是回退到未经验证的构建"* ]]
 }
 
 @test "download_binary verifies fallback release asset against fallback checksums" {
@@ -448,7 +448,7 @@ grep -q "fallback-binary" "$CONFIG_DIR/bin/status-go"
 EOF
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"SUCCESS:Installed status from V1.2.2"* ]]
+	[[ "$output" == *"SUCCESS:已从 V1.2.2 安装 status"* ]]
 }
 
 @test "download_binary aborts on fallback-tag checksum mismatch without a source build" {
@@ -513,7 +513,7 @@ EOF
 	[[ "$output" != *"SOURCE_BUILD_INVOKED"* ]] || return 1
 	[[ "$output" != *"UNEXPECTED_SUCCESS"* ]] || return 1
 	[[ "$output" != *"BINARY_INSTALLED_ANYWAY"* ]] || return 1
-	[[ "$output" == *"aborting instead of falling back"* ]] || return 1
+	[[ "$output" == *"已中止,而不是回退到未经验证的构建"* ]] || return 1
 }
 
 @test "install_files fails closed when sudo is unavailable, even under || caller (#update-incident)" {
@@ -596,7 +596,7 @@ EOF
 	# verify_installation exits 1 on the mixed-version state.
 	[ "$status" -eq 1 ] || return 1
 	[[ "$output" != *"UNEXPECTED_PASS"* ]] || return 1
-	[[ "$output" == *"was not replaced"* ]] || return 1
+	[[ "$output" == *"入口脚本未被替换"* ]] || return 1
 	[[ "$output" == *"1.45.0"* && "$output" == *"1.47.0"* ]] || return 1
 }
 
@@ -926,7 +926,7 @@ awk '/^report_install_lock_failure\(\)/{inside=1; next}
          if (name != "" && errors > 0 && !next_step) {print "NO_NEXT_STEP:" name; bad=1}
          name=$1; errors=0; next_step=0; next
      }
-     inside && /log_error/{errors++; if ($0 ~ /retry/) next_step=1}
+     inside && /log_error/{errors++; if ($0 ~ /retry|重试/) next_step=1}
      END{
          if (name != "" && errors > 0 && !next_step) {print "NO_NEXT_STEP:" name; bad=1}
          exit bad
@@ -1100,13 +1100,13 @@ download_release_checksums() { printf '%s  %s\n' "$hash" "$asset" > "$2"; return
 verify_release_attestation() { return 1; }
 out="$(verify_release_asset_checksum V1.0.0 "$asset" "$file")" && rc=0 || rc=$?
 [ "$rc" -eq 1 ] || { echo "WRONG: status1 rc=$rc want 1"; exit 1; }
-[[ "$out" == *"ERROR:Release attestation verification failed"* ]] || { echo "WRONG: status1 error missing: $out"; exit 1; }
+[[ "$out" == *"ERROR:${asset} 的发布证明校验失败"* ]] || { echo "WRONG: status1 error missing: $out"; exit 1; }
 
 # cannot verify (status 2) + MOLE_REQUIRE_ATTESTATION=1 -> fatal
 verify_release_attestation() { return 2; }
 out="$(MOLE_REQUIRE_ATTESTATION=1 verify_release_asset_checksum V1.0.0 "$asset" "$file")" && rc=0 || rc=$?
 [ "$rc" -eq 1 ] || { echo "WRONG: require-gate rc=$rc want 1"; exit 1; }
-[[ "$out" == *"ERROR:MOLE_REQUIRE_ATTESTATION=1 set but gh"* ]] || { echo "WRONG: require-gate error missing: $out"; exit 1; }
+[[ "$out" == *"ERROR:已设置 MOLE_REQUIRE_ATTESTATION=1,但 gh CLI 不可用或未登录"* ]] || { echo "WRONG: require-gate error missing: $out"; exit 1; }
 
 # cannot verify (status 2) without the gate -> falls back to checksum-only
 verify_release_attestation() { return 2; }
@@ -1117,7 +1117,7 @@ out="$(verify_release_asset_checksum V1.0.0 "$asset" "$file")" && rc=0 || rc=$?
 verify_release_attestation() { return 0; }
 out="$(verify_release_asset_checksum V1.0.0 "$asset" "$file")" && rc=0 || rc=$?
 [ "$rc" -eq 0 ] || { echo "WRONG: verified rc=$rc want 0"; exit 1; }
-[[ "$out" == *"SUCCESS:Verified ${asset} · sha256 + attestation"* ]] || { echo "WRONG: verified success missing: $out"; exit 1; }
+[[ "$out" == *"SUCCESS:已验证 ${asset} · sha256 + 证明"* ]] || { echo "WRONG: verified success missing: $out"; exit 1; }
 
 rm -f "$file"
 EOF

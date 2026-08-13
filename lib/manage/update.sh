@@ -876,7 +876,7 @@ check_for_updates() {
                             echo -n > "$msg_cache"
                         fi
                     else
-                        printf "\nUpdate %s available, run %smo update%s\n\n" "$latest" "$GREEN" "$NC" > "$msg_cache"
+                        printf "\n发现新版本 %s,运行 %smo update%s 进行更新\n\n" "$latest" "$GREEN" "$NC" > "$msg_cache"
                     fi
                 else
                     echo -n > "$msg_cache"
@@ -903,7 +903,7 @@ show_version() {
     if command -v sw_vers > /dev/null; then
         os_ver=$(sw_vers -productVersion)
     else
-        os_ver="Unknown"
+        os_ver="未知"
     fi
 
     local arch
@@ -914,16 +914,16 @@ show_version() {
 
     local sip_status
     if command -v csrutil > /dev/null; then
-        sip_status=$(csrutil status 2> /dev/null | grep -o "enabled\|disabled" || echo "Unknown")
+        sip_status=$(csrutil status 2> /dev/null | grep -o "enabled\|disabled" || echo "未知")
         sip_status="$(LC_ALL=C tr '[:lower:]' '[:upper:]' <<< "${sip_status:0:1}")${sip_status:1}"
     else
-        sip_status="Unknown"
+        sip_status="未知"
     fi
 
     local disk_free
     disk_free=$(get_free_space)
 
-    local install_method="Manual"
+    local install_method="手动"
     if is_homebrew_install; then
         install_method="Homebrew"
     fi
@@ -935,30 +935,30 @@ show_version() {
     # line; the remaining writes then fail with SIGPIPE and bash prints a
     # "write error: Broken pipe" the user never asked for. A closed reader
     # means "stop", so stop quietly.
-    printf '\nMole version %s\n' "$VERSION" 2> /dev/null || return 0
+    printf '\nMole 版本 %s\n' "$VERSION" 2> /dev/null || return 0
     if [[ "$channel" == "nightly" ]]; then
         local commit
         commit=$(get_install_commit)
         if [[ -n "$commit" ]]; then
-            printf 'Channel: Nightly (%s)\n' "$commit" 2> /dev/null || return 0
+            printf '频道: 夜间版 (%s)\n' "$commit" 2> /dev/null || return 0
         else
-            printf 'Channel: Nightly\n' 2> /dev/null || return 0
+            printf '频道: 夜间版\n' 2> /dev/null || return 0
         fi
     fi
     printf 'macOS: %s\n' "$os_ver" 2> /dev/null || return 0
-    printf 'Architecture: %s\n' "$arch" 2> /dev/null || return 0
-    printf 'Kernel: %s\n' "$kernel" 2> /dev/null || return 0
+    printf '架构: %s\n' "$arch" 2> /dev/null || return 0
+    printf '内核: %s\n' "$kernel" 2> /dev/null || return 0
     printf 'SIP: %s\n' "$sip_status" 2> /dev/null || return 0
-    printf 'Disk Free: %s\n' "$disk_free" 2> /dev/null || return 0
-    printf 'Install: %s\n' "$install_method" 2> /dev/null || return 0
-    printf 'Shell: %s\n\n' "${SHELL:-Unknown}" 2> /dev/null || return 0
+    printf '可用磁盘: %s\n' "$disk_free" 2> /dev/null || return 0
+    printf '安装方式: %s\n' "$install_method" 2> /dev/null || return 0
+    printf 'Shell: %s\n\n' "${SHELL:-未知}" 2> /dev/null || return 0
 }
 
 show_help() {
     show_brand_banner
     echo
-    printf "%s%s%s\n" "$BLUE" "COMMANDS" "$NC"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo" "$NC" "Main menu"
+    printf "%s%s%s\n" "$BLUE" "命令" "$NC"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo" "$NC" "主菜单"
     for entry in "${MOLE_COMMANDS[@]}"; do
         local name="${entry%%:*}"
         local desc="${entry#*:}"
@@ -968,25 +968,25 @@ show_help() {
         printf "  %s%-28s%s %s\n" "$GREEN" "$display" "$NC" "$desc"
     done
     echo
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo clean --dry-run" "$NC" "Preview cleanup"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo clean --whitelist" "$NC" "Manage protected caches"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo clean --dry-run" "$NC" "预演清理"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo clean --whitelist" "$NC" "管理受保护缓存"
 
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo optimize --dry-run" "$NC" "Preview optimization"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo optimize --whitelist" "$NC" "Manage protected items"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo uninstall --dry-run" "$NC" "Preview app uninstall"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo history --json" "$NC" "Export cleanup history"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo purge --dry-run" "$NC" "Preview project purge"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo installer --dry-run" "$NC" "Preview installer cleanup"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo touchid enable --dry-run" "$NC" "Preview Touch ID setup"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo completion --dry-run" "$NC" "Preview shell completion edits"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo purge --paths" "$NC" "Configure scan directories"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo analyze /Volumes" "$NC" "Analyze external drives only"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo update --force" "$NC" "Force reinstall latest stable version"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo update --nightly" "$NC" "Install latest unreleased main branch build"
-    printf "  %s%-28s%s %s\n" "$GREEN" "mo remove --dry-run" "$NC" "Preview Mole removal"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo optimize --dry-run" "$NC" "预演优化"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo optimize --whitelist" "$NC" "管理受保护项目"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo uninstall --dry-run" "$NC" "预演应用卸载"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo history --json" "$NC" "导出清理历史"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo purge --dry-run" "$NC" "预演构建产物清理"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo installer --dry-run" "$NC" "预演安装包清理"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo touchid enable --dry-run" "$NC" "预演 Touch ID 配置"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo completion --dry-run" "$NC" "预演 shell 补全修改"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo purge --paths" "$NC" "配置扫描目录"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo analyze /Volumes" "$NC" "仅分析外置磁盘"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo update --force" "$NC" "强制重装最新稳定版"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo update --nightly" "$NC" "安装最新未发布的 main 分支构建"
+    printf "  %s%-28s%s %s\n" "$GREEN" "mo remove --dry-run" "$NC" "预演 Mole 移除"
     echo
-    printf "%s%s%s\n" "$BLUE" "OPTIONS" "$NC"
-    printf "  %s%-28s%s %s\n" "$GREEN" "--debug" "$NC" "Show detailed operation logs"
+    printf "%s%s%s\n" "$BLUE" "选项" "$NC"
+    printf "  %s%-28s%s %s\n" "$GREEN" "--debug" "$NC" "显示详细操作日志"
     echo
 }
 

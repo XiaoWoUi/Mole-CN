@@ -654,7 +654,7 @@ EOF
     set_mock_sudo_uncached
     run_clean_dry_run
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Dry Run Mode"* ]] || return 1
+    [[ "$output" == *"预演模式"* ]] || return 1
     [[ "$output" == *"sudo -v && mo clean --dry-run"* ]]
     [[ "$output" != *"system preview included"* ]]
 }
@@ -667,7 +667,7 @@ EOF
         "$PROJECT_ROOT/mole" clean
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Dry Run Mode"* ]] || return 1
+    [[ "$output" == *"预演模式"* ]] || return 1
     [[ -f "$HOME/.Trash/env-dry-run-sentinel" ]]
 }
 
@@ -691,7 +691,7 @@ MOCK
     for removed_flag in "--select" "--categories" "--exclude"; do
         run env HOME="$HOME" MOLE_TEST_MODE=1 "$PROJECT_ROOT/mole" clean "$removed_flag"
         [ "$status" -eq 1 ]
-        [[ "$output" == *"was removed in this release"* ]] || return 1
+        [[ "$output" == *"已在本版本中移除"* ]] || return 1
         [[ "$output" == *"mo clean --dry-run"* ]] || return 1
     done
 }
@@ -701,7 +701,7 @@ MOCK
     run_clean_dry_run
     [ "$status" -eq 0 ]
     [[ "$output" == *"sudo -v"* ]] || return 1
-    [[ "$output" == *"full preview"* ]]
+    [[ "$output" == *"完整预览"* ]]
 }
 
 @test "mo clean adopts cached sudo before system cleanup (#1084)" {
@@ -788,12 +788,12 @@ printf '\nSYSTEM_CLEAN=%s\n' "$SYSTEM_CLEAN"
 SCRIPT
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"continue"* ]] || return 1
-    [[ "$output" != *"Enter"*"password"* ]] || return 1
+    [[ "$output" == *"继续"* ]] || return 1
+    [[ "$output" != *"回车"*"密码"* ]] || return 1
     [[ "$output" == *"ENSURE_PASSWORD=secret"* ]] || return 1
     [[ "$output" != *"ENSURE_PLAIN"* ]] || return 1
     [[ "$output" == *"SYSTEM_CLEAN=true"* ]] || return 1
-    [[ "$output" != *"Skipped"* ]]
+    [[ "$output" != *"已跳过"* ]]
 }
 
 @test "mo clean sudo prompt still skips on explicit Space (#1059)" {
@@ -816,7 +816,7 @@ printf '\nSYSTEM_CLEAN=%s\n' "$SYSTEM_CLEAN"
 SCRIPT
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Skipped"* ]] || return 1
+    [[ "$output" == *"已跳过"* ]] || return 1
     [[ "$output" != *"ENSURE_SUDO"* ]] || return 1
     [[ "$output" == *"SYSTEM_CLEAN=false"* ]]
 }
@@ -895,11 +895,11 @@ perform_cleanup
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Free space: 75.16GB"* ]] || return 1
-    [[ "$output" == *"Tracked cleanup:"* ]] || return 1
+    [[ "$output" == *"可用空间: 75.16GB"* ]] || return 1
+    [[ "$output" == *"释放空间:"* ]] || return 1
     [[ "$output" == *"1.02GB"* ]] || return 1
-    [[ "$output" == *"Free space: 76.19GB (+1.02GB)"* ]] || return 1
-    [[ "$output" != *"Space freed:"* ]] || return 1
+    [[ "$output" == *"可用空间: 76.19GB (+1.02GB)"* ]] || return 1
+    [[ "$output" != *"已释放空间:"* ]] || return 1
     [ "$(cat "$HOME/df.count")" = "2" ]
 }
 
@@ -929,8 +929,8 @@ EOF
 
     run env HOME="$HOME" MOLE_TEST_MODE=1 "$PROJECT_ROOT/mole" clean --dry-run
     [ "$status" -eq 0 ]
-    [[ "$output" == *"User app cache"* ]] || return 1
-    [[ "$output" == *"Potential space"* ]] || return 1
+    [[ "$output" == *"用户应用缓存"* ]] || return 1
+    [[ "$output" == *"可释放空间"* ]] || return 1
     [ -f "$HOME/Library/Caches/TestApp/cache.tmp" ]
 }
 
@@ -958,8 +958,8 @@ PLIST
     run env HOME="$HOME" MOLE_TEST_MODE=0 MOLE_TEST_NO_AUTH=1 \
         PATH="$MOCK_TOOLCHAIN_BIN:$PATH" "$PROJECT_ROOT/mole" clean --dry-run
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Stale login item · ~/Library/LaunchAgents/com.example.stale.plist"* ]] || return 1
-    [[ "$output" == *"review before removing"* ]] || return 1
+    [[ "$output" == *"过期的登录项 · ~/Library/LaunchAgents/com.example.stale.plist"* ]] || return 1
+    [[ "$output" == *"删除前请先检查"* ]] || return 1
     [ -f "$HOME/Library/LaunchAgents/com.example.stale.plist" ]
 }
 
@@ -1011,14 +1011,14 @@ PLIST
     [[ "$(grep -cF "$whitelisted_cache/keep.bin" "$preview")" -eq 0 ]] || return 1
     [[ "$(grep -cF "$protected_cache/protected.bin" "$preview")" -eq 0 ]] || return 1
     local preview_total preview_items preview_categories
-    preview_total=$(sed -n 's/^# Potential cleanup: //p' "$preview")
-    preview_items=$(sed -n 's/^# Items: //p' "$preview")
-    preview_categories=$(sed -n 's/^# Categories: //p' "$preview")
+    preview_total=$(sed -n 's/^# 可释放空间: //p' "$preview")
+    preview_items=$(sed -n 's/^# 项: //p' "$preview")
+    preview_categories=$(sed -n 's/^# 分类: //p' "$preview")
     [[ -n "$preview_total" && "$preview_items" =~ ^[0-9]+$ && "$preview_categories" =~ ^[0-9]+$ ]] || return 1
-    [[ "$output" != *"Category total"* ]] || return 1
-    printf '%s\n' "$output" | grep -F "Potential space:" |
-        grep -F "Items: $preview_items" |
-        grep -F "Categories: $preview_categories" |
+    [[ "$output" != *"分类总数"* ]] || return 1
+    printf '%s\n' "$output" | grep -F "可释放空间:" |
+        grep -F "项: $preview_items" |
+        grep -F "分类: $preview_categories" |
         grep -qF "$preview_total" || return 1
 }
 
@@ -1049,7 +1049,7 @@ EOF
     [ "$status" -eq 0 ] || return 1
     [[ "$output" == *"PARTIAL=true"* ]] || return 1
     [[ "$output" == *"Cloud & Office"* ]] || return 1
-    [[ "$output" == *"cache.bin  # size unknown"* ]] || return 1
+    [[ "$output" == *"cache.bin  # 大小未知"* ]] || return 1
 }
 
 @test "mo clean --dry-run never previews a live SQLite database family (#1390)" {
@@ -1086,7 +1086,7 @@ EOF
 
     run env HOME="$HOME" MOLE_TEST_MODE=1 "$PROJECT_ROOT/mole" clean --dry-run
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Protected"* ]] || return 1
+    [[ "$output" == *"发现受保护的项"* ]] || return 1
     [ -f "$HOME/Library/Caches/WhitelistedApp/data.tmp" ]
 }
 
@@ -1100,7 +1100,7 @@ EOF
 
     run env HOME="$HOME" MOLE_TEST_MODE=1 "$PROJECT_ROOT/mole" clean --dry-run
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Protected"* ]] || return 1
+    [[ "$output" == *"发现受保护的项"* ]] || return 1
     [ -f "$HOME/Library/Caches/WhitelistedApp/data.tmp" ]
 }
 
@@ -1300,8 +1300,8 @@ _clean_mail_downloads
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Would clean 1 mail attachments"* ]] || return 1
-    [[ "$output" != *"Cleaned 1 mail attachments"* ]] || return 1
+    [[ "$output" == *"将清理 1 个早于 30 天的邮件附件"* ]] || return 1
+    [[ "$output" != *"已清理 1 个早于 30 天的邮件附件"* ]] || return 1
     [ -f "$HOME/Library/Mail Downloads/old.pdf" ]
 }
 
@@ -1348,7 +1348,7 @@ clean_time_machine_failed_backups
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" != *"Time Machine cleanup · skipped (backup in progress)"* ]]
+    [[ "$output" != *"Time Machine 清理 · 已跳过(备份进行中)"* ]]
 }
 
 @test "clean_time_machine_failed_backups skips when backup is actually running" {
@@ -1394,7 +1394,7 @@ clean_time_machine_failed_backups
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Time Machine cleanup · skipped (backup in progress)"* ]]
+    [[ "$output" == *"Time Machine 清理 · 已跳过(备份进行中)"* ]]
 }
 
 @test "start_section recycles an idle section header in place on a TTY" {
@@ -1421,7 +1421,7 @@ EOF
     [[ "$raw_content" == *"Idle Alpha"* ]] || return 1
     [[ "$raw_content" == *$'\033[1A\r\033[2K'*"Active Beta"* ]] || return 1
     # TTY path must not fall back to the piped-output placeholder row.
-    [[ "$raw_content" != *"Nothing to clean"* ]] || return 1
+    [[ "$raw_content" != *"没有可清理的内容"* ]] || return 1
 }
 
 @test "log_success rows mark section activity so headers keep their blank separator" {
@@ -1448,7 +1448,7 @@ EOF
     # next header must not recycle (and eat) the row line.
     [[ "$raw_content" == *"System crash reports"* ]] || return 1
     [[ "$raw_content" != *$'\033[1A'* ]] || return 1
-    [[ "$raw_content" != *"Nothing to clean"* ]] || return 1
+    [[ "$raw_content" != *"没有可清理的内容"* ]] || return 1
 }
 
 @test "sections whose rows come only from log_success are not marked idle in pipes" {
@@ -1462,7 +1462,7 @@ EOF
         '
     [ "$status" -eq 0 ]
     [[ "$output" == *"System crash reports"* ]] || return 1
-    [[ "$output" != *"Nothing to clean"* ]] || return 1
+    [[ "$output" != *"没有可清理的内容"* ]] || return 1
 }
 
 @test "safe_clean skips caches that hold a compiled model cache" {
@@ -1609,8 +1609,8 @@ EOF
         '
     [ "$status" -eq 0 ]
     [[ "$output" == *"Idle Alpha"* ]] || return 1
-    [[ "$output" == *"Nothing to clean"* ]] || return 1
-    [[ "$output" != *"Category total"* ]] || return 1
+    [[ "$output" == *"没有可清理的内容"* ]] || return 1
+    [[ "$output" != *"分类总数"* ]] || return 1
 }
 
 @test "cleanup libs share one engine-absent shim instead of forking their own" {
@@ -1679,7 +1679,7 @@ mole_clean_process_guard running "App started" || rc=$?
 rc=0
 mole_clean_process_guard unknown "App started" || rc=$?
 [[ $rc -eq 1 ]] || exit 1
-[[ "$_MOLE_CLEAN_GUARD_REASON" == "process state unknown" ]] || exit 1
+[[ "$_MOLE_CLEAN_GUARD_REASON" == "进程状态未知" ]] || exit 1
 
 rc=0
 mole_clean_process_guard unknown "Updater started" "updater state unknown" || rc=$?

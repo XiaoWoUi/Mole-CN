@@ -474,9 +474,9 @@ batch_uninstall_applications || rc=$?
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"cannot be removed safely by Mole from this location"* ]] || return 1
-    [[ "$output" == *"Move it to Trash in Finder"* ]] || return 1
-    [[ "$output" == *"protected containers and app data untouched"* ]] || return 1
+    [[ "$output" == *"Mole 无法安全地从此位置移除"* ]] || return 1
+    [[ "$output" == *"请在 Finder 中将其移至废纸篓"* ]] || return 1
+    [[ "$output" == *"未改动受保护的容器和应用数据"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_"* ]]
 }
 
@@ -516,7 +516,7 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"cannot be removed safely by Mole from this location"* ]] || return 1
+    [[ "$output" == *"Mole 无法安全地从此位置移除"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_"* ]]
 }
 
@@ -1492,7 +1492,7 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"requires the official CrowdStrike uninstaller"* ]] || return 1
+    [[ "$output" == *"需要使用官方 CrowdStrike 卸载器"* ]] || return 1
     [[ "$output" != *"MOLE_DELETE"* ]]
 }
 
@@ -1538,14 +1538,14 @@ total_size_cleaned=0
 
 printf '\n' | batch_uninstall_applications > "$HOME/output.log" 2>&1
 
-grep -q "Review only: ~/system/com.example.review.helper" "$HOME/output.log"
+grep -q "仅查看: ~/system/com.example.review.helper" "$HOME/output.log"
 # The summary states the count, not the paths: they were already listed above
 # the confirmation prompt, so the path must appear exactly once in the run.
 [[ "$(grep -cF "~/system/com.example.review.helper" "$HOME/output.log")" -eq 1 ]]
-grep -q "Kept 1 system-level path, which Mole never removes" "$HOME/output.log"
+grep -q "保留了 1 个系统级路径,Mole 不会移除它们" "$HOME/output.log"
 # Keeping system paths is the designed outcome, so the run is not "incomplete".
-! grep -q "Uninstall incomplete" "$HOME/output.log"
-grep -q "Uninstall complete" "$HOME/output.log"
+! grep -q "卸载未完成" "$HOME/output.log"
+grep -q "卸载完成" "$HOME/output.log"
 # The point of the whole case: the file is reported, never deleted.
 ! grep -q "$HOME/system/com.example.review.helper" "$HOME/remove.log"
 [[ -e "$HOME/system/com.example.review.helper" ]]
@@ -1600,11 +1600,11 @@ output=$(cat "$output_file")
 [[ -d "$HOME/Library/Caches/TestApp" ]] || { echo "WRONG: dry-run removed cache"; cat "$output_file"; exit 1; }
 [[ -f "$HOME/Library/Preferences/com.example.TestApp.plist" ]] || { echo "WRONG: dry-run removed prefs"; cat "$output_file"; exit 1; }
 
-[[ "$output" == *"Uninstall dry run complete"* ]] || { echo "WRONG: missing dry-run summary"; cat "$output_file"; exit 1; }
-[[ "$output" == *"Would remove 1 app"* ]] || { echo "WRONG: missing would-remove summary"; cat "$output_file"; exit 1; }
-[[ "$output" != *"Could not remove"* ]] || { echo "WRONG: dry-run reported expected leftovers"; cat "$output_file"; exit 1; }
-[[ "$output" != *"system-level path"* ]] || { echo "WRONG: dry-run reported post-removal system leftovers"; cat "$output_file"; exit 1; }
-[[ "$output" != *"Uninstall incomplete"* ]] || { echo "WRONG: dry-run marked incomplete"; cat "$output_file"; exit 1; }
+[[ "$output" == *"卸载模拟运行完成"* ]] || { echo "WRONG: missing dry-run summary"; cat "$output_file"; exit 1; }
+[[ "$output" == *"将移除 1 个应用"* ]] || { echo "WRONG: missing would-remove summary"; cat "$output_file"; exit 1; }
+[[ "$output" != *"无法移除"* ]] || { echo "WRONG: dry-run reported expected leftovers"; cat "$output_file"; exit 1; }
+[[ "$output" != *"系统级"* ]] || { echo "WRONG: dry-run reported post-removal system leftovers"; cat "$output_file"; exit 1; }
+[[ "$output" != *"卸载未完成"* ]] || { echo "WRONG: dry-run marked incomplete"; cat "$output_file"; exit 1; }
 EOF
 
     [ "$status" -eq 0 ]
@@ -1962,10 +1962,10 @@ output=$(cat "$output_file")
 
 # The legacy "still running" failure summary must NOT fire.
 [[ "$output" != *"is still running"* ]] || { echo "WRONG: legacy still-running failure surfaced"; exit 1; }
-[[ "$output" != *Failed:*TestApp* ]] || { echo "WRONG: app counted as failed"; exit 1; }
+[[ "$output" != *失败:*TestApp* ]] || { echo "WRONG: app counted as failed"; exit 1; }
 
 # A friendlier warning should appear so the user knows to quit the lingering process.
-[[ "$output" == *"Still running during uninstall"* ]] || { echo "WRONG: missing running-process warning"; cat "$output_file"; exit 1; }
+[[ "$output" == *"卸载期间仍在运行"* ]] || { echo "WRONG: missing running-process warning"; cat "$output_file"; exit 1; }
 [[ "$output" == *TestApp* ]] || { echo "WRONG: warning omits app name"; exit 1; }
 EOF
 
@@ -2542,7 +2542,7 @@ EOF
     [[ "$output" == *"RESULT:ok"* ]] || return 1
     [[ "$output" == *"CALL2:15:/bin/echo -r -f -domain local -domain user -domain system"* ]] || return 1
     [[ "$output" == *"CALL3:10:/bin/echo -r -f -domain local -domain user"* ]] || return 1
-    [[ "$output" == *"DEBUG:LaunchServices rebuild timed out, trying lighter version"* ]]
+    [[ "$output" == *"DEBUG:LaunchServices 重建超时,正在尝试轻量版本"* ]]
 }
 
 @test "remove_mole deletes manual binaries and caches" {
@@ -2612,7 +2612,7 @@ printf '\n' | "$PROJECT_ROOT/mole" remove --dry-run
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"DRY RUN MODE"* ]] || return 1
+    [[ "$output" == *"试运行模式"* ]] || return 1
     [ -f "$HOME/.local/bin/mole" ]
     [ -f "$HOME/.local/bin/mo" ]
     [ -d "$HOME/.config/mole" ]
@@ -2702,7 +2702,7 @@ echo "count=${#selected_apps[@]}"
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Warning: No application found matching 'nonexistent'"* ]] || return 1
+    [[ "$output" == *"警告: 未找到匹配 'nonexistent' 的应用"* ]] || return 1
     [[ "$output" == *"count=0"* ]]
 }
 
@@ -3480,7 +3480,7 @@ INNER
 
     [ "$status" -eq 0 ] || return 1
     [[ "$output" == *"RC=0 DETAILS=1"* ]] || return 1
-    [[ "$output" == *"leftover scan timed out; only the app bundle will be removed"* ]] || return 1
+    [[ "$output" == *"残留扫描超时;仅移除应用包"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_DIAG"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_SYSTEM"* ]] || return 1
 }
@@ -3609,7 +3609,7 @@ INNER
     [[ "$output" == *'"name": "Zoom"'* ]] || return 1
     [[ "$output" == *'"uninstall_name": "Slack"'* ]] || return 1
     [[ "$output" == *'"bundle_id": "com.tinyspeck.slackmacgap"'* ]] || return 1
-    [[ "$output" == *'"source": "App"'* ]]
+    [[ "$output" == *'"source": "应用"'* ]]
 }
 
 @test "uninstall --list emits JSON array when stdout is piped" {

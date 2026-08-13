@@ -201,7 +201,7 @@ get_all_cache_items
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"LM Studio app cache|\$HOME/Library/Caches/com.lmstudio.lmstudio/*|ai_ml_cache"* ]] || return 1
+    [[ "$output" == *"LM Studio 应用缓存|\$HOME/Library/Caches/com.lmstudio.lmstudio/*|ai_ml_cache"* ]] || return 1
     [[ "$output" != *".cache/lm-studio"* ]]
 }
 
@@ -213,8 +213,8 @@ get_all_cache_items
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Codex Desktop update staging|\$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle/Installation|ai_ml_cache"* ]] || return 1
-    [[ "$output" == *"Tart OCI/IPSW cache|\$HOME/.tart/cache|container_cache"* ]] || return 1
+    [[ "$output" == *"Codex Desktop 更新暂存|\$HOME/Library/Caches/com.openai.codex/org.sparkle-project.Sparkle/Installation|ai_ml_cache"* ]] || return 1
+    [[ "$output" == *"Tart OCI/IPSW 缓存|\$HOME/.tart/cache|container_cache"* ]] || return 1
 }
 
 @test "whitelist inventory exposes Rust Cargo extracted sources" {
@@ -225,7 +225,7 @@ get_all_cache_items
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Rust Cargo extracted sources|\$HOME/.cargo/registry/src/*|compiler_cache"* ]]
+    [[ "$output" == *"Rust Cargo 解压源码|\$HOME/.cargo/registry/src/*|compiler_cache"* ]]
 }
 
 @test "whitelist inventory exposes Chrome AI model stores" {
@@ -236,9 +236,9 @@ get_all_cache_items
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Chrome on-device AI models|\$HOME/Library/Application Support/Google/Chrome/OptGuideOnDevice*/*|ai_ml_cache"* ]] || return 1
-    [[ "$output" == *"Chrome optimization guide models|\$HOME/Library/Application Support/Google/Chrome/optimization_guide_model_store/*|ai_ml_cache"* ]] || return 1
-    [[ "$output" == *"Chrome browser cache|\$HOME/Library/Caches/Google/Chrome/*|browser_cache"* ]] || return 1
+    [[ "$output" == *"Chrome 设备端 AI 模型|\$HOME/Library/Application Support/Google/Chrome/OptGuideOnDevice*/*|ai_ml_cache"* ]] || return 1
+    [[ "$output" == *"Chrome 优化指南模型|\$HOME/Library/Application Support/Google/Chrome/optimization_guide_model_store/*|ai_ml_cache"* ]] || return 1
+    [[ "$output" == *"Chrome 浏览器缓存|\$HOME/Library/Caches/Google/Chrome/*|browser_cache"* ]] || return 1
 }
 
 @test "mo clean --whitelist persists selections" {
@@ -272,7 +272,7 @@ EOF
 
     run /bin/bash --noprofile --norc -c "cd '$PROJECT_ROOT'; printf 'q' | HOME='$HOME' ./mo clean --whitelist"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Cancelled"* ]] || return 1
+    [[ "$output" == *"已取消,未保存更改"* ]] || return 1
     after_hash=$(shasum "$whitelist_file" | awk '{print $1}')
     [ "$before_hash" = "$after_hash" ]
 }

@@ -96,7 +96,7 @@ func TestMoveToTrashRejectsTraversal(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for path with traversal components")
 	}
-	if !strings.Contains(err.Error(), "traversal") {
+	if !strings.Contains(err.Error(), "越界") {
 		t.Fatalf("expected traversal error, got: %v", err)
 	}
 }
@@ -115,7 +115,7 @@ func TestValidateTrashTargetRejectsOrbStackLiveData(t *testing.T) {
 
 	for _, path := range tests {
 		t.Run(path, func(t *testing.T) {
-			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 				t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", path, err)
 			}
 		})
@@ -134,7 +134,7 @@ func TestValidateTrashTargetRejectsDockerDesktopLiveData(t *testing.T) {
 
 	for _, path := range tests {
 		t.Run(path, func(t *testing.T) {
-			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 				t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", path, err)
 			}
 		})
@@ -155,7 +155,7 @@ func TestValidateTrashTargetRejectsDockerDesktopSymlinkAlias(t *testing.T) {
 	}
 
 	path := filepath.Join(alias, "Data")
-	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", path, err)
 	}
 }
@@ -173,7 +173,7 @@ func TestValidateTrashTargetRejectsDockerDesktopCaseVariant(t *testing.T) {
 	if _, err := os.Stat(caseVariant); err != nil {
 		t.Skip("filesystem is case-sensitive")
 	}
-	if err := validateTrashTarget(caseVariant); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(caseVariant); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", caseVariant, err)
 	}
 }
@@ -186,7 +186,7 @@ func TestValidateTrashTargetRejectsDockerDesktopLiveDataWithoutHOME(t *testing.T
 	t.Setenv("HOME", "")
 
 	path := filepath.Join(currentUser.HomeDir, "Library", "Containers", "com.docker.docker", "Data")
-	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) with empty HOME error = %v, want protected path error", path, err)
 	}
 }
@@ -205,13 +205,13 @@ func TestValidateTrashTargetRejectsOrbStackGroupContainerAliases(t *testing.T) {
 	if err := os.Symlink(groupRoot, alias); err != nil {
 		t.Fatalf("create OrbStack group symlink: %v", err)
 	}
-	if err := validateTrashTarget(filepath.Join(alias, "data")); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(filepath.Join(alias, "data")); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("OrbStack group symlink error = %v, want protected path error", err)
 	}
 
 	caseVariant := filepath.Join(home, "library", "group containers", "huaq24hbr6.DEV.ORBSTACK", "data")
 	if _, err := os.Stat(caseVariant); err == nil {
-		if err := validateTrashTarget(caseVariant); err == nil || !strings.Contains(err.Error(), "protected path") {
+		if err := validateTrashTarget(caseVariant); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 			t.Fatalf("OrbStack group case variant error = %v, want protected path error", err)
 		}
 	}
@@ -225,7 +225,7 @@ func TestValidateTrashTargetRejectsOrbStackGroupContainerWithoutHOME(t *testing.
 	t.Setenv("HOME", "")
 
 	path := filepath.Join(currentUser.HomeDir, "Library", "Group Containers", "HUAQ24HBR6.dev.orbstack", "data")
-	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) with empty HOME error = %v, want protected path error", path, err)
 	}
 }
@@ -268,7 +268,7 @@ func TestValidateTrashTargetRejectsCriticalRoots(t *testing.T) {
 
 	for _, path := range tests {
 		t.Run(path, func(t *testing.T) {
-			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 				t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", path, err)
 			}
 		})
@@ -292,7 +292,7 @@ func TestValidateTrashTargetRejectsCriticalRootCaseAliases(t *testing.T) {
 			if !isSameExistingPath(tt.alias, tt.canonical) {
 				t.Skip("filesystem does not expose this case-insensitive alias")
 			}
-			if err := validateTrashTarget(tt.alias); err == nil || !strings.Contains(err.Error(), "protected path") {
+			if err := validateTrashTarget(tt.alias); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 				t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", tt.alias, err)
 			}
 		})
@@ -311,7 +311,7 @@ func TestValidateTrashTargetRejectsOrbStackCaseVariant(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	path := filepath.Join(home, "LIBRARY", "GROUP CONTAINERS", "HUAQ24HBR6.DEV.ORBSTACK", "DATA")
-	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", path, err)
 	}
 }
@@ -336,7 +336,7 @@ func TestValidateTrashTargetRejectsSymlinkToCriticalRoot(t *testing.T) {
 		t.Fatalf("create critical-root symlink: %v", err)
 	}
 
-	if err := validateTrashTarget(alias); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(alias); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", alias, err)
 	}
 }
@@ -375,7 +375,7 @@ func TestValidateTrashTargetRejectsEndpointSecurityCaches(t *testing.T) {
 
 	for _, path := range tests {
 		t.Run(path, func(t *testing.T) {
-			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+			if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 				t.Fatalf("validateTrashTarget(%q) error = %v, want protected path error", path, err)
 			}
 		})
@@ -397,7 +397,7 @@ func TestValidateTrashTargetRejectsEndpointSecurityCachesWithoutHOME(t *testing.
 	// The EDR check must not depend on HOME (e.g. `env -u HOME mo analyze`).
 	t.Setenv("HOME", "")
 	path := "/private/var/folders/zz/aa/C/com.crowdstrike.falcon.App/com.apple.metalfe"
-	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "protected path") {
+	if err := validateTrashTarget(path); err == nil || !strings.Contains(err.Error(), "受保护路径") {
 		t.Fatalf("validateTrashTarget(%q) with empty HOME error = %v, want protected path error", path, err)
 	}
 }

@@ -77,8 +77,8 @@ func TestCollectIOCountersSafelyRecoversPanic(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error from panic recovery")
 	}
-	if !strings.Contains(err.Error(), "panic collecting network counters") {
-		t.Fatalf("unexpected error: %v", err)
+	if !strings.Contains(err.Error(), "采集网络计数器时发生异常") {
+		t.Fatalf("意外的错误: %v", err)
 	}
 	if len(stats) != 0 {
 		t.Fatalf("expected empty stats when panic recovered")
@@ -97,7 +97,7 @@ func TestCollectIOCountersSafelyReturnsData(t *testing.T) {
 
 	got, err := collectIOCountersSafely()
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("意外的错误: %v", err)
 	}
 	if len(got) != 1 || got[0].Name != "en0" {
 		t.Fatalf("unexpected stats: %+v", got)
@@ -206,7 +206,7 @@ func TestTunnelInterfaceIsNotReportedAsAProxy(t *testing.T) {
 		NetworkHistory{}, got, 40,
 	)
 	rendered := strings.Join(card.lines, "\n")
-	if !strings.Contains(rendered, "Tunnel") || strings.Contains(rendered, "Proxy Tunnel") {
+	if !strings.Contains(rendered, "隧道") || strings.Contains(rendered, "Proxy Tunnel") {
 		t.Fatalf("tunnel must be rendered without a proxy claim: %q", rendered)
 	}
 }

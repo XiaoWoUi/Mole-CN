@@ -978,7 +978,7 @@ EOF
 		"$fake_brew_bin/mo" update
 
 	[ "$status" -ne 0 ]
-	[[ "$output" == *"Homebrew upgrade failed"* ]] || return 1
+	[[ "$output" == *"Homebrew 升级失败"* ]] || return 1
 	[[ "$output" == *"Please update to Xcode 27.0 (or delete it)."* ]] || return 1
 	[[ "$output" == *"https://developer.apple.com/download/all/"* ]]
 }
@@ -1000,7 +1000,7 @@ EOF
 		"$fake_brew_bin/mo" update
 
 	[ "$status" -ne 0 ]
-	[[ "$output" == *"Homebrew upgrade failed"* ]] || return 1
+	[[ "$output" == *"Homebrew 升级失败"* ]] || return 1
 	[[ "$output" == *"The upgrade command was interrupted"* ]] || return 1
 	[[ "$output" != *"Updated to latest version"* ]]
 }
@@ -1024,7 +1024,7 @@ EOF
 		"$fake_brew_bin/mo" update
 
 	[ "$status" -ne 0 ]
-	[[ "$output" == *"Homebrew upgrade failed"* ]] || return 1
+	[[ "$output" == *"Homebrew 升级失败"* ]] || return 1
 	[[ "$output" == *"Error: simulated upgrade failure"* ]] || return 1
 	[[ "$output" != *"Already on latest version"* ]]
 }

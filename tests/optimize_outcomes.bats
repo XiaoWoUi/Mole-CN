@@ -97,8 +97,8 @@ fi
 EOF
 
 	[[ "$status" -eq 0 ]] || { echo "$output"; return 1; }
-	[[ "$output" == *"Invalid optimize task outcome: invented"* ]] || return 1
-	[[ "$output" == *"Optimize task outcome is already set: unchanged"* ]] || return 1
+	[[ "$output" == *"无效的优化任务结果: invented"* ]] || return 1
+	[[ "$output" == *"优化任务结果已设置: unchanged"* ]] || return 1
 }
 
 @test "optimize outcomes reject results outside an active task" {
@@ -113,7 +113,7 @@ fi
 EOF
 
 	[[ "$status" -eq 0 ]] || { echo "$output"; return 1; }
-	[[ "$output" == *"Optimize task was not started"* ]] || return 1
+	[[ "$output" == *"优化任务未启动"* ]] || return 1
 }
 
 @test "optimize outcomes reject missing and duplicate task records" {
@@ -138,8 +138,8 @@ fi
 EOF
 
 	[[ "$status" -eq 0 ]] || { echo "$output"; return 1; }
-	[[ "$output" == *"Optimize task did not report an outcome: periodic_maintenance"* ]] || return 1
-	[[ "$output" == *"Optimize task outcome is already recorded: periodic_maintenance"* ]] || return 1
+	[[ "$output" == *"优化任务未上报结果: periodic_maintenance"* ]] || return 1
+	[[ "$output" == *"优化任务结果已记录: periodic_maintenance"* ]] || return 1
 }
 
 @test "optimize outcomes expose failed actions without leaking ledger storage" {

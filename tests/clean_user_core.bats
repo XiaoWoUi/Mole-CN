@@ -62,7 +62,7 @@ clean_user_essentials
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [ "$output" = $'SAFE:User app cache\nSAFE:User app logs\nTRASH' ]
+    [ "$output" = $'SAFE:用户应用缓存\nSAFE:用户应用日志\nTRASH' ]
 }
 
 @test "clean_trash dry run stays silent for compiled-model-only items" {
@@ -122,7 +122,7 @@ clean_user_essentials
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Trash · emptied, 2 items"* ]] || return 1
+    [[ "$output" == *"废纸篓 · 已清空,2 项"* ]] || return 1
     [[ "$output" != *"osascript called"* ]]
 }
 
@@ -178,7 +178,7 @@ clean_app_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Saved application states"* ]] || [[ "$output" == *"App caches"* ]]
+    [[ "$output" == *"已保存的应用状态"* ]] || [[ "$output" == *"应用缓存"* ]]
 }
 
 @test "clean_app_caches does not clean Autosave Information" {
@@ -222,11 +222,11 @@ EOF
     # The E5RT bundle cache is deliberately no longer a cleanup target: see
     # holds_compiled_model_cache(). Assert it first so the check cannot pass
     # vacuously on empty output.
-    [[ "$output" != *"Apple Intelligence runtime cache"* ]] || return 1
-    [[ "$output" == *"Apple Media Services cache"* ]] || return 1
-    [[ "$output" == *"Duet Expert cache"* ]] || return 1
-    [[ "$output" == *"Parsecd cache"* ]] || return 1
-    [[ "$output" == *"Apple Python cache"* ]] || return 1
+    [[ "$output" != *"Apple Intelligence 运行时缓存"* ]] || return 1
+    [[ "$output" == *"Apple Media Services 缓存"* ]] || return 1
+    [[ "$output" == *"Duet Expert 缓存"* ]] || return 1
+    [[ "$output" == *"Parsecd 缓存"* ]] || return 1
+    [[ "$output" == *"Apple Python 缓存"* ]] || return 1
 }
 
 @test "clean_app_caches shows spinner during initial app cache scan" {
@@ -244,7 +244,7 @@ clean_app_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SPIN_START:Scanning app caches..."* ]]
+    [[ "$output" == *"SPIN_START:正在扫描应用缓存..."* ]]
 }
 
 @test "clean_support_app_data targets crash reports and messages preview caches only" {
@@ -271,9 +271,9 @@ EOF
     [[ "$output" == *"FIND:$support_home/Library/Application Support/CrashReporter:30:f"* ]] || return 1
     [[ "$output" != *"com.apple.idleassetsd"* ]] || return 1
     [[ "$output" != *"Aerial wallpaper videos"* ]] || return 1
-    [[ "$output" == *"Messages sticker cache"* ]] || return 1
-    [[ "$output" == *"Messages preview attachment cache"* ]] || return 1
-    [[ "$output" == *"Messages preview sticker cache"* ]] || return 1
+    [[ "$output" == *"Messages 贴纸缓存"* ]] || return 1
+    [[ "$output" == *"Messages 预览附件缓存"* ]] || return 1
+    [[ "$output" == *"Messages 预览贴纸缓存"* ]] || return 1
     [[ "$output" != *"Messages attachments"* ]]
 }
 
@@ -292,9 +292,9 @@ clean_support_app_data
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Messages sticker cache"* ]] || return 1
-    [[ "$output" == *"Messages preview attachment cache"* ]] || return 1
-    [[ "$output" == *"Messages preview sticker cache"* ]]
+    [[ "$output" == *"Messages 贴纸缓存"* ]] || return 1
+    [[ "$output" == *"Messages 预览附件缓存"* ]] || return 1
+    [[ "$output" == *"Messages 预览贴纸缓存"* ]]
 }
 
 @test "clean_app_caches never hands a third-party container to safe_clean" {
@@ -396,7 +396,7 @@ clean_app_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Sandboxed app caches"* ]] || return 1
+    [[ "$output" == *"沙盒应用缓存"* ]] || return 1
     [[ "$output" != *"SHOULD_NOT_SIZE_SCAN"* ]]
 }
 
@@ -425,7 +425,7 @@ rm -rf "$HOME/Library/Application Support"
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Application Support logs/caches"* ]] || return 1
+    [[ "$output" == *"Application Support 日志/缓存"* ]] || return 1
     local total_kb
     total_kb=$(printf '%s\n' "$output" | sed -n 's/.*TOTAL_KB=\([0-9][0-9]*\).*/\1/p' | tail -1)
     [[ -n "$total_kb" ]] || return 1
@@ -461,9 +461,9 @@ rm -rf "$HOME/Library/Application Support"
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SPIN:Scanning Application Support... 1/1 [adspower_global, bulk clean]"* ]] || return 1
-    [[ "$output" == *"Application Support logs/caches"* ]] || return 1
-    [[ "$output" != *"151250 items"* ]] || return 1
+    [[ "$output" == *"SPIN:正在扫描 Application Support... 1/1 [adspower_global,批量清理]"* ]] || return 1
+    [[ "$output" == *"Application Support 日志/缓存"* ]] || return 1
+    [[ "$output" != *"151250 项"* ]] || return 1
     [[ "$output" != *"REMOVE:"* ]]
 }
 
@@ -623,7 +623,7 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Group Containers logs/caches"* ]] || return 1
+    [[ "$output" == *"群组容器日志/缓存"* ]] || return 1
     [[ "$output" == *"PASS"* ]]
 }
 
@@ -659,7 +659,7 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Handoff clipboard cache"* ]] || return 1
+    [[ "$output" == *"接力剪贴板缓存"* ]] || return 1
     [[ "$output" == *"PASS"* ]] || return 1
 }
 
@@ -691,8 +691,8 @@ fi
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Handoff clipboard cache"* ]] || return 1
-    [[ "$output" == *"dry"* ]] || return 1
+    [[ "$output" == *"接力剪贴板缓存"* ]] || return 1
+    [[ "$output" == *"预演"* ]] || return 1
     [[ "$output" == *"PASS"* ]] || return 1
 }
 
@@ -879,7 +879,7 @@ clean_group_container_caches
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Group Containers logs/caches"* ]] || return 1
+    [[ "$output" == *"群组容器日志/缓存"* ]] || return 1
     [[ "$output" != *"SHOULD_NOT_SIZE_SCAN"* ]]
 }
 
@@ -913,9 +913,9 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Safari cache"* ]] || return 1
-    [[ "$output" == *"Firefox cache"* ]] || return 1
-    [[ "$output" == *"Puppeteer browser cache"* ]]
+    [[ "$output" == *"Safari 缓存"* ]] || return 1
+    [[ "$output" == *"Firefox 缓存"* ]] || return 1
+    [[ "$output" == *"Puppeteer 浏览器缓存"* ]]
 }
 
 @test "clean_browsers never enters Firefox cleanup while Firefox is running" {
@@ -939,8 +939,8 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" != *"SAFE_CLEAN:Firefox cache"* ]] || return 1
-    [[ "$output" != *"SAFE_CLEAN:Firefox profile cache"* ]]
+    [[ "$output" != *"SAFE_CLEAN:Firefox 缓存"* ]] || return 1
+    [[ "$output" != *"SAFE_CLEAN:Firefox 配置文件缓存"* ]]
 }
 
 @test "clean_browsers fails closed when the Chrome process probe errors" {
@@ -964,8 +964,8 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"Chrome profile caches · skipped (process state unknown)"* ]] || return 1
-    [[ "$output" != *"SAFE_CLEAN:Chrome code cache"* ]]
+    [[ "$output" == *"Chrome 配置文件缓存 · 已跳过(进程状态未知)"* ]] || return 1
+    [[ "$output" != *"SAFE_CLEAN:Chrome 代码缓存"* ]]
 }
 
 @test "clean_browsers does not defer empty Chrome and Firefox roots" {
@@ -992,7 +992,7 @@ EOF
     }
     [[ "$output" != *"UNEXPECTED_DEFER:Chrome"* ]] || return 1
     [[ "$output" != *"UNEXPECTED_DEFER:Firefox"* ]] || return 1
-    [[ "$output" != *"process state unknown"* ]]
+    [[ "$output" != *"进程状态未知"* ]]
 }
 
 @test "clean_browsers does not defer broken-symlink-only Chrome and Firefox roots" {
@@ -1101,12 +1101,12 @@ EOF
         echo "$output"
         return 1
     }
-    [[ "$output" == *"Dropbox cache · skipped (process state unknown)"* ]] || return 1
-    [[ "$output" == *"Google Drive cache · skipped (process state unknown)"* ]] || return 1
-    [[ "$output" == *"OneDrive cache · skipped (process state unknown)"* ]] || return 1
-    [[ "$output" != *"SAFE_CLEAN:Dropbox cache"* ]] || return 1
-    [[ "$output" != *"SAFE_CLEAN:Google Drive cache"* ]] || return 1
-    [[ "$output" != *"SAFE_CLEAN:OneDrive cache"* ]]
+    [[ "$output" == *"Dropbox 缓存 · 已跳过(进程状态未知)"* ]] || return 1
+    [[ "$output" == *"Google Drive 缓存 · 已跳过(进程状态未知)"* ]] || return 1
+    [[ "$output" == *"OneDrive 缓存 · 已跳过(进程状态未知)"* ]] || return 1
+    [[ "$output" != *"SAFE_CLEAN:Dropbox 缓存"* ]] || return 1
+    [[ "$output" != *"SAFE_CLEAN:Google Drive 缓存"* ]] || return 1
+    [[ "$output" != *"SAFE_CLEAN:OneDrive 缓存"* ]]
 }
 
 @test "clean_browsers keeps all Chrome AI model stores when whitelisted" {
@@ -1157,9 +1157,9 @@ EOF
     [[ -f "$chrome_support/OptGuideOnDeviceClassifierModel/2026/classifier.bin" ]] || return 1
     [[ -f "$chrome_support/optimization_guide_model_store/2026/model.bin" ]] || return 1
     [[ ! -e "$chrome_support/Default/Code Cache/js/cache.bin" ]] || return 1
-    [[ "$output" == *"KEEP:Chrome on-device model cache"* ]] || return 1
-    [[ "$output" == *"KEEP:Chrome on-device classifier cache"* ]] || return 1
-    [[ "$output" == *"KEEP:Chrome optimization guide models"* ]] || return 1
+    [[ "$output" == *"KEEP:Chrome 设备端模型缓存"* ]] || return 1
+    [[ "$output" == *"KEEP:Chrome 设备端分类器缓存"* ]] || return 1
+    [[ "$output" == *"KEEP:Chrome 优化指南模型"* ]] || return 1
 }
 
 @test "clean_browsers preserves Brave Service Worker ScriptCache" {
@@ -1203,9 +1203,9 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Arc code cache|$HOME/Library/Application Support/Arc/User Data/"* ]] || return 1
-    [[ "$output" == *"Arc component CRX cache|$HOME/Library/Application Support/Arc/User Data/component_crx_cache/"* ]] || return 1
-    [[ "$output" == *"Arc extensions CRX cache|$HOME/Library/Application Support/Arc/User Data/extensions_crx_cache/"* ]] || return 1
+    [[ "$output" == *"Arc 代码缓存|$HOME/Library/Application Support/Arc/User Data/"* ]] || return 1
+    [[ "$output" == *"Arc 组件 CRX 缓存|$HOME/Library/Application Support/Arc/User Data/component_crx_cache/"* ]] || return 1
+    [[ "$output" == *"Arc 扩展 CRX 缓存|$HOME/Library/Application Support/Arc/User Data/extensions_crx_cache/"* ]] || return 1
     [[ "$output" == *"Arc SW $HOME/Library/Application Support/Arc/User Data/Default/Service Worker/CacheStorage"* ]] || return 1
     [[ "$output" != *"Arc Service Worker ScriptCache|$HOME/Library/Application Support/Arc/User Data/Default/Service Worker/ScriptCache/"* ]] || return 1
 
@@ -1289,9 +1289,9 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"QQ Browser cache|$HOME/Library/Caches/com.tencent.QQBrowser3/"* ]] || return 1
-    [[ "$output" == *"QQ Browser code cache|$HOME/Library/Application Support/QQBrowser3/"* ]] || return 1
-    [[ "$output" == *"QQ Browser component cache|$HOME/Library/Application Support/QQBrowser3/component_crx_cache/"* ]] || return 1
+    [[ "$output" == *"QQ 浏览器缓存|$HOME/Library/Caches/com.tencent.QQBrowser3/"* ]] || return 1
+    [[ "$output" == *"QQ 浏览器代码缓存|$HOME/Library/Application Support/QQBrowser3/"* ]] || return 1
+    [[ "$output" == *"QQ 浏览器组件缓存|$HOME/Library/Application Support/QQBrowser3/component_crx_cache/"* ]] || return 1
 
     rm -rf "$HOME/Library"
 }
@@ -1316,9 +1316,9 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"QQ Browser cache|$HOME/Library/Caches/com.tencent.QQBrowser3/"* ]] || return 1
-    [[ "$output" != *"QQ Browser code cache"* ]] || return 1
-    [[ "$output" != *"QQ Browser GPU cache"* ]] || return 1
+    [[ "$output" == *"QQ 浏览器缓存|$HOME/Library/Caches/com.tencent.QQBrowser3/"* ]] || return 1
+    [[ "$output" != *"QQ 浏览器代码缓存"* ]] || return 1
+    [[ "$output" != *"QQ 浏览器 GPU 缓存"* ]] || return 1
 
     rm -rf "$HOME/Library"
 }
@@ -1333,7 +1333,7 @@ clean_application_support_logs
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Skipped: No permission"* ]]
+    [[ "$output" == *"已跳过:无权访问"* ]]
 }
 
 @test "clean_apple_silicon_caches exits when not M-series" {
@@ -1442,7 +1442,7 @@ echo "SIZE_CALLS=$(cat "$count_file")"
 EOF
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Sandboxed app caches"* ]] || return 1
+    [[ "$output" == *"沙盒应用缓存"* ]] || return 1
     [[ "$output" == *"SIZE_CALLS=2"* ]]
 }
 
@@ -1522,14 +1522,14 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"CLEAN:Dia HTTP cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia code cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia component CRX cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia extensions CRX cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia Graphite Dawn cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia GPU cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia Dawn Graphite cache"* ]] || return 1
-    [[ "$output" == *"CLEAN:Dia Dawn WebGPU cache"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia HTTP 缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia 代码缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia 组件 CRX 缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia 扩展 CRX 缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia Graphite Dawn 缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia GPU 缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia Dawn Graphite 缓存"* ]] || return 1
+    [[ "$output" == *"CLEAN:Dia Dawn WebGPU 缓存"* ]] || return 1
 }
 
 @test "clean_browsers skips Dia Application Support caches while Dia runs" {
@@ -1552,10 +1552,10 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"Dia Application Support cache"* ]] || return 1
-    [[ "$output" == *"skipped (Dia running)"* ]] || return 1
-    [[ "$output" != *"CLEAN:Dia component CRX cache"* ]] || return 1
-    [[ "$output" != *"CLEAN:Dia HTTP cache"* ]] || return 1
+    [[ "$output" == *"Dia 的 Application Support 缓存"* ]] || return 1
+    [[ "$output" == *"已跳过(Dia 正在运行)"* ]] || return 1
+    [[ "$output" != *"CLEAN:Dia 组件 CRX 缓存"* ]] || return 1
+    [[ "$output" != *"CLEAN:Dia HTTP 缓存"* ]] || return 1
 }
 
 @test "clean_browsers fails closed when the Dia process probe errors" {
@@ -1578,9 +1578,9 @@ clean_browsers
 EOF
 
     [ "$status" -eq 0 ] || return 1
-    [[ "$output" == *"skipped (process state unknown)"* ]] || return 1
-    [[ "$output" != *"CLEAN:Dia component CRX cache"* ]] || return 1
-    [[ "$output" != *"CLEAN:Dia HTTP cache"* ]] || return 1
+    [[ "$output" == *"已跳过(进程状态未知)"* ]] || return 1
+    [[ "$output" != *"CLEAN:Dia 组件 CRX 缓存"* ]] || return 1
+    [[ "$output" != *"CLEAN:Dia HTTP 缓存"* ]] || return 1
 }
 
 @test "large files includes the unique System Data review targets" {
@@ -1613,8 +1613,8 @@ EOF
     }
     [[ "$output" == *"⊙"* ]] &&
         [[ "$output" == *"Xcode DerivedData"* ]] &&
-        [[ "$output" == *"Simulator data"* ]] &&
-        [[ "$output" == *"Docker Desktop data"* ]] || {
+        [[ "$output" == *"模拟器数据"* ]] &&
+        [[ "$output" == *"Docker Desktop 数据"* ]] || {
         echo "$output"
         return 1
     }
@@ -1652,11 +1652,11 @@ EOF
     }
     # Size alone cannot decide these two: the date separates a live phone
     # backup from a dead one, and a shipped archive from a stray export.
-    [[ "$output" == *"iOS backups"*"2026-01-02"* ]] || {
+    [[ "$output" == *"iOS 备份"*"2026-01-02"* ]] || {
         echo "$output"
         return 1
     }
-    [[ "$output" == *"Xcode archives"*"2026-03-04"* ]] || {
+    [[ "$output" == *"Xcode 归档"*"2026-03-04"* ]] || {
         echo "$output"
         return 1
     }

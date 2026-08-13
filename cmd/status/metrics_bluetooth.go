@@ -32,14 +32,14 @@ func (c *Collector) collectBluetooth(now time.Time) []BluetoothDevice {
 
 	c.lastBTAt = now
 	if len(c.lastBT) == 0 {
-		c.lastBT = []BluetoothDevice{{Name: "No Bluetooth info", Connected: false}}
+		c.lastBT = []BluetoothDevice{{Name: "无蓝牙信息", Connected: false}}
 	}
 	return c.lastBT
 }
 
 func readSystemProfilerBluetooth() ([]BluetoothDevice, error) {
 	if runtime.GOOS != "darwin" || !commandExists("system_profiler") {
-		return nil, errors.New("system_profiler unavailable")
+		return nil, errors.New("system_profiler 不可用")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), systemProfilerTimeout)
@@ -54,7 +54,7 @@ func readSystemProfilerBluetooth() ([]BluetoothDevice, error) {
 
 func readBluetoothCTLDevices() ([]BluetoothDevice, error) {
 	if !commandExists("bluetoothctl") {
-		return nil, errors.New("bluetoothctl unavailable")
+		return nil, errors.New("bluetoothctl 不可用")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), bluetoothctlTimeout)
@@ -105,7 +105,7 @@ func parseSPBluetooth(raw string) []BluetoothDevice {
 		devices = append(devices, BluetoothDevice{Name: currentName, Connected: connected, Battery: battery})
 	}
 	if len(devices) == 0 {
-		return []BluetoothDevice{{Name: "No devices", Connected: false}}
+		return []BluetoothDevice{{Name: "无设备", Connected: false}}
 	}
 	return devices
 }

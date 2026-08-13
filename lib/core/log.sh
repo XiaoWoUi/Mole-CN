@@ -155,7 +155,7 @@ log_error() {
 # shellcheck disable=SC2329
 debug_log() {
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
-        printf '%b%s\n' "${GRAY}[DEBUG]${NC} " "$*" >&2
+        printf '%b%s\n' "${GRAY}[调试]${NC} " "$*" >&2
         local timestamp
         timestamp=$(get_timestamp)
         append_log_line "$DEBUG_LOG_FILE" "[$timestamp] DEBUG: $*"
@@ -276,8 +276,8 @@ debug_operation_start() {
 
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
         # Output to stderr for immediate feedback
-        echo -e "${GRAY}[DEBUG] === $operation_name ===${NC}" >&2
-        [[ -n "$operation_desc" ]] && echo -e "${GRAY}[DEBUG] $operation_desc${NC}" >&2
+        echo -e "${GRAY}[调试] === $operation_name ===${NC}" >&2
+        [[ -n "$operation_desc" ]] && echo -e "${GRAY}[调试] $operation_desc${NC}" >&2
 
         # Also log to file
         if [[ -n "$operation_desc" ]]; then
@@ -302,7 +302,7 @@ debug_operation_detail() {
 
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
         # Output to stderr
-        echo -e "${GRAY}[DEBUG] $detail_type: $detail_value${NC}" >&2
+        echo -e "${GRAY}[调试] $detail_type: $detail_value${NC}" >&2
 
         # Also log to file
         append_log_line "$DEBUG_LOG_FILE" "$detail_type: $detail_value"
@@ -319,10 +319,10 @@ debug_file_action() {
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
         local msg="  * $file_path"
         [[ -n "$file_size" ]] && msg+=", $file_size"
-        [[ -n "$file_age" ]] && msg+=", ${file_age} days old"
+        [[ -n "$file_age" ]] && msg+=", ${file_age} 天前"
 
         # Output to stderr
-        echo -e "${GRAY}[DEBUG] $action: $msg${NC}" >&2
+        echo -e "${GRAY}[调试] $action: $msg${NC}" >&2
 
         # Also log to file
         append_log_line "$DEBUG_LOG_FILE" "$action: $msg"
@@ -343,7 +343,7 @@ debug_risk_level() {
         esac
 
         # Output to stderr with color
-        echo -e "${GRAY}[DEBUG] Risk Level: ${color}${risk_level}${GRAY}, $reason${NC}" >&2
+        echo -e "${GRAY}[调试] 风险等级: ${color}${risk_level}${GRAY}, $reason${NC}" >&2
 
         # Also log to file
         echo "Risk Level: $risk_level, $reason" >> "$DEBUG_LOG_FILE" 2> /dev/null || true
@@ -359,7 +359,7 @@ log_system_info() {
     # Reset debug log file for this new session
     ensure_user_file "$DEBUG_LOG_FILE"
     if ! : > "$DEBUG_LOG_FILE" 2> /dev/null; then
-        echo -e "${YELLOW}${ICON_WARNING}${NC} Debug log not writable: $DEBUG_LOG_FILE" >&2
+        echo -e "${YELLOW}${ICON_WARNING}${NC} 调试日志不可写: $DEBUG_LOG_FILE" >&2
     fi
 
     # Start block in debug log file
@@ -388,7 +388,7 @@ log_system_info() {
     } >> "$DEBUG_LOG_FILE" 2> /dev/null || true
 
     # Notification to stderr
-    echo -e "${GRAY}[DEBUG] Debug logging enabled. Session log: $DEBUG_LOG_FILE${NC}" >&2
+    echo -e "${GRAY}[调试] 调试日志已启用。会话日志: $DEBUG_LOG_FILE${NC}" >&2
 }
 
 # ============================================================================
@@ -434,7 +434,7 @@ print_summary_block() {
 
     # If debug mode is on, remind user about the log file location
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
-        echo -e "${GRAY}Debug session log saved to:${NC} ${DEBUG_LOG_FILE}"
+        echo -e "${GRAY}调试会话日志已保存到:${NC} ${DEBUG_LOG_FILE}"
     fi
 }
 

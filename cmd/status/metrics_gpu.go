@@ -52,8 +52,8 @@ func (c *Collector) collectGPU(now time.Time) ([]GPUStatus, error) {
 
 	if !commandExists("nvidia-smi") {
 		return []GPUStatus{{
-			Name: "No GPU metrics available",
-			Note: "Install nvidia-smi or use platform-specific metrics",
+			Name: "无可用 GPU 指标",
+			Note: "请安装 nvidia-smi 或使用平台专属指标",
 		}}, nil
 	}
 
@@ -83,8 +83,8 @@ func (c *Collector) collectGPU(now time.Time) ([]GPUStatus, error) {
 
 	if len(gpus) == 0 {
 		return []GPUStatus{{
-			Name: "GPU read failed",
-			Note: "Verify nvidia-smi availability",
+			Name: "GPU 读取失败",
+			Note: "请检查 nvidia-smi 是否可用",
 		}}, nil
 	}
 
@@ -96,7 +96,7 @@ func readMacGPUInfo() ([]GPUStatus, error) {
 	defer cancel()
 
 	if !commandExists("system_profiler") {
-		return nil, errors.New("system_profiler unavailable")
+		return nil, errors.New("system_profiler 不可用")
 	}
 
 	out, err := runCmd(ctx, "system_profiler", "-json", "SPDisplaysDataType")
@@ -144,8 +144,8 @@ func readMacGPUInfo() ([]GPUStatus, error) {
 
 	if len(gpus) == 0 {
 		return []GPUStatus{{
-			Name: "GPU info unavailable",
-			Note: "Unable to parse system_profiler output",
+			Name: "GPU 信息不可用",
+			Note: "无法解析 system_profiler 输出",
 		}}, nil
 	}
 

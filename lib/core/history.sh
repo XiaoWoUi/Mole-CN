@@ -318,15 +318,15 @@ history_join_counts() {
     local rebuilt="$5"
     local other="$6"
 
-    [[ "$removed" -gt 0 ]] && parts+=("removed $removed")
-    [[ "$trashed" -gt 0 ]] && parts+=("trashed $trashed")
-    [[ "$skipped" -gt 0 ]] && parts+=("skipped $skipped")
-    [[ "$failed" -gt 0 ]] && parts+=("failed $failed")
-    [[ "$rebuilt" -gt 0 ]] && parts+=("rebuilt $rebuilt")
-    [[ "$other" -gt 0 ]] && parts+=("other $other")
+    [[ "$removed" -gt 0 ]] && parts+=("已移除 $removed")
+    [[ "$trashed" -gt 0 ]] && parts+=("已移入废纸篓 $trashed")
+    [[ "$skipped" -gt 0 ]] && parts+=("已跳过 $skipped")
+    [[ "$failed" -gt 0 ]] && parts+=("失败 $failed")
+    [[ "$rebuilt" -gt 0 ]] && parts+=("已重建 $rebuilt")
+    [[ "$other" -gt 0 ]] && parts+=("其他 $other")
 
     if [[ ${#parts[@]} -eq 0 ]]; then
-        printf 'no file actions'
+        printf '无文件操作'
         return 0
     fi
 
@@ -345,7 +345,7 @@ history_size_label() {
     if [[ "$size_kb" =~ ^[0-9]+$ ]]; then
         bytes_to_human_kb "$size_kb"
     else
-        printf 'unknown'
+        printf '未知'
     fi
 }
 
@@ -417,13 +417,13 @@ history_render_text() {
     session_count=${#HISTORY_SESSION_COMMANDS[@]}
     deletion_count=${#HISTORY_DELETE_TIMESTAMPS[@]}
 
-    printf '\n%sMole History%s\n\n' "$BLUE" "$NC"
+    printf '\n%sMole 历史%s\n\n' "$BLUE" "$NC"
 
     if [[ "$session_count" -eq 0 ]]; then
-        printf 'Recent sessions\n'
-        printf '  No operation history yet.\n'
+        printf '最近的会话\n'
+        printf '  暂无操作历史。\n'
     else
-        printf 'Recent sessions\n'
+        printf '最近的会话\n'
         local start=$((session_count - limit))
         [[ "$start" -lt 0 ]] && start=0
         local idx=$((session_count - 1))
@@ -443,18 +443,18 @@ history_render_text() {
             local count_text
             count_text=$(history_join_counts "$removed" "$trashed" "$skipped" "$failed" "$rebuilt" "$other")
             if [[ "$failed_tasks" -gt 0 ]]; then
-                count_text+=", $failed_tasks optimize tasks failed"
+                count_text+=", $failed_tasks 个优化任务失败"
             fi
-            [[ -z "$ended" ]] && ended="not ended"
-            printf '  %-10s %s, %s items, %s\n' "$command" "$started" "$items" "$size"
-            printf '             %s, ended %s\n' "$count_text" "$ended"
+            [[ -z "$ended" ]] && ended="未结束"
+            printf '  %-10s %s, %s 个项目, %s\n' "$command" "$started" "$items" "$size"
+            printf '             %s, 结束 %s\n' "$count_text" "$ended"
             idx=$((idx - 1))
         done
     fi
 
-    printf '\nDeletion audit\n'
+    printf '\n删除审计\n'
     if [[ "$deletion_count" -eq 0 ]]; then
-        printf '  No deletion audit entries yet.\n'
+        printf '  暂无删除审计记录。\n'
     else
         local start=$((deletion_count - limit))
         [[ "$start" -lt 0 ]] && start=0
@@ -472,9 +472,9 @@ history_render_text() {
         done
     fi
 
-    printf '\nLogs\n'
-    printf '  operations: %s\n' "$operations_log"
-    printf '  deletions:  %s\n\n' "$deletions_log"
+    printf '\n日志\n'
+    printf '  操作日志: %s\n' "$operations_log"
+    printf '  删除日志:  %s\n\n' "$deletions_log"
 }
 
 history_render_json_sessions() {

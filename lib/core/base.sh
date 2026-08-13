@@ -325,7 +325,7 @@ format_free_space_kb() {
         return 0
     fi
 
-    echo "Unknown"
+    echo "未知"
 }
 
 # Get free disk space on root volume.
@@ -337,7 +337,7 @@ get_free_space() {
         return $?
     fi
 
-    echo "Unknown"
+    echo "未知"
 }
 
 # Get optimal parallel jobs for operation type (scan|io|compute|default)
@@ -905,7 +905,7 @@ mktemp_file() {
     local error_msg
     # Add .XXXXXX suffix to work with both BSD and GNU mktemp
     if ! error_msg=$(mktemp "$(mole_temp_path_template "$prefix")" 2>&1); then
-        echo "Error: Failed to create temporary file: $error_msg" >&2
+        echo "错误: 无法创建临时文件: $error_msg" >&2
         return 1
     fi
     temp="$error_msg"
@@ -995,7 +995,7 @@ start_section() {
 # Shows "Nothing to tidy" if no activity was recorded
 end_section() {
     if [[ "${TRACK_SECTION:-0}" == "1" && "${SECTION_ACTIVITY:-0}" == "0" ]]; then
-        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Nothing to tidy"
+        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} 没有需要整理的内容"
     fi
     TRACK_SECTION=0
 }
@@ -1205,7 +1205,7 @@ _MOLE_CLEAN_GUARD_REASON=""
 mole_clean_process_guard() {
     local probe="$1"
     local busy_reason="$2"
-    local unknown_reason="${3:-process state unknown}"
+    local unknown_reason="${3:-进程状态未知}"
     local process_state=0
     "$probe" || process_state=$?
     if [[ $process_state -eq 1 ]]; then
@@ -1225,8 +1225,8 @@ mole_clean_process_guard() {
 mole_report_guard_stop() {
     local display_name="$1"
     shift
-    if [[ "$_MOLE_CLEAN_GUARD_REASON" == "process state unknown" ]]; then
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · stopped (${_MOLE_CLEAN_GUARD_REASON})"
+    if [[ "$_MOLE_CLEAN_GUARD_REASON" == "进程状态未知" ]]; then
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} ${display_name} · 已停止(${_MOLE_CLEAN_GUARD_REASON})"
         note_activity
     else
         "$@"

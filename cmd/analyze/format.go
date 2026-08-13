@@ -260,11 +260,11 @@ func formatUnusedTime(lastAccess time.Time) string {
 	years := days / 365
 
 	if years >= 2 {
-		return fmt.Sprintf(">%dyr", years)
+		return fmt.Sprintf(">%d年", years)
 	} else if years >= 1 {
-		return ">1yr"
+		return ">1年"
 	} else if months >= 3 {
-		return fmt.Sprintf(">%dmo", months)
+		return fmt.Sprintf(">%d月", months)
 	}
 
 	return ""
