@@ -741,7 +741,7 @@ _scan_resolve_uncached() {
         echo "${app_path}|${display_name}|${bundle_id}|${app_mtime}|${quick_size_kb}" >> "$output_file"
     }
 
-    update_scan_status "Scanning applications..." "0" "$total_apps"
+    update_scan_status "正在扫描应用..." "0" "$total_apps"
 
     # Skip Pass 2 when the warm cache already wrote every row to $scan_raw_file.
     # Also avoids expanding an empty array; macOS bash 3.2 (the /bin/bash that
@@ -754,7 +754,7 @@ _scan_resolve_uncached() {
             # timed mdls/du child from this background worker (issue #1222).
             process_app_metadata "$app_data_tuple" "$scan_raw_file" < /dev/null &
             pids+=($!)
-            update_scan_status "Scanning applications..." "$app_count" "$total_apps"
+            update_scan_status "正在扫描应用..." "$app_count" "$total_apps"
 
             if ((${#pids[@]} >= max_parallel)); then
                 wait "${pids[0]}" 2> /dev/null
@@ -1120,7 +1120,7 @@ scan_applications() {
                 local status_line status_message status_completed status_total
                 status_line=$(cat "$scan_status_file" 2> /dev/null || echo "")
                 IFS='|' read -r status_message status_completed status_total <<< "$status_line"
-                [[ -z "$status_message" ]] && status_message="Scanning applications..."
+                [[ -z "$status_message" ]] && status_message="正在扫描应用..."
                 local c="${spinner_chars:$((i % 4)):1}"
                 if [[ "$status_completed" =~ ^[0-9]+$ && "$status_total" =~ ^[0-9]+$ && $status_total -gt 0 ]]; then
                     printf "\r\033[K%s %s %d/%d" "$c" "$status_message" "$status_completed" "$status_total" >&2
@@ -1146,7 +1146,7 @@ scan_applications() {
         rm -f "$spinner_shown_file" "$scan_status_file" 2> /dev/null || true
     }
 
-    update_scan_status "Scanning applications..." "0" "0"
+    update_scan_status "正在扫描应用..." "0" "0"
     start_scan_spinner
 
     # Phase 2: discover candidate apps.
