@@ -64,6 +64,7 @@ func createInsightEntries() []dirEntry {
 		{"JetBrains 缓存", filepath.Join(home, "Library", "Caches", "JetBrains")},
 		{"Docker 数据", filepath.Join(home, "Library", "Containers", "com.docker.docker", "Data")},
 		{"pip 缓存", filepath.Join(home, "Library", "Caches", "pip")},
+		{"uv 缓存", filepath.Join(home, ".cache", "uv")},
 		{"Gradle 缓存", filepath.Join(home, ".gradle", "caches")},
 		{"CocoaPods 缓存", filepath.Join(home, "Library", "Caches", "CocoaPods")},
 	}

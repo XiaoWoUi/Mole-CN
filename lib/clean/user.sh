@@ -55,10 +55,10 @@ clean_trash() {
             local trash_item
             while IFS= read -r -d '' trash_item; do
                 [[ -e "$trash_item" ]] || continue
-                if should_protect_path "$trash_item" 2> /dev/null ||
-                    is_path_whitelisted "$trash_item" 2> /dev/null ||
+                if is_path_whitelisted "$trash_item" 2> /dev/null ||
                     (declare -f holds_compiled_model_cache > /dev/null 2>&1 &&
-                        holds_compiled_model_cache "$trash_item" 2> /dev/null); then
+                        holds_compiled_model_cache "$trash_item" 2> /dev/null) ||
+                    ! validate_path_for_deletion "$trash_item" 2> /dev/null; then
                     continue
                 fi
                 local trash_item_kb
@@ -90,23 +90,126 @@ clean_trash() {
     fi
 
     local cleaned_count=0
+    local skipped_count=0
     while IFS= read -r -d '' item; do
         if safe_remove "$item" true; then
             cleaned_count=$((cleaned_count + 1))
+        else
+            skipped_count=$((skipped_count + 1))
         fi
     done < <(command find "$HOME/.Trash" -mindepth 1 -maxdepth 1 -print0 2> /dev/null || true)
 
     [[ -t 1 ]] && stop_inline_spinner
 
     if [[ $cleaned_count -gt 0 ]]; then
-        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} 废纸篓 · 已清空,$cleaned_count 项"
+        if [[ $skipped_count -gt 0 ]]; then
+            echo -e "  ${YELLOW}${ICON_WARNING}${NC} 废纸篓 · 已移除 $cleaned_count 项,$skipped_count 项跳过"
+        else
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} 废纸篓 · 已清空,$cleaned_count 项"
+        fi
+        note_activity
+    elif [[ $skipped_count -gt 0 ]]; then
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} 废纸篓 · $skipped_count 项无法移除"
         note_activity
     fi
 }
 
+# Re-resolve the Deno root at the deletion boundary and refuse any candidate
+# that has become it, or that now contains it. Excluding the root while the
+# candidate list is built only proves where it pointed at that moment: a
+# symlinked DENO_DIR retargeted afterwards makes the sink delete whatever the
+# root points at now. Failing closed here costs one skipped cache directory;
+# guessing costs the user's Deno state.
+_user_cache_deno_delete_guard() {
+    local candidate="${1:-}"
+    [[ -n "$candidate" ]] || return 1
+
+    local deno_root=""
+    deno_root=$(mole_deno_cache_root 2> /dev/null) || return 1
+
+    local candidate_physical=""
+    if [[ -d "$candidate" ]]; then
+        candidate_physical=$(cd -P "$candidate" 2> /dev/null && pwd -P) || return 1
+    fi
+    local deno_physical=""
+    if [[ -d "$deno_root" ]]; then
+        deno_physical=$(cd -P "$deno_root" 2> /dev/null && pwd -P) || return 1
+    fi
+
+    local candidate_probe deno_probe
+    for candidate_probe in "$candidate" "$candidate_physical"; do
+        [[ -n "$candidate_probe" ]] || continue
+        for deno_probe in "$deno_root" "$deno_physical"; do
+            [[ -n "$deno_probe" ]] || continue
+            # The candidate is the root, sits inside it, or contains it.
+            case "$deno_probe" in
+                "$candidate_probe" | "$candidate_probe"/*) return 1 ;;
+            esac
+            case "$candidate_probe" in
+                "$deno_probe"/*) return 1 ;;
+            esac
+        done
+    done
+    return 0
+}
+
 clean_user_essentials() {
     start_section_spinner "正在扫描缓存..."
-    safe_clean ~/Library/Caches/* "用户应用缓存"
+    # Deno's default root sits inside the otherwise broad user-cache sweep,
+    # but `deno clean` removes the entire DENO_DIR, including origin storage
+    # and downloaded runtime payloads. Keep the effective root for review and
+    # clean every sibling through the normal funnel.
+    local deno_cache_root=""
+    local deno_cache_root_valid=true
+    if ! deno_cache_root=$(mole_deno_cache_root 2> /dev/null); then
+        # An explicitly broad or malformed DENO_DIR is not safe to report as a
+        # cache root, but sweeping past an unresolved owner root is worse.
+        # Keep the generic cache batch empty and continue with the other user
+        # cleanup categories.
+        deno_cache_root_valid=false
+    fi
+    local deno_physical_root=""
+    if [[ "$deno_cache_root_valid" == "true" && -d "$deno_cache_root" ]]; then
+        deno_physical_root=$(cd -P "$deno_cache_root" 2> /dev/null && pwd -P) || deno_physical_root=""
+    fi
+    local -a user_cache_targets=()
+    local user_cache_target
+    if [[ "$deno_cache_root_valid" == "true" ]]; then
+        for user_cache_target in "$HOME/Library/Caches"/*; do
+            [[ -e "$user_cache_target" || -L "$user_cache_target" ]] || continue
+            case "$deno_cache_root" in
+                "$user_cache_target" | "$user_cache_target"/*) continue ;;
+            esac
+            if [[ -n "$deno_physical_root" && -d "$user_cache_target" ]]; then
+                local user_cache_physical_target=""
+                user_cache_physical_target=$(cd -P "$user_cache_target" 2> /dev/null && pwd -P) ||
+                    user_cache_physical_target=""
+                case "$deno_physical_root" in
+                    "$user_cache_physical_target" | "$user_cache_physical_target"/*) continue ;;
+                esac
+            fi
+            user_cache_targets+=("$user_cache_target")
+        done
+    fi
+    if [[ ${#user_cache_targets[@]} -gt 0 ]]; then
+        local user_cache_rc=0
+        # Ask twice on purpose: safe_clean_guarded filters the batch, and the
+        # sink guard re-asks after every other check, immediately before rm,
+        # because safe_remove does real work between the two.
+        local _MOLE_SAFE_REMOVE_FINAL_GUARD=_user_cache_deno_delete_guard
+        safe_clean_guarded _user_cache_deno_delete_guard \
+            "${user_cache_targets[@]}" "用户应用缓存" || user_cache_rc=$?
+        if [[ $user_cache_rc -eq 75 ]]; then
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} 用户应用缓存 · 已停止(清理期间 Deno 根目录发生变化)"
+            note_activity
+        fi
+    elif [[ "$deno_cache_root_valid" != "true" ]]; then
+        # Refusing here is right, but staying silent about it is not: the whole
+        # category would just be missing from the section. Name the cause the
+        # way every other guard in this file does.
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} 用户应用缓存 · 已停止(DENO_DIR 无法解析)"
+        note_activity
+    fi
     stop_section_spinner
 
     safe_clean ~/Library/Logs/* "用户应用日志"
@@ -144,7 +247,33 @@ _clean_recent_items() {
     safe_clean ~/Library/Preferences/com.apple.recentitems.plist "最近项目偏好设置" || true
 }
 
-# Internal: Clean incomplete browser downloads, skipping files currently open.
+_incomplete_download_delete_guard_allows() {
+    local path="$1"
+    _mole_snapshot_path_identity "$path" || return 2
+    local expected_parent="$_MOLE_PATH_SNAPSHOT_PARENT"
+    local expected_parent_id="$_MOLE_PATH_SNAPSHOT_PARENT_ID"
+    local expected_target_id="$_MOLE_PATH_SNAPSHOT_TARGET_ID"
+
+    local open_state=0
+    _mole_paths_have_open_handle "$path" || open_state=$?
+    if [[ $open_state -eq 124 || $open_state -ge 128 ]]; then
+        _mole_record_clean_cancellation "$open_state"
+        return "$open_state"
+    fi
+    [[ $open_state -eq 1 ]] || return 1
+    _mole_path_matches_identity \
+        "$path" "$expected_parent" "$expected_parent_id" "$expected_target_id" || return 2
+
+    _MOLE_SAFE_CLEAN_BOUND_PATH="$path"
+    _MOLE_SAFE_CLEAN_EXPECTED_PARENT="$expected_parent"
+    _MOLE_SAFE_CLEAN_EXPECTED_PARENT_ID="$expected_parent_id"
+    _MOLE_SAFE_CLEAN_EXPECTED_TARGET_ID="$expected_target_id"
+    return 0
+}
+
+# Internal: Clean incomplete browser downloads only after a complete open-file
+# view says the exact file is idle. The guarded cleanup repeats the probe after
+# sizing, and safe_remove repeats it again at the real deletion boundary.
 _clean_incomplete_downloads() {
     local -a patterns=(
         "$HOME/Downloads/*.download"
@@ -158,12 +287,33 @@ _clean_incomplete_downloads() {
         i=$((i + 1))
         for f in $pattern; do
             [[ -e "$f" ]] || continue
-            if lsof -F n -- "$f" > /dev/null 2>&1; then
+            local open_state=0
+            _mole_paths_have_open_handle "$f" || open_state=$?
+            if [[ $open_state -eq 124 || $open_state -ge 128 ]]; then
+                _mole_record_clean_cancellation "$open_state"
+                return 0
+            fi
+            if [[ $open_state -eq 0 ]]; then
                 echo -e "  ${GRAY}${ICON_WARNING}${NC} 跳过进行中的下载: $(basename "$f")"
                 note_activity
                 continue
             fi
-            safe_clean "$f" "$label" || true
+            if [[ $open_state -eq 2 ]]; then
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} 跳过未完成的下载(无法检查文件占用): $(basename "$f")"
+                note_activity
+                continue
+            fi
+            local guarded_rc=0
+            safe_clean_guarded _incomplete_download_delete_guard_allows \
+                "$f" "$label" || guarded_rc=$?
+            if [[ $guarded_rc -eq 124 || $guarded_rc -ge 128 ]]; then
+                _mole_record_clean_cancellation "$guarded_rc"
+                return 0
+            fi
+            if [[ $guarded_rc -eq 75 ]]; then
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} 最终占用检查后跳过未完成的下载: $(basename "$f")"
+                note_activity
+            fi
         done
     done
 }
@@ -800,6 +950,9 @@ directory_has_entries() {
 }
 
 clean_app_caches() {
+    # Every App Container handle probe in this section shares one wall-clock
+    # budget, including the explicit Apple cache rows before the generic scan.
+    local _MOLE_CONTAINER_CACHE_PROBE_DEADLINE=""
     start_section_spinner "正在扫描应用缓存..."
 
     # macOS system caches (merged from clean_macos_system_caches)
@@ -816,7 +969,10 @@ clean_app_caches() {
     # recoverable user documents, not only disposable cache data.
     safe_clean ~/Library/IdentityCaches/* "身份缓存" || true
     safe_clean ~/Library/Suggestions/* "Siri 建议缓存" || true
-    safe_clean ~/Library/Calendars/Calendar\ Cache "日历缓存" || true
+    # Do not clean ~/Library/Calendars/Calendar Cache*: CalendarAgent keeps this
+    # SQLite index open in the background. Deleting it while the daemon is
+    # running can crash Calendar.app until logout/login (#1508). Apple treats
+    # this as a manual troubleshooting step, not routine cache maintenance.
     safe_clean ~/Library/Application\ Support/AddressBook/Sources/*/Photos.cache "通讯录照片缓存" || true
     clean_support_app_data
 
@@ -861,7 +1017,6 @@ clean_app_caches() {
     local precise_size_limit="${MOLE_CONTAINER_CACHE_PRECISE_SIZE_LIMIT:-64}"
     [[ "$precise_size_limit" =~ ^[0-9]+$ ]] || precise_size_limit=64
     local precise_size_used=0
-
     local _ng_state
     _ng_state=$(shopt -p nullglob || true)
     shopt -s nullglob
@@ -984,76 +1139,14 @@ process_container_cache() {
     item_count=$(cache_top_level_entry_count_capped "$cache_dir" 101)
     [[ "$item_count" =~ ^[0-9]+$ ]] || item_count=0
     [[ "$item_count" -eq 0 ]] && return 0
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        local _nullglob_state
-        local _dotglob_state
-        _nullglob_state=$(shopt -p nullglob || true)
-        _dotglob_state=$(shopt -p dotglob || true)
-        shopt -s nullglob dotglob
-
-        local item
-        for item in "$cache_dir"/*; do
-            [[ -e "$item" ]] || continue
-            [[ -L "$item" ]] && continue
-            if holds_compiled_model_cache "$item"; then
-                continue
-            fi
-            if should_protect_path "$item" 2> /dev/null || is_path_whitelisted "$item" 2> /dev/null; then
-                continue
-            fi
-            local item_size_kb=0
-            local size_known=false
-            if [[ "$precise_size_used" -lt "$precise_size_limit" ]]; then
-                local size_rc=0
-                item_size_kb=$(get_path_size_kb "$item" 2> /dev/null) || size_rc=$?
-                if [[ $size_rc -ne 0 ]]; then
-                    _mole_record_clean_cancellation "$size_rc"
-                    # eval: restore shopt state captured by $(shopt -p)
-                    eval "$_nullglob_state"
-                    eval "$_dotglob_state"
-                    return "$size_rc"
-                fi
-                [[ "$item_size_kb" =~ ^[0-9]+$ ]] || item_size_kb=0
-                precise_size_used=$((precise_size_used + 1))
-                size_known=true
-            else
-                total_size_partial=true
-            fi
-
-            if declare -f register_dry_run_cleanup_target > /dev/null 2>&1; then
-                register_dry_run_cleanup_target "$item" || continue
-            fi
-
-            if declare -f append_dry_run_cleanup_target > /dev/null 2>&1; then
-                append_dry_run_cleanup_target "$item" "$item_size_kb" 1 "$size_known"
-            fi
-            total_size=$((total_size + item_size_kb))
-            cleaned_count=$((cleaned_count + 1))
-            found_any=true
-        done
-
-        # eval: restore shopt state captured by $(shopt -p)
-        eval "$_nullglob_state"
-        eval "$_dotglob_state"
-        return 0
-    fi
-
-    if [[ "$item_count" -le 100 && "$precise_size_used" -lt "$precise_size_limit" ]]; then
-        local size=""
-        local size_rc=0
-        size=$(get_path_size_kb "$cache_dir" 2> /dev/null) || size_rc=$?
-        [[ $size_rc -eq 0 ]] || _mole_record_clean_cancellation "$size_rc"
-        [[ $size_rc -eq 0 ]] || return "$size_rc"
-        [[ "$size" =~ ^[0-9]+$ ]] || size=0
-        total_size=$((total_size + size))
-        precise_size_used=$((precise_size_used + 1))
-    else
+    local measure_item_sizes=true
+    if [[ "$item_count" -gt 100 ]]; then
+        # Large containers are intentionally cleanup-only: one du per child
+        # turns a bounded cache sweep into another long recursive scan.
+        measure_item_sizes=false
         total_size_partial=true
     fi
 
-    found_any=true
-    cleaned_count=$((cleaned_count + 1))
     local _nullglob_state
     local _dotglob_state
     _nullglob_state=$(shopt -p nullglob || true)
@@ -1072,7 +1165,52 @@ process_container_cache() {
         if should_protect_path "$item" 2> /dev/null || is_path_whitelisted "$item" 2> /dev/null; then
             continue
         fi
-        safe_remove "$item" true || true
+
+        local item_size_kb=0
+        local size_known=false
+        if [[ "$measure_item_sizes" == "true" && "$precise_size_used" -lt "$precise_size_limit" ]]; then
+            local size_rc=0
+            item_size_kb=$(get_path_size_kb "$item" 2> /dev/null) || size_rc=$?
+            if [[ $size_rc -ne 0 ]]; then
+                _mole_record_clean_cancellation "$size_rc"
+                # eval: restore shopt state captured by $(shopt -p)
+                eval "$_nullglob_state"
+                eval "$_dotglob_state"
+                return "$size_rc"
+            fi
+            [[ "$item_size_kb" =~ ^[0-9]+$ ]] || item_size_kb=0
+            precise_size_used=$((precise_size_used + 1))
+            size_known=true
+        elif [[ "$measure_item_sizes" == "true" ]]; then
+            total_size_partial=true
+        fi
+
+        local action_rc=0
+        if [[ "$DRY_RUN" == "true" ]]; then
+            # Dry-run and real mode share this candidate loop. Preview probes
+            # once here; real mode probes once at safe_remove's final sink.
+            _mole_reset_process_snapshot
+            validate_path_for_deletion "$item" 2> /dev/null || action_rc=$?
+            if [[ $action_rc -eq 0 ]] && declare -f register_dry_run_cleanup_target > /dev/null 2>&1; then
+                register_dry_run_cleanup_target "$item" || action_rc=$?
+            fi
+            if [[ $action_rc -eq 0 ]] && declare -f append_dry_run_cleanup_target > /dev/null 2>&1; then
+                append_dry_run_cleanup_target "$item" "$item_size_kb" 1 "$size_known" || action_rc=$?
+            fi
+        else
+            safe_remove "$item" true "$item_size_kb" || action_rc=$?
+        fi
+        if [[ $action_rc -ge 128 ]]; then
+            _mole_record_clean_cancellation "$action_rc"
+            # eval: restore shopt state captured by $(shopt -p)
+            eval "$_nullglob_state"
+            eval "$_dotglob_state"
+            return "$action_rc"
+        fi
+        [[ $action_rc -eq 0 ]] || continue
+        total_size=$((total_size + item_size_kb))
+        cleaned_count=$((cleaned_count + 1))
+        found_any=true
     done
     # eval: restore shopt state captured by $(shopt -p)
     eval "$_nullglob_state"
@@ -1092,10 +1230,11 @@ clean_group_container_caches() {
     local total_size_partial=false
     local cleaned_count=0
     local found_any=false
+    local _MOLE_CONTAINER_CACHE_PROBE_DEADLINE=""
 
     local container_dir
-    local _nullglob_state
-    _nullglob_state=$(shopt -p nullglob || true)
+    local group_nullglob_state
+    group_nullglob_state=$(shopt -p nullglob || true)
     shopt -s nullglob
 
     for container_dir in "$group_containers_dir"/*; do
@@ -1165,58 +1304,79 @@ clean_group_container_caches() {
 
             local candidate_size_kb=0
             local candidate_changed=false
-            local _nullglob_state
-            local _dotglob_state
-            _nullglob_state=$(shopt -p nullglob || true)
-            _dotglob_state=$(shopt -p dotglob || true)
+            local candidate_nullglob_state
+            local candidate_dotglob_state
+            candidate_nullglob_state=$(shopt -p nullglob || true)
+            candidate_dotglob_state=$(shopt -p dotglob || true)
             shopt -s nullglob dotglob
 
+            local candidate_size_known=true
             if [[ "$quick_count" -gt 100 ]]; then
                 total_size_partial=true
-                for item in "$candidate"/*; do
-                    [[ -e "$item" ]] || continue
-                    [[ -L "$item" ]] && continue
-                    if should_protect_path "$item" 2> /dev/null || is_path_whitelisted "$item" 2> /dev/null; then
-                        continue
-                    fi
-                    if [[ "$DRY_RUN" == "true" ]] && declare -f record_dry_run_cleanup_target > /dev/null 2>&1; then
-                        record_dry_run_cleanup_target "$item" 0 1 false || continue
-                    fi
-                    candidate_changed=true
-                    if [[ "$DRY_RUN" != "true" ]]; then
-                        safe_remove "$item" true 2> /dev/null || true
-                    fi
-                done
-            else
-                for item in "$candidate"/*; do
-                    [[ -e "$item" ]] || continue
-                    [[ -L "$item" ]] && continue
-                    if should_protect_path "$item" 2> /dev/null || is_path_whitelisted "$item" 2> /dev/null; then
-                        continue
-                    fi
-                    local item_size=""
+                candidate_size_known=false
+            fi
+            for item in "$candidate"/*; do
+                [[ -e "$item" ]] || continue
+                [[ -L "$item" ]] && continue
+                if should_protect_path "$item" 2> /dev/null ||
+                    is_path_whitelisted "$item" 2> /dev/null ||
+                    holds_compiled_model_cache "$item" 2> /dev/null; then
+                    continue
+                fi
+
+                local item_size=0
+                if [[ "$candidate_size_known" == "true" ]]; then
                     local size_rc=0
                     item_size=$(get_path_size_kb "$item" 2> /dev/null) || size_rc=$?
                     [[ $size_rc -eq 0 ]] || _mole_record_clean_cancellation "$size_rc"
-                    [[ $size_rc -eq 0 ]] || return "$size_rc"
+                    if [[ $size_rc -ne 0 ]]; then
+                        # eval: restore shopt state captured by $(shopt -p)
+                        eval "$candidate_nullglob_state"
+                        eval "$candidate_dotglob_state"
+                        eval "$group_nullglob_state"
+                        return "$size_rc"
+                    fi
                     [[ "$item_size" =~ ^[0-9]+$ ]] || item_size=0
-                    if [[ "$DRY_RUN" == "true" ]]; then
-                        if declare -f record_dry_run_cleanup_target > /dev/null 2>&1; then
-                            record_dry_run_cleanup_target "$item" "$item_size" 1 true || continue
-                        fi
-                        candidate_changed=true
-                        candidate_size_kb=$((candidate_size_kb + item_size))
-                        continue
+                fi
+
+                local action_rc=0
+                if [[ "$DRY_RUN" == "true" ]]; then
+                    _mole_reset_process_snapshot
+                    # Match real safe_remove ordering: a compiled-model cache
+                    # that appeared during sizing is rejected before the
+                    # recursive lsof probe can consume this section's budget.
+                    if holds_compiled_model_cache "$item" 2> /dev/null; then
+                        action_rc=1
                     fi
-                    if safe_remove "$item" true 2> /dev/null; then
-                        candidate_changed=true
-                        candidate_size_kb=$((candidate_size_kb + item_size))
+                    if [[ $action_rc -eq 0 ]]; then
+                        validate_path_for_deletion "$item" 2> /dev/null || action_rc=$?
                     fi
-                done
-            fi
+                    if [[ $action_rc -eq 0 ]] && declare -f record_dry_run_cleanup_target > /dev/null 2>&1; then
+                        # The path, whitelist, compiled-model, live-owner, and
+                        # SQLite guards have all run after sizing. Avoid only
+                        # repeating that complete eligibility pass.
+                        local _MOLE_DRY_RUN_TARGET_PREVALIDATED=true
+                        record_dry_run_cleanup_target \
+                            "$item" "$item_size" 1 "$candidate_size_known" || action_rc=$?
+                    fi
+                else
+                    safe_remove "$item" true "$item_size" 2> /dev/null || action_rc=$?
+                fi
+                if [[ $action_rc -ge 128 ]]; then
+                    _mole_record_clean_cancellation "$action_rc"
+                    # eval: restore shopt state captured by $(shopt -p)
+                    eval "$candidate_nullglob_state"
+                    eval "$candidate_dotglob_state"
+                    eval "$group_nullglob_state"
+                    return "$action_rc"
+                fi
+                [[ $action_rc -eq 0 ]] || continue
+                candidate_changed=true
+                candidate_size_kb=$((candidate_size_kb + item_size))
+            done
             # eval: restore shopt state captured by $(shopt -p)
-            eval "$_nullglob_state"
-            eval "$_dotglob_state"
+            eval "$candidate_nullglob_state"
+            eval "$candidate_dotglob_state"
 
             if [[ "$candidate_changed" == "true" ]]; then
                 total_size=$((total_size + candidate_size_kb))
@@ -1226,7 +1386,7 @@ clean_group_container_caches() {
         done
     done
     # eval: restore shopt state captured by $(shopt -p)
-    eval "$_nullglob_state"
+    eval "$group_nullglob_state"
 
     stop_section_spinner
 
@@ -1726,6 +1886,8 @@ clean_cloud_storage() {
 
 # Office app caches.
 clean_office_applications() {
+    # Bound every explicit Office App Container probe as one section.
+    local _MOLE_CONTAINER_CACHE_PROBE_DEADLINE=""
     if [[ "${MO_DEBUG:-0}" == "1" ]]; then
         echo "[DEBUG] 正在清理办公应用缓存..." >&2
     fi
@@ -1753,6 +1915,7 @@ clean_office_applications() {
 
 # Virtualization caches.
 clean_utm_caches() {
+    local _MOLE_CONTAINER_CACHE_PROBE_DEADLINE=""
     if pgrep -x "UTM" > /dev/null 2>&1; then
         debug_log "UTM 运行时跳过 UTM 缓存清理"
         return 0
@@ -2090,7 +2253,11 @@ clean_application_support_logs() {
                         fi
                     fi
                     if [[ "$DRY_RUN" != "true" ]]; then
-                        safe_remove "$item" true > /dev/null 2>&1 || true
+                        if [[ "$item_size_known" == "true" ]]; then
+                            safe_remove "$item" true "$item_size_kb" > /dev/null 2>&1 || true
+                        else
+                            safe_remove "$item" true > /dev/null 2>&1 || true
+                        fi
                     fi
                 done < <(command find "$candidate" -mindepth 1 -maxdepth 1 -print0 2> /dev/null || true)
                 if [[ "$item_found" == "true" ]]; then
@@ -2177,7 +2344,11 @@ clean_application_support_logs() {
                         fi
                     fi
                     if [[ "$DRY_RUN" != "true" ]]; then
-                        safe_remove "$item" true > /dev/null 2>&1 || true
+                        if [[ "$item_size_known" == "true" ]]; then
+                            safe_remove "$item" true "$item_size_kb" > /dev/null 2>&1 || true
+                        else
+                            safe_remove "$item" true > /dev/null 2>&1 || true
+                        fi
                     fi
                 done < <(command find "$candidate" -mindepth 1 -maxdepth 1 -print0 2> /dev/null || true)
                 if [[ "$item_found" == "true" ]]; then
@@ -2578,6 +2749,12 @@ check_large_file_candidates() {
     done
     _report_large_review_dir "Lima 数据" "$HOME/.lima"
     _report_large_review_dir "Maven 本地仓库" "$HOME/.m2/repository"
+    _report_large_review_dir "Ivy 本地仓库" "$HOME/.ivy2/cache"
+    _report_large_review_dir "NuGet 包" "$HOME/.nuget/packages"
+    local deno_module_cache=""
+    if deno_module_cache=$(mole_deno_cache_root 2> /dev/null); then
+        _report_large_review_dir "Deno 模块缓存" "$deno_module_cache"
+    fi
     _report_large_review_dir "pnpm 存储" "$HOME/Library/pnpm/store"
     _report_large_review_dir "Conda 包" "$HOME/.conda/pkgs"
     _report_large_review_dir "Anaconda 包" "$HOME/anaconda3/pkgs"

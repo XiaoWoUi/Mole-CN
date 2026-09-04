@@ -37,7 +37,7 @@
 #         is the right behavior.
 #   8s    External tool calls that are too slow for MEDIUM_PROBE (5s) but
 #         shouldn't pay the PKG_LIST (10s) ceiling: `hdiutil info`,
-#         `brew outdated`, `simctl list` warm-up retry. Also the deep
+#         `brew outdated`. Also the deep
 #         `find /private/var/folders -maxdepth 8` GPU-cache scan in
 #         lib/clean/system.sh - same "occasionally slow disk probe" shape.
 #   15s   Long-running maintenance ops on user-selected targets:
@@ -65,6 +65,14 @@ readonly MOLE_TIMEOUT_PKG_LIST_SEC="${MOLE_TIMEOUT_PKG_LIST_SEC:-10}"
 readonly MOLE_TIMEOUT_PKG_CLEANUP_SEC="${MOLE_TIMEOUT_PKG_CLEANUP_SEC:-20}"
 readonly MOLE_TIMEOUT_DISK_VERIFY_SEC="${MOLE_TIMEOUT_DISK_VERIFY_SEC:-30}"
 readonly MOLE_TIMEOUT_HINT_SCAN_SEC="${MOLE_TIMEOUT_HINT_SCAN_SEC:-15}"
+readonly MOLE_CLOUD_OFFICE_SECTION_BUDGET_SEC="${MOLE_CLOUD_OFFICE_SECTION_BUDGET_SEC:-300}"
+
+# True when a cooperative clean-section wall clock has elapsed (#1513).
+_mole_clean_section_budget_spent() {
+    [[ -n "${_MOLE_CLEAN_SECTION_DEADLINE:-}" &&
+        "$_MOLE_CLEAN_SECTION_DEADLINE" =~ ^[0-9]+$ &&
+        $SECONDS -ge $_MOLE_CLEAN_SECTION_DEADLINE ]]
+}
 
 # Clamp a per-command timeout to an overall wall-clock deadline. Kept beside
 # the timeout policy constants because cleanup, uninstall, and file operations

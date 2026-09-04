@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 
@@ -288,26 +289,74 @@ func getScoreStyle(score int) lipgloss.Style {
 	}
 }
 
-func renderProcessAlertBar(alerts []ProcessAlert, width int) string {
+func renderProcessAlertBar(alerts []ProcessAlert, processStale *bool, processCollectedAt *time.Time, width int) string {
 	active := activeAlerts(alerts)
 	if len(active) == 0 {
 		return ""
 	}
 
 	focus := active[0]
+	prefix := "告警"
+	historical := !processSnapshotFresh(processStale)
+	if historical {
+		prefix = "上次告警"
+		available := max(width-2, 0)
+		if width > 0 && lipgloss.Width(prefix) > available {
+			prefix = "旧"
+		}
+	}
 
-	text := fmt.Sprintf(
-		"告警 %s 占用 %.1f%% 持续 %s(阈值 %.1f%%)",
+	detail := fmt.Sprintf(
+		"%s 占用 %.1f%% 持续 %s(阈值 %.1f%%)",
 		formatProcessLabel(ProcessInfo{PID: focus.PID, Name: focus.Name}),
 		focus.CPU,
 		focus.Window,
 		focus.Threshold,
 	)
+	text := prefix + " " + detail
 	if len(active) > 1 {
 		text += fmt.Sprintf(" · 另有 %d 项", len(active)-1)
 	}
+	if historical {
+		freshnessWidth := -1
+		if width > 0 {
+			freshnessWidth = max(width-2-lipgloss.Width(prefix+" · "), 0)
+		}
+		if freshness := processFreshnessLabel(processStale, processCollectedAt, freshnessWidth); freshness != "" {
+			text = prefix + " · " + freshness + " · " + strings.TrimPrefix(text, prefix+" ")
+		}
+	}
 
 	return renderBanner(alertBarStyle, text, width)
+}
+
+func processSnapshotStale(stale *bool) bool {
+	return stale != nil && *stale
+}
+
+func processSnapshotFresh(stale *bool) bool {
+	return stale != nil && !*stale
+}
+
+func processFreshnessLabel(stale *bool, collectedAt *time.Time, maxWidth int) string {
+	if processSnapshotFresh(stale) {
+		return ""
+	}
+	base := "数据过期"
+	if stale == nil {
+		base = "未知"
+	}
+	if maxWidth >= 0 && lipgloss.Width(base) > maxWidth {
+		return ""
+	}
+	if base == "未知" || collectedAt == nil || collectedAt.IsZero() {
+		return base
+	}
+	label := base + " " + collectedAt.Format(time.RFC3339)
+	if maxWidth >= 0 && lipgloss.Width(label) > maxWidth {
+		return base
+	}
+	return label
 }
 
 func renderBanner(style lipgloss.Style, text string, width int) string {
@@ -567,8 +616,16 @@ func ioBar(rate float64) string {
 }
 
 func renderProcessCard(procs []ProcessInfo, cardWidth int) cardData {
+	return renderProcessCardWithZombies(procs, 0, nil, cardWidth)
+}
+
+func renderProcessCardWithZombies(procs []ProcessInfo, zombieCount int, zombieParents []ZombieParent, cardWidth int) cardData {
 	var lines []string
 	maxProcs := 3
+	if zombieCount > 0 {
+		lines = append(lines, renderZombieProcessLine(zombieCount, zombieParents, cardWidth))
+		maxProcs = 2
+	}
 	for i, p := range procs {
 		if i >= maxProcs {
 			break
@@ -595,6 +652,18 @@ func renderProcessCard(procs []ProcessInfo, cardWidth int) cardData {
 	return cardData{icon: iconProcs, title: "进程", lines: lines}
 }
 
+func renderZombieProcessLine(count int, parents []ZombieParent, cardWidth int) string {
+	if cardWidth <= 0 {
+		cardWidth = colWidth
+	}
+	line := fmt.Sprintf("Zombies %d", count)
+	if len(parents) > 0 {
+		owner := formatProcessLabel(ProcessInfo{PID: parents[0].PID, Name: parents[0].Name})
+		line += fmt.Sprintf(" · %s ×%d", owner, parents[0].Count)
+	}
+	return warnStyle.Render(shorten(line, cardWidth))
+}
+
 func processBar(percent float64, cardWidth int) string {
 	if cardWidth >= processWideMinWidth {
 		return progressBar(percent)
@@ -616,12 +685,46 @@ func processMemoryText(p ProcessInfo) string {
 // has completed at least once; until it has, an empty battery list means "not
 // measured yet", not "this Mac has no battery".
 func buildCards(m MetricsSnapshot, width int, cpuCores int, batteryProbed bool) []cardData {
+	zombieCount := 0
+	if m.ZombieCount != nil {
+		zombieCount = *m.ZombieCount
+	}
+	processCard := renderProcessCardWithZombies(m.TopProcesses, zombieCount, m.ZombieParents, width)
+	hasRenderedProcessData := len(m.TopProcesses) > 0 || zombieCount > 0
+	hasActiveProcessAlert := len(activeAlerts(m.ProcessAlerts)) > 0
+	switch {
+	case processSnapshotFresh(m.ProcessStale):
+		if !hasRenderedProcessData {
+			message := "暂无进程活动"
+			if hasActiveProcessAlert {
+				message = "暂无进程数据 · 告警显示在上方"
+			}
+			processCard.lines = []string{subtleStyle.Render(message)}
+		}
+	case processSnapshotStale(m.ProcessStale):
+		freshnessWidth := width
+		if freshnessWidth <= 0 {
+			freshnessWidth = colWidth
+		}
+		freshness := processFreshnessLabel(m.ProcessStale, m.ProcessCollectedAt, freshnessWidth)
+		if hasRenderedProcessData {
+			processCard.lines = append([]string{warnStyle.Render(freshness)}, processCard.lines...)
+		} else {
+			processCard.lines = []string{warnStyle.Render(freshness + " · no retained process activity")}
+		}
+	default:
+		if hasRenderedProcessData {
+			processCard.lines = append([]string{warnStyle.Render("未知")}, processCard.lines...)
+		} else if hasActiveProcessAlert || m.ProcessCollectedAt != nil || m.ZombieCount != nil {
+			processCard.lines = []string{warnStyle.Render("未知 · 进程采样不可用")}
+		}
+	}
 	cards := []cardData{
 		renderCPUCard(m.CPU, m.Thermal, cpuCores),
 		renderMemoryCard(m.Memory, width),
 		renderDiskCard(m.Disks, m.DiskIO, m.TrashSize, m.TrashApprox),
 		renderBatteryCard(m.Batteries, m.Thermal, batteryProbed),
-		renderProcessCard(m.TopProcesses, width),
+		processCard,
 		renderNetworkCard(m.Network, m.NetworkHistory, m.Proxy, width),
 	}
 	// Sensors card disabled - redundant with CPU temp

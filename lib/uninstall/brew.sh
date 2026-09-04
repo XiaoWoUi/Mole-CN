@@ -159,7 +159,7 @@ _detect_cask_via_caskroom_search() {
     local candidate existing seen
     for candidate in "${tokens[@]}"; do
         seen=false
-        for existing in "${uniq[@]}"; do
+        for existing in "${uniq[@]+"${uniq[@]}"}"; do
             if [[ "$candidate" == "$existing" ]]; then
                 seen=true
                 break
@@ -215,8 +215,10 @@ _detect_cask_via_symlink_check() {
 _detect_cask_via_brew_list() {
     local app_path="$1"
     local app_bundle_name="$2"
+    local app_base_name
     local app_name_lower
-    app_name_lower=$(echo "${app_bundle_name%.app}" | LC_ALL=C tr '[:upper:]' '[:lower:]')
+    app_base_name="${app_bundle_name%.[aA][pP][pP]}"
+    app_name_lower=$(printf '%s' "$app_base_name" | LC_ALL=C tr '[:upper:]' '[:lower:]')
 
     local cask_list=""
     local list_rc=0

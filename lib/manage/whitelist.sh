@@ -50,7 +50,7 @@ save_whitelist_patterns() {
         header_text="# Mole 优化白名单 - 优化过程中将跳过这些检查"
     else
         config_file="$WHITELIST_CONFIG_CLEAN"
-        header_text="# Mole 白名单 - 受保护路径不会被删除\n# 默认保护: Playwright 浏览器、HuggingFace 模型、Maven 仓库、Ollama 模型、Surge Mac、R renv、Finder 元数据\n# 每行添加一个模式以保护项目安全。"
+        header_text="# Mole 白名单 - 受保护路径不会被删除\n# 默认保护: Playwright 浏览器、Ollama 模型、Surge Mac、R renv、Finder 元数据\n# 每行添加一个模式以保护项目安全。"
     fi
 
     ensure_user_file "$config_file"
@@ -98,7 +98,6 @@ Gradle worker 缓存|$HOME/.gradle/workers/*|ide_cache
 Xcode DerivedData(构建产物、索引)|$HOME/Library/Developer/Xcode/DerivedData/*|ide_cache
 Xcode 内部缓存文件|$HOME/Library/Caches/com.apple.dt.Xcode/*|ide_cache
 Xcode iOS 设备支持符号|$HOME/Library/Developer/Xcode/iOS DeviceSupport/*/Symbols/System/Library/Caches/*|ide_cache
-Maven 本地仓库(Java 依赖)|$HOME/.m2/repository/*|ide_cache
 JetBrains IDE 数据(IntelliJ、PyCharm、WebStorm、GoLand)|$HOME/Library/Application Support/JetBrains/*|ide_cache
 JetBrains IDE 缓存|$HOME/Library/Caches/JetBrains/*|ide_cache
 Android Studio 缓存与索引|$HOME/Library/Caches/Google/AndroidStudio*/*|ide_cache
@@ -112,16 +111,11 @@ Codex Desktop 更新暂存|$HOME/Library/Caches/com.openai.codex/org.sparkle-pro
 Chrome 设备端 AI 模型|$HOME/Library/Application Support/Google/Chrome/OptGuideOnDevice*/*|ai_ml_cache
 Chrome 优化指南模型|$HOME/Library/Application Support/Google/Chrome/optimization_guide_model_store/*|ai_ml_cache
 Bazel 构建缓存|$HOME/.cache/bazel/*|compiler_cache
-Go 构建缓存|$HOME/Library/Caches/go-build/*|compiler_cache
-Go 模块缓存|$HOME/go/pkg/mod/*|compiler_cache
 Rust Cargo 注册表缓存|$HOME/.cargo/registry/cache/*|compiler_cache
-Rust Cargo 解压源码|$HOME/.cargo/registry/src/*|compiler_cache
 Rust 文档缓存|$HOME/.rustup/toolchains/*/share/doc/*|compiler_cache
 Rustup 工具链下载|$HOME/.rustup/downloads/*|compiler_cache
 ccache 编译器缓存|$HOME/.ccache/*|compiler_cache
 sccache 分布式编译器缓存|$HOME/.cache/sccache/*|compiler_cache
-SBT Scala 构建缓存|$HOME/.sbt/*|compiler_cache
-Ivy 依赖缓存|$HOME/.ivy2/cache/*|compiler_cache
 Turbo monorepo 构建缓存|$HOME/.turbo/*|compiler_cache
 Next.js 构建缓存|$HOME/.next/*|compiler_cache
 Vite 构建缓存|$HOME/.vite/*|compiler_cache
@@ -130,10 +124,10 @@ pre-commit 钩子缓存|$HOME/.cache/pre-commit/*|compiler_cache
 Ruff Python 检查器缓存|$HOME/.cache/ruff/*|compiler_cache
 MyPy 类型检查器缓存|$HOME/.cache/mypy/*|compiler_cache
 Pytest 测试缓存|$HOME/.pytest_cache/*|compiler_cache
+PyInstaller 二进制缓存|$HOME/Library/Application Support/pyinstaller/bincache*|compiler_cache
 Flutter SDK 缓存|$HOME/.cache/flutter/*|compiler_cache
 Swift Package Manager 缓存|$HOME/.cache/swift-package-manager/*|compiler_cache
 Zig 编译器缓存|$HOME/.cache/zig/*|compiler_cache
-Deno 缓存|$HOME/Library/Caches/deno/*|compiler_cache
 CocoaPods 缓存(iOS 依赖)|$HOME/Library/Caches/CocoaPods/*|package_manager
 npm 包缓存|$HOME/.npm/_cacache/*|package_manager
 pip Python 包缓存|$HOME/.cache/pip/*|package_manager
@@ -148,13 +142,9 @@ Composer PHP 依赖缓存|$HOME/Library/Caches/composer/*|package_manager
 RubyGems 缓存|$HOME/.gem/cache/*|package_manager
 Conda 包元数据/压缩包缓存|$HOME/.conda/pkgs|package_manager
 Anaconda 包元数据/压缩包缓存|$HOME/anaconda3/pkgs|package_manager
-PyTorch 模型缓存|$HOME/.cache/torch/*|ai_ml_cache
-TensorFlow 模型与数据集缓存|$HOME/.cache/tensorflow/*|ai_ml_cache
-HuggingFace 模型与数据集|$HOME/.cache/huggingface/*|ai_ml_cache
 Playwright 浏览器二进制|$HOME/Library/Caches/ms-playwright*|ai_ml_cache
 Selenium WebDriver 二进制|$HOME/.cache/selenium/*|ai_ml_cache
 Ollama 本地 AI 模型|$HOME/.ollama/models/*|ai_ml_cache
-Weights & Biases 机器学习实验缓存|$HOME/.cache/wandb/*|ai_ml_cache
 Safari 浏览器缓存|$HOME/Library/Caches/com.apple.Safari/*|browser_cache
 Chrome 浏览器缓存|$HOME/Library/Caches/Google/Chrome/*|browser_cache
 Firefox 浏览器缓存|$HOME/Library/Caches/Firefox/*|browser_cache
@@ -164,6 +154,7 @@ Surge 配置与数据|$HOME/Library/Application Support/com.nssurge.surge-mac/*|
 Docker BuildX 缓存|$HOME/.docker/buildx/cache/*|container_cache
 Podman 容器缓存|$HOME/.local/share/containers/cache/*|container_cache
 Tart OCI/IPSW 缓存|$HOME/.tart/cache|container_cache
+Final Cut Pro 代理媒体(渲染文件仍会清理)|$HOME/Movies/*.fcpbundle/*/Transcoded Media/Proxy Media|app_cache
 字体缓存|$HOME/Library/Caches/com.apple.FontRegistry/*|system_cache
 Spotlight 元数据缓存|$HOME/Library/Caches/com.apple.spotlight/*|system_cache
 CloudKit 缓存|$HOME/Library/Caches/CloudKit/*|system_cache
@@ -171,6 +162,21 @@ CloudKit 缓存|$HOME/Library/Caches/CloudKit/*|system_cache
 来自 iTunes/Finder 的 iOS/iPadOS 设备固件 (.ipsw)|$HOME/Library/iTunes/*Software Updates/*.ipsw|system_cache
 Apple Configurator 2 设备固件 (.ipsw)|$HOME/Library/Group Containers/*.group.com.apple.configurator/**/*.ipsw|system_cache
 EOF
+    local go_cache_root
+    if go_cache_root=$(mole_go_cache_root GOCACHE); then
+        printf 'Go 构建缓存|%s/*|compiler_cache\n' "$go_cache_root"
+    fi
+    if go_cache_root=$(mole_go_cache_root GOMODCACHE); then
+        printf 'Go 模块缓存|%s/*|compiler_cache\n' "$go_cache_root"
+    fi
+    local github_cache_root
+    if github_cache_root=$(mole_github_cli_cache_root); then
+        printf 'GitHub CLI 缓存|%s/gh|network_tools\n' "$github_cache_root"
+    fi
+    local darwin_user_cache
+    if darwin_user_cache=$(mole_darwin_user_cache_root); then
+        printf 'Clang 模块缓存|%s/clang/*|compiler_cache\n' "$darwin_user_cache"
+    fi
     # Add FINDER_METADATA with constant reference
     echo "Finder 元数据, .DS_Store|$FINDER_METADATA_SENTINEL|system_cache"
 }
@@ -336,8 +342,12 @@ ${GRAY}编辑: ${display_config}${NC}"
         items_source=$(get_all_cache_items)
         active_config_file="$WHITELIST_CONFIG_CLEAN"
         local display_config="${active_config_file/#$HOME/~}"
+        # Naming the file was not enough: users read the category list as the
+        # whole feature and did not know the file also takes arbitrary paths,
+        # so a cache Mole cleans but does not list looked unprotectable
+        # (discussion #1436). Say what the file accepts, not just where it is.
         menu_title="白名单管理器,选择要保护的缓存
-${GRAY}编辑: ${display_config}${NC}"
+${GRAY}编辑: ${display_config},添加任意路径同样会被保护${NC}"
     fi
 
     while IFS='|' read -r display_name pattern _; do
@@ -351,7 +361,13 @@ ${GRAY}编辑: ${display_config}${NC}"
         index=$((index + 1))
     done <<< "$items_source"
 
-    # Identify custom patterns (not in predefined list)
+    # Identify custom patterns (not in predefined list).
+    #
+    # Hard-safety entries have no inventory row on purpose: they are not
+    # opt-in protections the user picks from a menu. Without this check they
+    # fall through to custom_patterns, which both mislabels them as
+    # user-added and writes them into the saved file as if the user had chosen
+    # them, so a mandatory rule becomes an editable one on first save.
     local -a custom_patterns=()
     if [[ ${#CURRENT_WHITELIST_PATTERNS[@]} -gt 0 ]]; then
         for current_pattern in "${CURRENT_WHITELIST_PATTERNS[@]}"; do
@@ -362,6 +378,15 @@ ${GRAY}编辑: ${display_config}${NC}"
                     break
                 fi
             done
+            if [[ "$is_predefined" == "false" && ${#SAFETY_WHITELIST_PATTERNS[@]} -gt 0 ]]; then
+                local safety_pattern
+                for safety_pattern in "${SAFETY_WHITELIST_PATTERNS[@]}"; do
+                    if patterns_equivalent "$current_pattern" "$safety_pattern"; then
+                        is_predefined=true
+                        break
+                    fi
+                done
+            fi
             if [[ "$is_predefined" == "false" ]]; then
                 custom_patterns+=("$current_pattern")
             fi

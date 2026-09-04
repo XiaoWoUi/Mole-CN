@@ -634,8 +634,8 @@ cp "$APP_ROOT/Selected.app/Contents/Info.plist" \
     "$APP_ROOT/Utilities/AnotherSibling.app/Contents/Info.plist"
 uninstall_live_bundle_has_other_install \
     "com.example.live-shared" "$APP_ROOT/Selected.app"
-[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 2 ]]
-[[ "$first_fingerprint" != "$_MOLE_UNINSTALL_LIVE_SIBLING_FINGERPRINT" ]]
+[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 2 ]] || exit 1
+[[ "$first_fingerprint" != "$_MOLE_UNINSTALL_LIVE_SIBLING_FINGERPRINT" ]] || exit 1
 
 mkdir -p "$HOME/external/LinkedSibling.app/Contents"
 cp "$APP_ROOT/Selected.app/Contents/Info.plist" \
@@ -647,6 +647,67 @@ uninstall_live_bundle_has_other_install \
 EOF
 
     [ "$status" -eq 0 ]
+}
+
+@test "live same-bundle guard finds mixed-case siblings but ignores nested and unrelated bundles" {
+    local app_root="$HOME/live-mixed-case-apps"
+    mkdir -p "$app_root/Selected.app/Contents" \
+        "$app_root/Unrelated.App/Contents"
+
+    run env HOME="$HOME" PROJECT_ROOT="$PROJECT_ROOT" APP_ROOT="$app_root" \
+        /bin/bash --noprofile --norc <<'EOF'
+set -euo pipefail
+source "$PROJECT_ROOT/lib/core/common.sh"
+source "$PROJECT_ROOT/lib/uninstall/batch.sh"
+pkg_receipt_nonstandard_app_paths() { :; }
+
+write_bundle_id() {
+    local path="$1"
+    local bundle_id="$2"
+    mkdir -p "$path/Contents"
+    printf '%s\n' \
+        '<?xml version="1.0" encoding="UTF-8"?>' \
+        '<plist version="1.0"><dict>' \
+        "<key>CFBundleIdentifier</key><string>$bundle_id</string>" \
+        '</dict></plist>' \
+        > "$path/Contents/Info.plist"
+}
+
+write_bundle_id "$APP_ROOT/Selected.app" "com.example.live-mixed"
+write_bundle_id "$APP_ROOT/Unrelated.App" "com.example.unrelated"
+selected_apps=("0|$APP_ROOT/Selected.app|Selected|com.example.live-mixed|0|Never")
+_MOLE_UNINSTALL_LIVE_APP_ROOTS=("$APP_ROOT")
+_MOLE_UNINSTALL_LIVE_VOLUMES_ROOT="$HOME/no-volumes"
+
+# A case-variant app with another id must not block the selected app.
+if uninstall_live_bundle_has_other_install \
+    "com.example.live-mixed" "$APP_ROOT/Selected.app"; then
+    echo "WRONG: unrelated app reported as a sibling"
+    exit 1
+fi
+[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 0 ]] || exit 1
+
+# A nested helper belongs to Container.APP and is not another installation.
+write_bundle_id "$APP_ROOT/Container.APP/Nested.app" "com.example.live-mixed"
+if uninstall_live_bundle_has_other_install \
+    "com.example.live-mixed" "$APP_ROOT/Selected.app"; then
+    echo "WRONG: nested app reported as a sibling"
+    exit 1
+fi
+[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 0 ]] || exit 1
+
+# A top-level surviving .APP with the same id must trip the destructive guard.
+write_bundle_id "$APP_ROOT/Survivor.APP" "com.example.live-mixed"
+uninstall_live_bundle_has_other_install \
+    "com.example.live-mixed" "$APP_ROOT/Selected.app"
+[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 1 ]] || exit 1
+[[ "${_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[0]}" == "$APP_ROOT/Survivor.APP" ]]
+EOF
+
+    [ "$status" -eq 0 ] || {
+        echo "$output"
+        return 1
+    }
 }
 
 @test "live same-bundle scan accepts dot-app text in a volume ancestor" {
@@ -706,8 +767,8 @@ live_rc=0
 uninstall_live_bundle_has_other_install \
     "com.example.volume-root" "$HOME/Selected.app" || live_rc=$?
 printf 'LIVE_RC=%s PATHS=%s\n' "$live_rc" "${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]}"
-[[ $live_rc -eq 0 ]]
-[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 1 ]]
+[[ $live_rc -eq 0 ]] || exit 1
+[[ ${#_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[@]} -eq 1 ]] || exit 1
 [[ "${_MOLE_UNINSTALL_LIVE_SIBLING_PATHS[0]}" == "$SURVIVOR" ]]
 EOF
 
@@ -905,7 +966,7 @@ total_items=0
 
 _batch_execute_removals
 [[ $success_count -eq 0 && $failed_count -eq 1 ]]
-[[ "${failed_items[0]}" == *"app installation set changed after preview"* ]]
+[[ "${failed_items[0]}" == *"app installation set changed after preview"* ]] || exit 1
 [[ ! -e "$HOME/teardown-ran" ]]
 EOF
 
@@ -941,8 +1002,8 @@ IFS="$old_ifs"
 
 printf 'new bundle metadata\n' > "$app_path/Contents/Info.plist"
 touch -t 202101010000 "$app_path/Contents/Info.plist"
-[[ "$(_batch_selected_app_identity "$app_path")" == "$expected_identity" ]]
-[[ "$(_batch_selected_app_info_identity "$app_path")" != "$expected_info_identity" ]]
+[[ "$(_batch_selected_app_identity "$app_path")" == "$expected_identity" ]] || exit 1
+[[ "$(_batch_selected_app_info_identity "$app_path")" != "$expected_info_identity" ]] || exit 1
 
 uninstall_live_bundle_has_other_install() {
     _MOLE_UNINSTALL_LIVE_SIBLING_FINGERPRINT=""
@@ -968,7 +1029,7 @@ total_items=0
 
 _batch_execute_removals
 [[ $success_count -eq 0 && $failed_count -eq 1 ]]
-[[ "${failed_items[0]}" == *"selected app changed after preview"* ]]
+[[ "${failed_items[0]}" == *"selected app changed after preview"* ]] || exit 1
 [[ ! -e "$HOME/teardown-ran" ]]
 EOF
 
@@ -1028,10 +1089,10 @@ total_estimated_size=0
 _batch_scan_app_details
 IFS='|' read -r _ _ stored_bundle _ _ _ _ _ _ _ _ _ _ stored_guard _ \
     stored_original stored_fingerprint _ <<< "${app_details[0]}"
-[[ "$stored_bundle" == "unknown" ]]
-[[ "$stored_guard" == "guard_login" ]]
-[[ "$stored_original" == "com.example.shared" ]]
-[[ -n "$stored_fingerprint" ]]
+[[ "$stored_bundle" == "unknown" ]] || exit 1
+[[ "$stored_guard" == "guard_login" ]] || exit 1
+[[ "$stored_original" == "com.example.shared" ]] || exit 1
+[[ -n "$stored_fingerprint" ]] || exit 1
 [[ ! -e "$HOME/unexpected-discovery" ]]
 EOF
 
@@ -1093,8 +1154,8 @@ app_details=()
 total_estimated_size=0
 
 _batch_scan_app_details
-[[ ${#app_details[@]} -eq 2 ]]
-[[ ! -e "$HOME/unexpected-discovery" ]]
+[[ ${#app_details[@]} -eq 2 ]] || exit 1
+[[ ! -e "$HOME/unexpected-discovery" ]] || exit 1
 
 printf '%s\n' \
     '<?xml version="1.0" encoding="UTF-8"?>' \
@@ -1120,8 +1181,8 @@ total_items=0
 
 _batch_execute_removals
 [[ $success_count -eq 0 && $failed_count -eq 2 ]]
-[[ "${failed_items[0]}" == *"app installation set changed after preview"* ]]
-[[ "${failed_items[1]}" == *"selected app changed after preview"* ]]
+[[ "${failed_items[0]}" == *"app installation set changed after preview"* ]] || exit 1
+[[ "${failed_items[1]}" == *"selected app changed after preview"* ]] || exit 1
 [[ ! -e "$HOME/teardown-ran" ]]
 EOF
 
@@ -1184,8 +1245,8 @@ app_details=()
 total_estimated_size=0
 
 _batch_scan_app_details
-[[ ${#app_details[@]} -eq 2 ]]
-[[ ! -e "$HOME/unexpected-discovery" ]]
+[[ ${#app_details[@]} -eq 2 ]] || exit 1
+[[ ! -e "$HOME/unexpected-discovery" ]] || exit 1
 
 success_count=0
 failed_count=0
@@ -1235,8 +1296,8 @@ app_details=()
 total_estimated_size=0
 dry_scan_rc=0
 _batch_scan_app_details || dry_scan_rc=$?
-[[ $dry_scan_rc -eq 0 ]]
-[[ ${#app_details[@]} -eq 2 ]]
+[[ $dry_scan_rc -eq 0 ]] || exit 1
+[[ ${#app_details[@]} -eq 2 ]] || exit 1
 
 success_count=0
 failed_count=0
@@ -1253,7 +1314,7 @@ files_cleaned=0
 total_items=0
 dry_execute_rc=0
 _batch_execute_removals || dry_execute_rc=$?
-[[ $dry_execute_rc -eq 0 ]]
+[[ $dry_execute_rc -eq 0 ]] || exit 1
 [[ $success_count -eq 2 && $failed_count -eq 0 ]]
 [[ -e "$first" && -e "$second" ]]
 EOF
@@ -1541,7 +1602,7 @@ printf '\n' | batch_uninstall_applications > "$HOME/output.log" 2>&1
 grep -q "仅查看: ~/system/com.example.review.helper" "$HOME/output.log"
 # The summary states the count, not the paths: they were already listed above
 # the confirmation prompt, so the path must appear exactly once in the run.
-[[ "$(grep -cF "~/system/com.example.review.helper" "$HOME/output.log")" -eq 1 ]]
+[[ "$(grep -cF "~/system/com.example.review.helper" "$HOME/output.log")" -eq 1 ]] || exit 1
 grep -q "保留了 1 个系统级路径,Mole 不会移除它们" "$HOME/output.log"
 # Keeping system paths is the designed outcome, so the run is not "incomplete".
 ! grep -q "卸载未完成" "$HOME/output.log"
@@ -2502,31 +2563,23 @@ EOF
     [ "$status" -eq 0 ]
 }
 
-@test "refresh_launch_services_after_uninstall falls back after timeout" {
+@test "refresh_launch_services_after_uninstall compacts without forcing a domain re-registration" {
     run env HOME="$HOME" PROJECT_ROOT="$PROJECT_ROOT" /bin/bash --noprofile --norc << 'EOF'
 set -euo pipefail
 source "$PROJECT_ROOT/lib/core/common.sh"
 source "$PROJECT_ROOT/lib/uninstall/batch.sh"
 
-log_file="$HOME/lsregister-timeout.log"
+test_home="$HOME/launchservices-refresh-home"
+mkdir -p "$test_home"
+log_file="$test_home/lsregister-calls.log"
 : > "$log_file"
-call_index=0
 
 get_lsregister_path() { echo "/bin/echo"; }
-debug_log() { echo "DEBUG:$*" >> "$log_file"; }
 run_with_timeout() {
     local duration="$1"
     shift
-    call_index=$((call_index + 1))
-    echo "CALL${call_index}:$duration:$*" >> "$log_file"
-
-    if [[ "$call_index" -eq 2 ]]; then
-        return 124
-    fi
-    if [[ "$call_index" -eq 3 ]]; then
-        return 124
-    fi
-    return 0
+    echo "CALL:$duration:$*" >> "$log_file"
+    return 124
 }
 
 if refresh_launch_services_after_uninstall; then
@@ -2540,9 +2593,40 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"RESULT:ok"* ]] || return 1
-    [[ "$output" == *"CALL2:15:/bin/echo -r -f -domain local -domain user -domain system"* ]] || return 1
-    [[ "$output" == *"CALL3:10:/bin/echo -r -f -domain local -domain user"* ]] || return 1
-    [[ "$output" == *"DEBUG:LaunchServices 重建超时,正在尝试轻量版本"* ]]
+    [[ "$output" == *"CALL:10:/bin/echo -gc"* ]] || return 1
+    [[ "$output" != *" -r "* ]] || return 1
+    [[ "$output" != *" -f "* ]] || return 1
+    [[ "$output" != *" -domain "* ]] || return 1
+    [ "$(printf '%s\n' "$output" | grep -c '^CALL:')" -eq 1 ] || return 1
+}
+
+@test "unregister_app_bundle accepts mixed-case app suffixes only in real mode" {
+    run env HOME="$HOME" PROJECT_ROOT="$PROJECT_ROOT" /bin/bash --noprofile --norc << 'EOF'
+set -euo pipefail
+source "$PROJECT_ROOT/lib/core/common.sh"
+source "$PROJECT_ROOT/lib/uninstall/batch.sh"
+
+test_home="$HOME/launchservices-unregister-home"
+mkdir -p "$test_home/Upper.APP" "$test_home/Plain.bundle"
+log_file="$test_home/lsregister-calls.log"
+: > "$log_file"
+
+get_lsregister_path() { echo "/bin/echo"; }
+run_with_timeout() {
+    local duration="$1"
+    shift
+    echo "CALL:$duration:$*" >> "$log_file"
+}
+
+MOLE_DRY_RUN=0 unregister_app_bundle "$test_home/Upper.APP"
+MOLE_DRY_RUN=0 unregister_app_bundle "$test_home/Plain.bundle"
+MOLE_DRY_RUN=1 unregister_app_bundle "$test_home/Upper.APP"
+cat "$log_file"
+EOF
+
+    [ "$status" -eq 0 ] || return 1
+    [[ "$output" == *"CALL:5:/bin/echo -u $HOME/launchservices-unregister-home/Upper.APP"* ]] || return 1
+    [ "$(printf '%s\n' "$output" | grep -c '^CALL:')" -eq 1 ]
 }
 
 @test "remove_mole deletes manual binaries and caches" {
@@ -2687,6 +2771,26 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"count=1"* ]] || return 1
     [[ "$output" == *"Test Application"* ]]
+}
+
+@test "match_apps_by_name prefers an exact mixed-case bundle basename" {
+    run /bin/bash --noprofile --norc << 'EOF'
+set -euo pipefail
+selected_apps=()
+apps_data=(
+	"1000|$HOME/Applications/Foo.APP|Different Display Name|com.example.Foo|1 MB|1000000|1024"
+	"1001|$HOME/Applications/Foo Bar.app|Foo Bar|com.example.FooBar|1 MB|1000001|1024"
+)
+source "$PROJECT_ROOT/tests/test_match_apps_helper.sh"
+match_apps_by_name "Foo"
+echo "count=${#selected_apps[@]}"
+echo "match=${selected_apps[0]}"
+EOF
+
+    [ "$status" -eq 0 ] || return 1
+    [[ "$output" == *"count=1"* ]] || return 1
+    [[ "$output" == *"/Foo.APP|"* ]] || return 1
+    [[ "$output" != *"/Foo Bar.app|"* ]]
 }
 
 @test "match_apps_by_name warns on no match" {
@@ -2914,7 +3018,7 @@ actual=$(cat "$trace_file")
     exit 1
 }
 
-[[ ! -e "${scan_temp}.spinner_shown" ]]
+[[ ! -e "${scan_temp}.spinner_shown" ]] || exit 1
 [[ ! -e "${scan_temp}.scan_status" ]]
 INNER
 
@@ -2948,8 +3052,8 @@ paginated_multi_select() {
 }
 
 select_apps_for_uninstall
-[[ ${#selected_apps[@]} -eq 1 ]]
-[[ -z "${MOLE_MENU_IGNORE_INITIAL_ENTER:-}" ]]
+[[ ${#selected_apps[@]} -eq 1 ]] || exit 1
+[[ -z "${MOLE_MENU_IGNORE_INITIAL_ENTER:-}" ]] || exit 1
 
 expected=$(printf 'format\ndrain\nguard:1\npaginated\n')
 actual=$(cat "$trace_file")
@@ -3167,6 +3271,62 @@ INNER
 
     rm -f "$first_cache"
     [ "$status" -eq 0 ]
+}
+
+@test "completed uninstall suppresses dead-terminal countdown read errors (#1503)" {
+    local apps_cache
+    apps_cache="$(mktemp "${BATS_TEST_TMPDIR:-$BATS_RUN_TMPDIR:-$HOME}/tmp-1503-countdown.XXXXXX")"
+
+    run env HOME="$HOME" PROJECT_ROOT="$PROJECT_ROOT" APPS_CACHE_FILE="$apps_cache" \
+        /bin/bash --noprofile --norc << 'INNER'
+set -euo pipefail
+source "$PROJECT_ROOT/lib/core/common.sh"
+
+log_operation_session_start() { :; }
+hide_cursor() { :; }
+show_cursor() { :; }
+clear_screen() { :; }
+start_uninstall_interactive_screen() { :; }
+stop_uninstall_interactive_screen() { :; }
+scan_applications() { printf '%s\n' "$APPS_CACHE_FILE"; }
+load_applications() { :; }
+select_apps_for_uninstall() {
+    selected_apps=("0|$HOME/Applications/TestApp.app|TestApp|com.example.TestApp|1KB|Today|1")
+}
+batch_uninstall_applications() { :; }
+uninstall_app_inventory_fingerprint() { printf 'stable\n'; }
+uninstall_normalize_size_display() { printf '%s\n' "$1"; }
+uninstall_normalize_last_used_display() { printf '%s\n' "$1"; }
+get_display_width() { printf '%s\n' "${#1}"; }
+truncate_by_display_width() { printf '%s\n' "$1"; }
+mole_tty_is_foreground() { return 0; }
+drain_pending_input() { :; }
+read() {
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" == -t || "$arg" == -t* ]]; then
+            printf 'read error: 0: Input/output error\n' >&2
+            return 1
+        fi
+    done
+    builtin read "$@"
+}
+
+eval "$(sed -n '/^main()/,/main \"\$@\"/p' "$PROJECT_ROOT/bin/uninstall.sh" | sed '$d')"
+main > "$HOME/countdown.out" 2> "$HOME/countdown.err"
+
+[[ "$(cat "$HOME/countdown.err")" != *'Input/output error'* ]] || {
+    cat "$HOME/countdown.err" >&2
+    exit 1
+}
+[[ "$(grep -o 'Press Enter to return to the app list' "$HOME/countdown.out" | wc -l | tr -d ' ')" -eq 5 ]]
+INNER
+
+    rm -f "$apps_cache"
+    [ "$status" -eq 0 ] || {
+        echo "$output"
+        return 1
+    }
 }
 
 @test "inventory cache reuse accepts removals only and rejects stale changes (#1315)" {

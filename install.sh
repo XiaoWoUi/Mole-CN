@@ -1041,7 +1041,7 @@ write_install_channel_metadata() {
     }
 }
 
-# CLI parsing (supports main/latest and version tokens).
+# CLI parsing (supports main, the legacy latest alias, and version tokens).
 parse_args() {
     local -a args=("$@")
     local version_token=""
@@ -1322,8 +1322,8 @@ download_binary() {
         # onto an unverified source build (classic verification-stripping
         # downgrade). Explicit source builds remain available via
         # MOLE_VERSION=main / MOLE_EDGE_INSTALL=true.
-        log_error "${binary_name} 校验失败;已中止,而不是回退到未经验证的构建"
-        log_error "请稍后重试,或明确选择源码构建: MOLE_VERSION=main ./install.sh"
+        log_error "${binary_name} 的完整性校验未通过,安装已中止"
+        log_error "请稍后重试,或改用源码构建方式安装"
         return 1
     fi
     rm -f "$staged_path"
@@ -1347,8 +1347,8 @@ download_binary() {
             # asset arrived but did not verify, which is evidence of tampering
             # or a corrupted checksums file, not of unavailability. Only a
             # plain download failure may continue into the source build.
-            log_error "${binary_name} 从 ${fallback_tag} 的校验失败;已中止,而不是回退到未经验证的构建"
-            log_error "请稍后重试,或明确选择源码构建: MOLE_VERSION=main ./install.sh"
+            log_error "${binary_name} 在 ${fallback_tag} 的完整性校验未通过,安装已中止"
+            log_error "请稍后重试,或改用源码构建方式安装"
             return 1
         fi
         rm -f "$staged_path"

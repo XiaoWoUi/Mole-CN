@@ -37,6 +37,8 @@ IS_M_SERIES=$([[ "$(uname -m)" == "arm64" ]] && echo "true" || echo "false")
 MOLE_USER_HOME="$(get_invoking_home)"
 [[ -n "$MOLE_USER_HOME" ]] || MOLE_USER_HOME="$HOME"
 
+load_mole_whitelist "$MOLE_USER_HOME"
+
 CLEAN_PREVIEW_FINAL_FILE="$MOLE_USER_HOME/.config/mole/clean-list.txt"
 CLEAN_PREVIEW_STAGING_FILE=""
 CLEAN_PREVIEW_LEDGER_FILE=""
@@ -66,81 +68,6 @@ readonly PROTECTED_SW_DOMAINS=(
     "linear.app"
     "excalidraw.com"
 )
-
-declare -a WHITELIST_PATTERNS=()
-WHITELIST_WARNINGS=()
-if [[ -f "$MOLE_USER_HOME/.config/mole/whitelist" ]]; then
-    while IFS= read -r line; do
-        # shellcheck disable=SC2295
-        line="${line#"${line%%[![:space:]]*}"}"
-        # shellcheck disable=SC2295
-        line="${line%"${line##*[![:space:]]}"}"
-        [[ -z "$line" || "$line" =~ ^# ]] && continue
-
-        [[ "$line" == ~* ]] && line="${line/#~/$MOLE_USER_HOME}"
-        line="${line//\$HOME/$MOLE_USER_HOME}"
-        line="${line//\$\{HOME\}/$MOLE_USER_HOME}"
-        if [[ "$line" =~ \.\. ]]; then
-            WHITELIST_WARNINGS+=("不允许路径穿越: $line")
-            continue
-        fi
-
-        if [[ "$line" != "$FINDER_METADATA_SENTINEL" ]]; then
-            if [[ "$line" =~ [[:cntrl:]] ]]; then
-                WHITELIST_WARNINGS+=("无效的路径格式: $line")
-                continue
-            fi
-
-            if [[ "$line" != /* ]]; then
-                WHITELIST_WARNINGS+=("必须是绝对路径: $line")
-                continue
-            fi
-        fi
-
-        if [[ "$line" =~ // ]]; then
-            WHITELIST_WARNINGS+=("路径含连续斜杠: $line")
-            continue
-        fi
-
-        case "$line" in
-            / | /System | /System/* | /bin | /bin/* | /sbin | /sbin/* | /usr/bin | /usr/bin/* | /usr/sbin | /usr/sbin/* | /etc | /etc/* | /var/db | /var/db/*)
-                WHITELIST_WARNINGS+=("受保护的系统路径: $line")
-                continue
-                ;;
-        esac
-
-        duplicate="false"
-        if [[ ${#WHITELIST_PATTERNS[@]} -gt 0 ]]; then
-            for existing in "${WHITELIST_PATTERNS[@]}"; do
-                if [[ "$line" == "$existing" ]]; then
-                    duplicate="true"
-                    break
-                fi
-            done
-        fi
-        [[ "$duplicate" == "true" ]] && continue
-        WHITELIST_PATTERNS+=("$line")
-    done < "$MOLE_USER_HOME/.config/mole/whitelist"
-else
-    WHITELIST_PATTERNS=("${DEFAULT_WHITELIST_PATTERNS[@]}")
-fi
-
-# Expand whitelist patterns once to avoid repeated tilde expansion in hot loops.
-expand_whitelist_patterns() {
-    if [[ ${#WHITELIST_PATTERNS[@]} -gt 0 ]]; then
-        local -a EXPANDED_PATTERNS
-        EXPANDED_PATTERNS=()
-        for pattern in "${WHITELIST_PATTERNS[@]}"; do
-            local expanded="${pattern/#\~/$MOLE_USER_HOME}"
-            EXPANDED_PATTERNS+=("$expanded")
-        done
-        WHITELIST_PATTERNS=("${EXPANDED_PATTERNS[@]}")
-    fi
-}
-expand_whitelist_patterns
-# Existing user files replace defaults entirely; re-apply hard safety entries
-# (FINDER_METADATA and future SAFETY_WHITELIST_PATTERNS) so they still protect.
-ensure_safety_whitelist_patterns
 
 prepare_clean_preview_file() {
     EXPORT_LIST_FILE="$CLEAN_PREVIEW_FINAL_FILE"
@@ -244,9 +171,8 @@ defer_cleanup_family() {
     debug_log "运行期间推迟的清理: $family"
 }
 
-# The Cloud & Office section runs in a timeout worker, so its array writes stay
-# in that child shell. Replay its file-backed records before rendering the
-# parent summary.
+# Replay file-backed deferred-family records before rendering the summary.
+# defer_cleanup_family writes through DEFERRED_CLEANUP_FAMILIES_FILE when set.
 sync_deferred_cleanup_families() {
     local record_file="${DEFERRED_CLEANUP_FAMILIES_FILE:-}"
     local family
@@ -331,27 +257,45 @@ append_dry_run_cleanup_target() {
 # prepared ledger retain the legacy in-memory duplicate check.
 record_dry_run_cleanup_target() {
     local path="$1"
-    if declare -f should_protect_path > /dev/null 2>&1 && should_protect_path "$path" 2> /dev/null; then
-        return 1
+    local pending_clean_cancel="${MOLE_CLEAN_CANCEL_STATUS:-0}"
+    if [[ "${MOLE_CURRENT_COMMAND:-}" == "clean" &&
+        ("$pending_clean_cancel" -eq 124 || "$pending_clean_cancel" -ge 128) ]]; then
+        return "$pending_clean_cancel"
     fi
-    if declare -f is_path_whitelisted > /dev/null 2>&1 && is_path_whitelisted "$path" 2> /dev/null; then
-        return 1
-    fi
-    if declare -f holds_compiled_model_cache > /dev/null 2>&1 && holds_compiled_model_cache "$path" 2> /dev/null; then
-        return 1
-    fi
-    # Keep preview eligibility identical to real cleanup (#1390 / PR #1391).
-    if declare -f _mole_should_refuse_live_user_cache_path > /dev/null 2>&1 &&
-        _mole_should_refuse_live_user_cache_path "$path"; then
-        return 1
-    fi
-    if declare -f _mole_is_sqlite_database_path > /dev/null 2>&1 &&
-        _mole_is_sqlite_database_path "$path" &&
-        declare -f _mole_sqlite_database_in_use > /dev/null 2>&1; then
-        local sqlite_state=0
-        _mole_sqlite_database_in_use "$path" || sqlite_state=$?
-        if [[ $sqlite_state -eq 0 || $sqlite_state -eq 2 ]]; then
+    if [[ "${_MOLE_DRY_RUN_TARGET_PREVALIDATED:-false}" != "true" ]]; then
+        if declare -f should_protect_path > /dev/null 2>&1 && should_protect_path "$path" 2> /dev/null; then
             return 1
+        fi
+        if declare -f is_path_whitelisted > /dev/null 2>&1 && is_path_whitelisted "$path" 2> /dev/null; then
+            return 1
+        fi
+        if declare -f holds_compiled_model_cache > /dev/null 2>&1 && holds_compiled_model_cache "$path" 2> /dev/null; then
+            return 1
+        fi
+        # Keep preview eligibility identical to real cleanup (#1390 / PR #1391).
+        if declare -f _mole_should_refuse_live_user_cache_path > /dev/null 2>&1; then
+            local live_cache_state=0
+            _mole_should_refuse_live_user_cache_path "$path" || live_cache_state=$?
+            if [[ $live_cache_state -eq 0 || $live_cache_state -eq 2 ]]; then
+                return 1
+            fi
+            if [[ $live_cache_state -eq 124 || $live_cache_state -ge 128 ]]; then
+                _mole_record_clean_cancellation "$live_cache_state"
+                return "$live_cache_state"
+            fi
+        fi
+        if declare -f _mole_is_sqlite_database_path > /dev/null 2>&1 &&
+            _mole_is_sqlite_database_path "$path" &&
+            declare -f _mole_sqlite_database_in_use > /dev/null 2>&1; then
+            local sqlite_state=0
+            _mole_sqlite_database_in_use "$path" || sqlite_state=$?
+            if [[ $sqlite_state -eq 0 || $sqlite_state -eq 2 ]]; then
+                return 1
+            fi
+            if [[ $sqlite_state -eq 124 || $sqlite_state -ge 128 ]]; then
+                _mole_record_clean_cancellation "$sqlite_state"
+                return "$sqlite_state"
+            fi
         fi
     fi
 
@@ -889,6 +833,10 @@ _safe_clean_impl() {
         return "$pending_clean_cancel"
     fi
 
+    if _mole_clean_section_budget_spent; then
+        return 0
+    fi
+
     if [[ $# -eq 0 ]]; then
         return 0
     fi
@@ -906,20 +854,12 @@ _safe_clean_impl() {
 
     local -a valid_targets=()
     for target in "${targets[@]}"; do
-        # Optimization: If target is a glob literal and parent dir missing, skip it.
-        if [[ "$target" == *"*"* && ! -e "$target" ]]; then
-            local base_path="${target%%\**}"
-            local parent_dir
-            if [[ "$base_path" == */ ]]; then
-                parent_dir="${base_path%/}"
-            else
-                parent_dir="${base_path%/*}"
-            fi
-
-            if [[ ! -d "$parent_dir" ]]; then
-                # debug_log "Skipping nonexistent parent: $parent_dir for $target"
-                continue
-            fi
+        # Missing targets cannot become less safe by being skipped. Filter them
+        # before the protection, whitelist, and compiled-model probes below;
+        # every target that still exists is fully checked again at the sink.
+        # Preserve broken symlinks so the deletion policy can classify them.
+        if [[ ! -e "$target" && ! -L "$target" ]]; then
+            continue
         fi
         valid_targets+=("$target")
     done
@@ -940,6 +880,7 @@ _safe_clean_impl() {
     local removal_failed_count=0
     local delete_guard_stopped=0
     local cleanup_interrupt_rc=0
+    local section_deadline="${_MOLE_CLEAN_SECTION_DEADLINE:-}"
     # A guarded cleanup may bind the exact object it approved to safe_remove's
     # final identity check. These names deliberately use dynamic scope so the
     # callback can populate them without stdout/command-substitution races.
@@ -1231,6 +1172,9 @@ _safe_clean_impl() {
         idx=0
         if [[ ${#existing_paths[@]} -gt 0 ]]; then
             for path in "${existing_paths[@]}"; do
+                if _mole_clean_section_budget_spent; then
+                    break
+                fi
                 local result_file="$temp_dir/result_${idx}"
                 if [[ -f "$result_file" ]]; then
                     read -r size count size_unknown < "$result_file" 2> /dev/null || true
@@ -1260,7 +1204,7 @@ _safe_clean_impl() {
                             bound_parent_id="$_MOLE_SAFE_CLEAN_EXPECTED_PARENT_ID"
                             bound_target_id="$_MOLE_SAFE_CLEAN_EXPECTED_TARGET_ID"
                         fi
-                        safe_remove "$path" true "$size" "" \
+                        safe_remove "$path" true "$size" "$section_deadline" \
                             "$bound_parent" "$bound_parent_id" \
                             "$bound_target_id" || action_rc=$?
                         # A removal timeout (124) is a failed removal, not a
@@ -1330,6 +1274,9 @@ _safe_clean_impl() {
         local idx=0
         if [[ ${#existing_paths[@]} -gt 0 ]]; then
             for path in "${existing_paths[@]}"; do
+                if _mole_clean_section_budget_spent; then
+                    break
+                fi
                 local size_kb=0
                 local size_rc=0
                 size_kb=$(get_cleanup_path_size_kb "$path") || size_rc=$?
@@ -1368,7 +1315,7 @@ _safe_clean_impl() {
                         bound_parent_id="$_MOLE_SAFE_CLEAN_EXPECTED_PARENT_ID"
                         bound_target_id="$_MOLE_SAFE_CLEAN_EXPECTED_TARGET_ID"
                     fi
-                    safe_remove "$path" true "$size_kb" "" \
+                    safe_remove "$path" true "$size_kb" "$section_deadline" \
                         "$bound_parent" "$bound_parent_id" \
                         "$bound_target_id" || action_rc=$?
                     # Same non-fatal removal-timeout policy as the
@@ -1505,6 +1452,9 @@ start_cleanup() {
     export MOLE_CLEAN_SIZING_TIMEOUTS
     MOLE_CLEAN_REMOVAL_TIMEOUTS=0
     export MOLE_CLEAN_REMOVAL_TIMEOUTS
+    MOLE_CLEAN_REMOVAL_TIMEOUT_PATHS=""
+    export MOLE_CLEAN_REMOVAL_TIMEOUT_PATHS
+    _MOLE_CLEAN_SECTION_DEADLINE=""
     log_operation_session_start "clean"
     DRY_RUN_SEEN_IDENTITIES=()
     DRY_RUN_TOTAL_PARTIAL=false
@@ -1654,7 +1604,10 @@ perform_cleanup() {
 
         for pattern in "${WHITELIST_PATTERNS[@]}"; do
             local is_predefined=false
-            for default in "${DEFAULT_WHITELIST_PATTERNS[@]}"; do
+            # Hard safety entries are the most core protection Mole ships, so
+            # count them with the defaults. Attributing them to the user reads
+            # as "you added these" for rules nobody opted into.
+            for default in "${DEFAULT_WHITELIST_PATTERNS[@]}" "${SAFETY_WHITELIST_PATTERNS[@]}"; do
                 local expanded_default="${default/#\~/$HOME}"
                 if [[ "$pattern" == "$expanded_default" ]]; then
                     is_predefined=true
@@ -1714,8 +1667,12 @@ perform_cleanup() {
         if [[ $pending_clean_cancel -eq 124 || $pending_clean_cancel -ge 128 ]]; then
             return "$pending_clean_cancel"
         fi
+        local step_name="${1:-cleanup step}"
+        local _perf_step_start
+        debug_timer_start _perf_step_start
         local step_rc=0
         "$@" || step_rc=$?
+        debug_timer_end "cleanup step: $step_name" _perf_step_start
         pending_clean_cancel="${MOLE_CLEAN_CANCEL_STATUS:-0}"
         if [[ $step_rc -eq 124 || $step_rc -ge 128 ]]; then
             MOLE_CLEAN_CANCEL_STATUS=$step_rc
@@ -1772,19 +1729,18 @@ perform_cleanup() {
 
             # ===== 5. Cloud & Office =====
             start_section "云与办公"
-            # Force shell fallback so timeout runs in this shell context.
-            # The Cloud/Office cleaners rely on helpers (safe_clean, whitelist checks)
-            # defined in this script and sourced modules.
-            if run_with_shell_timeout 300 run_cloud_and_office_cleanup; then
-                : # completed successfully
-            else
-                local ret=$?
-                if [[ $ret -eq 124 ]]; then
-                    log_warning "云与办公清理超过 5 分钟超时,跳过剩余项"
-                elif [[ $ret -ge 128 ]]; then
-                    return "$ret"
+            local _perf_cloud_office_start
+            debug_timer_start _perf_cloud_office_start
+            local cloud_office_rc=0
+            _run_cleanup_step run_cloud_and_office_cleanup || cloud_office_rc=$?
+            debug_timer_end "cleanup step: run_cloud_and_office_cleanup" \
+                _perf_cloud_office_start
+            if [[ $cloud_office_rc -ne 0 ]]; then
+                if [[ $cloud_office_rc -eq 124 || $cloud_office_rc -ge 128 ]]; then
+                    _mole_record_clean_cancellation "$cloud_office_rc"
+                    return "$cloud_office_rc"
                 else
-                    log_warning "云与办公清理失败,退出码 $ret"
+                    log_warning "云与办公清理失败,退出码 $cloud_office_rc"
                 fi
             fi
             end_section
@@ -2017,7 +1973,35 @@ perform_cleanup() {
     fi
 
     if [[ ${MOLE_CLEAN_REMOVAL_TIMEOUTS:-0} -gt 0 ]]; then
-        summary_details+=("${GRAY}${ICON_WARNING}${NC} ${MOLE_CLEAN_REMOVAL_TIMEOUTS} 项超出 ${MOLE_TIMEOUT_DISK_VERIFY_SEC} 秒的移除预算,可能只被部分移除。请再次运行清理,或为较慢的磁盘调高 ${GRAY}MOLE_TIMEOUT_DISK_VERIFY_SEC${NC}。")
+        # Name the timed-out paths so the note is actionable without opening
+        # the operation log. Cap the list: a pathological disk can time out on
+        # many items and the note must stay one line.
+        local removal_timeout_note="项超出 ${MOLE_TIMEOUT_DISK_VERIFY_SEC} 秒的移除预算,可能只被部分移除"
+        local -a removal_timeout_paths=()
+        local removal_timeout_path
+        while IFS= read -r removal_timeout_path; do
+            [[ -n "$removal_timeout_path" ]] && removal_timeout_paths+=("$removal_timeout_path")
+        done <<< "${MOLE_CLEAN_REMOVAL_TIMEOUT_PATHS:-}"
+        if [[ ${#removal_timeout_paths[@]} -gt 0 ]]; then
+            local removal_timeout_show=3
+            [[ ${#removal_timeout_paths[@]} -lt $removal_timeout_show ]] && removal_timeout_show=${#removal_timeout_paths[@]}
+            local removal_timeout_list=""
+            local removal_timeout_idx
+            local removal_timeout_display
+            for ((removal_timeout_idx = 0; removal_timeout_idx < removal_timeout_show; removal_timeout_idx++)); do
+                # Abbreviate $HOME: three absolute paths under
+                # ~/Library/Developer already run past one terminal line, which
+                # is the width this note is capped to keep.
+                removal_timeout_display="${removal_timeout_paths[$removal_timeout_idx]}"
+                [[ -n "$HOME" && "$removal_timeout_display" == "$HOME"/* ]] && removal_timeout_display="~${removal_timeout_display#"$HOME"}"
+                removal_timeout_list+="${removal_timeout_list:+, }${removal_timeout_display}"
+            done
+            if [[ ${#removal_timeout_paths[@]} -gt $removal_timeout_show ]]; then
+                removal_timeout_list+=", 及其余 $((${#removal_timeout_paths[@]} - removal_timeout_show)) 项"
+            fi
+            removal_timeout_note+="${removal_timeout_list:+: }${removal_timeout_list}"
+        fi
+        summary_details+=("${GRAY}${ICON_WARNING}${NC} ${MOLE_CLEAN_REMOVAL_TIMEOUTS} ${removal_timeout_note}。请再次运行清理,或为较慢的磁盘调高 ${GRAY}MOLE_TIMEOUT_DISK_VERIFY_SEC${NC}。")
     fi
 
     if [[ $had_errexit -eq 1 ]]; then
@@ -2043,8 +2027,42 @@ run_with_shell_timeout() {
 
 # shellcheck disable=SC2329  # Invoked indirectly via run_with_timeout fallback.
 run_cloud_and_office_cleanup() {
-    clean_cloud_storage
-    clean_office_applications
+    local cleanup_rc=0
+    local pending_clean_cancel=0
+    _MOLE_CLEAN_SECTION_DEADLINE=$((SECONDS + MOLE_CLOUD_OFFICE_SECTION_BUDGET_SEC))
+
+    clean_cloud_storage || cleanup_rc=$?
+    pending_clean_cancel="${MOLE_CLEAN_CANCEL_STATUS:-0}"
+    if [[ $cleanup_rc -eq 124 || $cleanup_rc -ge 128 ||
+        $pending_clean_cancel -eq 124 || $pending_clean_cancel -ge 128 ]]; then
+        _MOLE_CLEAN_SECTION_DEADLINE=""
+        if [[ $cleanup_rc -eq 124 || $cleanup_rc -ge 128 ]]; then
+            return "$cleanup_rc"
+        fi
+        return "$pending_clean_cancel"
+    fi
+
+    if ! _mole_clean_section_budget_spent; then
+        cleanup_rc=0
+        clean_office_applications || cleanup_rc=$?
+        pending_clean_cancel="${MOLE_CLEAN_CANCEL_STATUS:-0}"
+        if [[ $cleanup_rc -eq 124 || $cleanup_rc -ge 128 ||
+            $pending_clean_cancel -eq 124 || $pending_clean_cancel -ge 128 ]]; then
+            _MOLE_CLEAN_SECTION_DEADLINE=""
+            if [[ $cleanup_rc -eq 124 || $cleanup_rc -ge 128 ]]; then
+                return "$cleanup_rc"
+            fi
+            return "$pending_clean_cancel"
+        fi
+    fi
+
+    if _mole_clean_section_budget_spent; then
+        echo -e "  ${YELLOW}${ICON_WARNING}${NC} Cloud & Office · ${GRAY}time limit reached, skipped remaining items${NC}"
+        note_activity
+    fi
+
+    _MOLE_CLEAN_SECTION_DEADLINE=""
+    return 0
 }
 
 main() {

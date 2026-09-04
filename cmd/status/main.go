@@ -190,7 +190,12 @@ func (m model) View() string {
 	}
 
 	header, mole := renderHeader(m.metrics, m.errMessage, m.animFrame, termWidth, m.catHidden)
-	alertBar := renderProcessAlertBar(m.metrics.ProcessAlerts, termWidth)
+	alertBar := renderProcessAlertBar(
+		m.metrics.ProcessAlerts,
+		m.metrics.ProcessStale,
+		m.metrics.ProcessCollectedAt,
+		termWidth,
+	)
 
 	renderFrame := func(cpuCores int) string {
 		var cardContent string
